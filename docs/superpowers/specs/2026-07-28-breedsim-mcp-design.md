@@ -1,6 +1,6 @@
 # breedsim-mcp — design
 
-> Status: DRAFT for review, 2026-07-28. Nothing built.
+> Status: **APPROVED 2026-07-28.** Section 8's open questions are now DECIDED (see §9).
 > Name `breedsim-mcp` — verified free on PyPI and GitHub (control: `plantcv-mcp` returns 200
 > and is found, so the probe discriminates). Deliberately **not** `alphasimr-mcp`: borrowing
 > the upstream name is what forced an affiliation disclaimer onto `plantcv-mcp`.
@@ -123,7 +123,7 @@ No genomic selection models (GBLUP/RR-BLUP), no multi-trait or G×E, no optimal 
 selection, no crossing-block optimisation, no genotype-matrix export. Phase 2 adds genomic
 selection and `compare_programs` for a paired A/B of two schemes.
 
-## 8. Open questions — these need answers before implementation
+## 8. Open questions — RESOLVED (kept for the reasoning; decisions in §9)
 
 1. **Install tax.** Needs R ≥4.3, a compiled AlphaSimR (Rcpp, minutes), `libtirpc-dev`, and
    rpy2 pinned `<3.6` (3.6 requires R ≥4.4). Far heavier than `uv pip install`. Should the
@@ -134,3 +134,40 @@ selection and `compare_programs` for a paired A/B of two schemes.
    and refuses rather than silently returning irreproducible numbers.
 3. **Replicate cost.** 10 replicates × N cycles is 10× the runtime. Fixed default, or adaptive
    until the CI is narrow enough to support the claim being made?
+
+## 9. Decisions (2026-07-28)
+
+### Licence — GPL-3.0-or-later
+
+**Verified:** AlphaSimR 2.1.0 is **MIT** (installed `DESCRIPTION`, confirmed on CRAN), but
+**rpy2 3.5.17 is GPLv2+**, and R itself is GPL.
+
+`plantcv-mcp` is MIT because PlantCV's MPL-2.0 is a *file-level* copyleft that an ordinary
+runtime dependency does not spread. **That reasoning does not carry over.** GPL is a strong
+copyleft, and a distributed package that IMPORTS rpy2 is normally a derivative work, so the
+combined distribution must be GPL-compatible.
+
+So this package is **GPL-3.0-or-later**. It keeps the rpy2 architecture already verified
+working, and GPL is the ecosystem norm here — R is GPL and every AlphaSimR user is already in
+that world. `NOTICE` will credit AlphaSimR (MIT, Chris Gaynor) and state that this project is
+unofficial and unaffiliated.
+
+### The three open questions
+
+1. **Install tax → detect and explain, never bootstrap.** Auto-installing R packages mutates
+   the user's system as a side effect, takes minutes and can fail halfway. Instead a
+   doctor-style check, surfaced through `list_methods()` and raised on first use, names
+   exactly what is missing and the command that fixes it.
+2. **Thread pinning → pin at import AND guard at runtime.** `OMP_NUM_THREADS=1` is set before
+   rpy2 loads. Because import order is not ours to control, a runtime check also detects the
+   case where R came up unpinned and marks those results `reproducible: false` with a loud
+   warning. It WARNS rather than blocks, consistent with `implausible_coverage`: trading
+   reproducibility for speed is a legitimate choice, silently doing so is not.
+3. **Replicate cost → fixed floor of 10 for phase 1; adaptive deferred.** The response
+   reports the CI width and fires `replicates_too_few` when the interval is wide relative to
+   the difference being claimed. Adaptive replication until a target precision is reached is
+   phase 2.
+
+**Note the asymmetry, which is deliberate:** the no-point-estimate rule is STRUCTURAL and has
+no override, while `threads_not_pinned` only warns. The first prevents a class of wrong
+answer; the second describes a tradeoff the caller is entitled to make.
