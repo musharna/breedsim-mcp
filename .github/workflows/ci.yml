@@ -3,6 +3,10 @@ name: ci
 # Action majors are pinned to floating vN tags verified to EXIST. Re-verify
 # before bumping: astral-sh/setup-uv publishes releases ahead of its floating
 # tags, so releases/latest is not a safe source for the pin.
+#
+# cache is v6 (node24), not v4 (node20): the first CI run emitted six Node 20
+# deprecation warnings and cache was the ONLY source -- checkout@v7 and
+# setup-uv@v7 already run node24. Verified from each action.yml's `using:`.
 
 on:
   push:
@@ -31,7 +35,7 @@ jobs:
       # cached on the R version rather than rebuilt every run.
       - name: Cache AlphaSimR
         id: cache-alphasimr
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/R/library
           key: alphasimr-${{ runner.os }}-${{ hashFiles('.github/workflows/ci.yml') }}
