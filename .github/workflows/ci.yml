@@ -1,0 +1,88 @@
+name: ci
+
+# Action majors are pinned to floating vN tags verified to EXIST. Re-verify
+# before bumping: astral-sh/setup-uv publishes releases ahead of its floating
+# tags, so releases/latest is not a safe source for the pin.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v7
+
+      # libtirpc-dev is NOT optional: without it rpy2 fails to link with
+      # "cannot find -ltirpc". r-base-dev provides the R headers.
+      - name: Install R and rpy2 build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y r-base r-base-dev libtirpc-dev
+
+      # AlphaSimR is an Rcpp/RcppArmadillo compile measured in minutes, so it is
+      # cached on the R version rather than rebuilt every run.
+      - name: Cache AlphaSimR
+        id: cache-alphasimr
+        uses: actions/cache@v4
+        with:
+          path: ~/R/library
+          key: alphasimr-${{ runner.os }}-${{ hashFiles('.github/workflows/ci.yml') }}
+
+      - name: Install AlphaSimR
+        if: steps.cache-alphasimr.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/R/library
+          Rscript -e 'install.packages("AlphaSimR", lib="~/R/library", repos="https://cloud.r-project.org", Ncpus=4)'
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install (locked)
+        run: uv sync --locked --all-groups --python ${{ matrix.python-version }}
+
+      - name: Lint
+        run: uv run --python ${{ matrix.python-version }} ruff check .
+
+      - name: Format check
+        run: uv run --python ${{ matrix.python-version }} ruff format --check .
+
+      - name: Tests
+        env:
+          R_LIBS_USER: ~/R/library
+        run: uv run --python ${{ matrix.python-version }} pytest -q
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Build
+        run: uv build
+
+      # The sdist allow-list is the only thing keeping internal directories out
+      # of a published artifact. Assert both directions.
+      - name: Sdist contents are exactly what we intend
+        run: |
+          set -euo pipefail
+          listing=$(tar tzf dist/*.tar.gz)
+          echo "$listing"
+          for want in README.md LICENSE NOTICE pyproject.toml; do
+            echo "$listing" | grep -q "/$want$" \
+              || { echo "::error::sdist is MISSING $want"; exit 1; }
+          done
+          for forbid in .claude docs/superpowers; do
+            if echo "$listing" | grep -q "$forbid"; then
+              echo "::error::sdist leaked $forbid"; exit 1
+            fi
+          done
+          echo "sdist contents OK"
