@@ -9,7 +9,6 @@ in-process assertion.
 import subprocess
 import sys
 
-
 from breedsim_mcp.engine import (
     MissingDependencyError,
     check_environment,
@@ -30,6 +29,7 @@ def _run(code: str, env_extra: dict | None = None) -> subprocess.CompletedProces
         text=True,
         env=env,
         timeout=300,
+        check=False,  # the tests assert on returncode themselves
     )
 
 

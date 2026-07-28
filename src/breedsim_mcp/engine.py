@@ -77,7 +77,7 @@ def _rpy2():
     """Import rpy2 lazily, translating failure into an actionable error."""
     try:
         import rpy2.robjects as ro
-    except Exception as exc:  # noqa: BLE001 - any import failure means R is unusable
+    except Exception as exc:  # deliberately blind: any failure here means R is unusable
         raise MissingDependencyError.for_r() from exc
     return ro
 
