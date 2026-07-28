@@ -1,0 +1,31 @@
+breedsim-mcp
+Copyright (c) 2026 Jaret Arnold
+Licensed under the GNU General Public License v3.0 or later. See LICENSE.
+
+--------------------------------------------------------------------------------
+Why GPL and not MIT
+--------------------------------------------------------------------------------
+
+This project imports rpy2, which is licensed GPLv2+. A distributed work that
+imports a GPL library is normally a derivative work, so the combination must be
+GPL-compatible. That is the whole reason for the licence choice here — it is not
+a statement about AlphaSimR, which is MIT.
+
+--------------------------------------------------------------------------------
+Third-party dependencies
+--------------------------------------------------------------------------------
+
+    AlphaSimR — https://github.com/gaynorr/AlphaSimR
+    Author  — Chris Gaynor and contributors
+    License — MIT
+
+    rpy2    — https://rpy2.github.io/
+    License — GPLv2+
+
+    R       — https://www.r-project.org/
+    License — GPL-2 / GPL-3
+
+This project is an independent, UNOFFICIAL Model Context Protocol server. It is
+not affiliated with, endorsed by, or sponsored by the AlphaSimR authors, the
+University of Edinburgh, or the R Foundation. Package and project names are used
+only to identify the software this server drives.

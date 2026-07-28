@@ -1,0 +1,84 @@
+[project]
+name = "breedsim-mcp"
+version = "0.1.0"
+description = "MCP server for breeding-scheme simulation — returns distributions, never a single stochastic run"
+readme = "README.md"
+# GPL, not MIT. AlphaSimR itself is MIT, but rpy2 is GPLv2+ and we import it
+# directly, so the distributed combination must be GPL-compatible.
+license = "GPL-3.0-or-later"
+requires-python = ">=3.11"
+authors = [{ name = "Jaret Arnold" }]
+keywords = [
+    "mcp",
+    "model-context-protocol",
+    "plant-breeding",
+    "simulation",
+    "alphasimr",
+    "quantitative-genetics",
+    "genomic-selection",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    # 1.28.1 is a SECURITY floor, not a feature floor.
+    "mcp>=1.28.1,<2",
+    # rpy2 >=3.6 requires R >= 4.4 (it binds R_getVar, absent in 4.3). Pinning
+    # below 3.6 keeps us working on R 4.3.x, which is what Debian/Ubuntu ship.
+    "rpy2>=3.5,<3.6",
+    "numpy>=1.26",
+    # pydantic raises PydanticUserError on stdlib TypedDict under Python < 3.12,
+    # which breaks outputSchema generation on 3.11 only.
+    "typing-extensions>=4.12",
+]
+
+[project.urls]
+Homepage = "https://github.com/musharna/breedsim-mcp"
+Repository = "https://github.com/musharna/breedsim-mcp"
+Issues = "https://github.com/musharna/breedsim-mcp/issues"
+
+[project.scripts]
+breedsim-mcp = "breedsim_mcp.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/breedsim_mcp"]
+
+[tool.hatch.build.targets.sdist]
+# hatchling's `packages` covers the WHEEL ONLY. Without an explicit allow-list
+# the sdist packs .claude/ and docs/. Verify with `tar tzf`, not `git ls-files`.
+include = [
+    "src/**",
+    "tests/**",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "NOTICE",
+    "pyproject.toml",
+]
+exclude = [".claude", "docs", "dist"]
+
+[tool.uv]
+# Do NOT build against a conda interpreter. conda ships its own libstdc++.so.6,
+# which shadows the system one and is older than system libicuuc requires, so
+# rpy2's dlopen of libR.so dies with "GLIBCXX_3.4.30 not found". A uv-managed
+# CPython links against the system C++ runtime and works.
+python-preference = "only-managed"
+
+[tool.ruff]
+# ruff formats Python code blocks embedded in Markdown; docs/ holds the design
+# and plan, whose quoted snippets are a record and must not be rewritten.
+extend-exclude = ["docs"]
+
+[dependency-groups]
+dev = ["pytest>=8.0", "ruff>=0.6"]
