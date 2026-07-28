@@ -1,9 +1,11 @@
 """Founder populations, and honest reporting of whether they can be reproduced.
 
-Measured 2026-07-28 on AlphaSimR 2.1.0: under a fixed `set.seed`, `quickHaplo`
-produces identical founder haplotypes while `runMacs` does not — and `runMacs`
-stays irreproducible even at `nThreads=1` with `OMP_NUM_THREADS=1`, so this is not
-a threading artefact. The MaCS coalescent simply does not draw from R's RNG.
+Measured 2026-07-28 on AlphaSimR 2.1.0. `quickHaplo` reproduces from a seed.
+`runMacs` is subtler than "ignores the seed": its MaCS RNG is seeded once per R
+SESSION and advances across calls, so two seeded calls in one session differ while
+the same call SEQUENCE in a fresh process reproduces exactly. Since this server is
+a long-lived process, the practical consequence is that a repeat found_population
+with the same seed gives different founders — hence reproducible=False.
 
 Both generators are offered, because `runMacs` gives realistic coalescent LD that
 `quickHaplo` does not. What is NOT offered is silence about the difference.
@@ -92,10 +94,13 @@ def found_population(
             None
             if reproducible
             else (
-                "Founders were generated with runMacs, whose coalescent RNG is not "
-                "governed by R's set.seed. Measured: identical seeds give different "
-                "founder haplotypes, even at nThreads=1 with OMP_NUM_THREADS=1. Use "
-                "generator='quickHaplo' if you need this session to be reproducible."
+                "Founders were generated with runMacs. Its MaCS coalescent RNG is "
+                "seeded ONCE PER R SESSION and advances across calls, so set.seed "
+                "does not reset it: calling found_population again with the SAME "
+                "seed in this long-lived server process yields DIFFERENT founders. "
+                "(Measured: within one session, two seeded runMacs calls differ; "
+                "across fresh processes the same call sequence does reproduce.) Use "
+                "generator='quickHaplo' if you need repeatable founders here."
             )
         ),
         spec={
