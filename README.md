@@ -19,8 +19,9 @@ interval. There is no flag that collapses it to a point estimate.
 
 [![ci](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml)
 
-Phase 1 complete: 4 tools, 30 tests against real AlphaSimR, 12 mutation checks all confirmed
-red ([docs/MUTATION-CHECKS.md](docs/MUTATION-CHECKS.md)). CI installs R and compiles
+Phase 1 complete, plus paired comparison: 5 tools, 38 tests against real AlphaSimR, and 15
+mutation checks all confirmed red ([docs/MUTATION-CHECKS.md](docs/MUTATION-CHECKS.md)). CI
+installs R and compiles
 AlphaSimR, so the suite runs against the real engine on Python 3.11, 3.12 and 3.13 — not
 against a mock.
 
@@ -87,14 +88,16 @@ can currently produce reproducible results**.
 
 ## Tools
 
-| tool                                                   | returns                                                          |
-| ------------------------------------------------------ | ---------------------------------------------------------------- |
-| `list_methods()`                                       | engine versions, generators, replicate floor, determinism status |
-| `found_population(generator, seed, n_ind, n_chr, ...)` | `session_id` + founder provenance + `reproducible`               |
-| `run_program(session_id, cycles, replicates, ...)`     | per-cycle **distributions** — mean, sd, 95% CI                   |
-| `describe_session(session_id)`                         | provenance, trait architecture, cycles run                       |
+| tool                                                        | returns                                                          |
+| ----------------------------------------------------------- | ---------------------------------------------------------------- |
+| `list_methods()`                                            | engine versions, generators, replicate floor, determinism status |
+| `found_population(generator, seed, n_ind, n_chr, ...)`      | `session_id` + founder provenance + `reproducible`               |
+| `run_program(session_id, cycles, replicates, ...)`          | per-cycle **distributions** — mean, sd, 95% CI                   |
+| `compare_programs(session_id, a_n_select, b_n_select, ...)` | the **paired difference** between two programmes, with a CI      |
+| `describe_session(session_id)`                              | provenance, trait architecture, cycles run                       |
 
 Typical loop: `found_population` → `run_program` → read the CI and the warnings.
+Comparing two schemes: `found_population` → `compare_programs` → read `difference`.
 
 ### Species
 
@@ -149,14 +152,75 @@ There is no `value` field anywhere. Intervals use **t** critical values rather t
 1.96, because at n = 5–10 the normal understates the interval — the wrong direction to be
 wrong in when the interval exists to be honest.
 
+### Comparing two programmes
+
+Do **not** call `run_program` twice and compare the means. Use `compare_programs`, which
+pairs the two arms on the same seeds — replicate _i_ of A and replicate _i_ of B start from
+identical founders under an identical seed — and differences them **within** each pair, so
+the shared luck of that seed cancels instead of being counted twice.
+
+Read `difference` and `favours`. `favours` is `null` when the interval contains zero, which
+means the two programmes are not distinguishable at that replicate count; the larger mean is
+then not the better programme.
+
+Here is why the pairing earns its keep. Verbatim, selecting 12 of 100 against 18 of 100,
+final cycle of two, ten replicates:
+
+```json
+{
+  "programs": {
+    "a": { "label": "A", "n_select": 12, "n_cross": 100 },
+    "b": { "label": "B", "n_select": 18, "n_cross": 100 }
+  },
+  "cycles": [
+    {
+      "cycle": 2,
+      "a_genetic_gain": {
+        "mean": 2.046227841067686,
+        "ci_low": 1.9001469542399823,
+        "ci_high": 2.1923087278953903,
+        "n": 10
+      },
+      "b_genetic_gain": {
+        "mean": 1.730473406465538,
+        "ci_low": 1.5520780571733739,
+        "ci_high": 1.9088687557577022,
+        "n": 10
+      },
+      "difference": {
+        "mean": 0.31575443460214814,
+        "ci_low": 0.10028439648886733,
+        "ci_high": 0.5312244727154289,
+        "n": 10
+      }
+    }
+  ],
+  "favours": "a",
+  "intervals_overlap": true,
+  "warnings": [{ "code": "overlap_but_different", "message": "..." }]
+}
+```
+
+**The two per-programme intervals overlap** — A spans 1.900–2.192, B spans 1.552–1.909 — so
+reading them side by side says "no difference". The paired difference says otherwise:
+`[+0.100, +0.531]`, entirely above zero. Pairing cancels the seed-to-seed variation that
+made both individual intervals wide, so it resolves a contrast that eyeballing the overlap
+cannot. That is what `overlap_but_different` is for.
+
+**Two overlapping confidence intervals do not imply no difference.** This is the single
+easiest way to get a breeding comparison wrong, and it is why the tool reports a difference
+rather than two numbers.
+
 ### Warnings
 
-| code                        | meaning                                                                  |
-| --------------------------- | ------------------------------------------------------------------------ |
-| `nondeterministic_founders` | founders came from `runMacs`; a repeat call will differ                  |
-| `threads_not_pinned`        | `OMP_NUM_THREADS != 1`, so the same seed will not reproduce              |
-| `replicates_too_few`        | the CI is wide relative to the effect — too wide to support a comparison |
-| `variance_exhausted`        | genetic variance has collapsed; a still-rising mean is a plateau         |
+| code                           | meaning                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------ |
+| `nondeterministic_founders`    | founders came from `runMacs`; a repeat call will differ                  |
+| `difference_indistinguishable` | the paired difference interval contains zero — no winner at this n       |
+| `overlap_but_different`        | the per-arm intervals overlap but the paired difference resolves         |
+| `threads_not_pinned`           | `OMP_NUM_THREADS != 1`, so the same seed will not reproduce              |
+| `replicates_too_few`           | the CI is wide relative to the effect — too wide to support a comparison |
+| `variance_exhausted`           | genetic variance has collapsed; a still-rising mean is a plateau         |
 
 None of these withhold results. Outputs are always distributions, so you can already see when
 an answer is too noisy to use — they explain rather than refuse.
@@ -182,7 +246,8 @@ founders fixed and threads pinned, seed 7 reproduces exactly: `meanG=2.01451853`
 
 No genomic selection models (GBLUP/RR-BLUP), no multi-trait or G×E, no optimal contribution
 selection, no crossing-block optimisation, no genotype-matrix export. Truncation selection on
-phenotype only. Phase 2 adds genomic selection and `compare_programs` for a paired A/B.
+phenotype only. Genomic selection is the next thing worth building; `compare_programs` has
+landed.
 
 Sessions are in-memory and capped (8, LRU); they do not survive a restart.
 

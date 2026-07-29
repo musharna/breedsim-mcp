@@ -1,4 +1,4 @@
-"""MCP server. Four tools over a session store.
+"""MCP server. Five tools over a session store.
 
 `engine` is imported FIRST and deliberately: it pins OMP_NUM_THREADS before rpy2
 loads, and R reads that variable when OpenMP initialises. Import order here is
@@ -19,8 +19,11 @@ from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 from typing_extensions import TypedDict
 
+from .comparison import compare_programs
 from .diagnostics import (
+    indistinguishable_warning,
     nondeterministic_founders_warning,
+    overlap_but_different_warning,
     replicates_too_few_warning,
     threads_not_pinned_warning,
     variance_exhausted_warning,
@@ -38,7 +41,16 @@ _store = SessionStore()
 INSTRUCTIONS = f"""\
 Breeding-scheme simulation, driving AlphaSimR.
 
-Work in this order: found_population -> run_program.
+Work in this order: found_population -> run_program, or found_population ->
+compare_programs when the question is "which of these two is better".
+
+TO COMPARE TWO PROGRAMMES, USE compare_programs — do not run run_program twice and
+compare the means. compare_programs pairs the two arms on the same seeds so the
+shared luck cancels, and returns the DIFFERENCE with its own confidence interval.
+Read `difference` and `favours`. When `favours` is null the interval contains zero
+and the programmes are not distinguishable at that replicate count, so the larger
+mean is not the better programme. Two overlapping per-programme intervals do NOT
+imply no difference — that is what `overlap_but_different` is telling you.
 
 THIS SERVER DOES NOT RETURN SINGLE RUNS. run_program executes many replicates and
 returns, per cycle, the mean, standard deviation and 95% confidence interval of
@@ -92,6 +104,29 @@ class RunResult(TypedDict):
     session_id: str
     replicates: int
     cycles: list[CycleDict]
+    reproducible: bool
+    recipe: dict[str, Any]
+    warnings: list[WarningDict]
+
+
+class CompareCycleDict(TypedDict):
+    cycle: int
+    a_genetic_gain: SummaryDict
+    b_genetic_gain: SummaryDict
+    difference: SummaryDict
+
+
+class CompareResult(TypedDict):
+    session_id: str
+    replicates: int
+    paired: bool
+    programs: dict[str, Any]
+    cycles: list[CompareCycleDict]
+    difference_is: str
+    # None when the difference interval contains zero. Not a missing value —
+    # it is the answer "these are not distinguishable at this replicate count".
+    favours: str | None
+    intervals_overlap: bool
     reproducible: bool
     recipe: dict[str, Any]
     warnings: list[WarningDict]
@@ -246,6 +281,61 @@ def build_server() -> FastMCP:
                 threads_not_pinned_warning(engine.threads_are_pinned()),
                 replicates_too_few_warning(last_gain),
                 variance_exhausted_warning(variances),
+            ]
+        )
+        return out
+
+    @mcp.tool(
+        name="compare_programs",
+        title="Compare two programmes (paired, returns the difference)",
+        annotations=READ_ONLY,
+    )
+    def compare_programs_tool(
+        session_id: str,
+        a_n_select: int = 10,
+        b_n_select: int = 25,
+        cycles: int = 3,
+        replicates: int = DEFAULT_REPLICATES,
+        a_n_cross: int | None = None,
+        b_n_cross: int | None = None,
+        base_seed: int = 1000,
+        a_label: str = "A",
+        b_label: str = "B",
+    ) -> CompareResult:
+        """Compare two programmes on shared founders using paired seeds.
+
+        Read `difference` and `favours`, NOT the two per-programme means. The
+        arms are paired replicate-by-replicate on the same seed, so the shared
+        luck cancels and the difference carries its own confidence interval.
+
+        `favours` is null when that interval contains zero — meaning the two
+        programmes are not distinguishable at this replicate count. When it is
+        null, do not report the larger mean as the better programme.
+
+        Note that two overlapping per-programme intervals do NOT imply no
+        difference; `overlap_but_different` fires when the paired difference
+        resolves a contrast that the overlap hides.
+        """
+        out = compare_programs(
+            _store,
+            session_id,
+            a_n_select=a_n_select,
+            b_n_select=b_n_select,
+            cycles=cycles,
+            replicates=replicates,
+            a_n_cross=a_n_cross,
+            b_n_cross=b_n_cross,
+            base_seed=base_seed,
+            a_label=a_label,
+            b_label=b_label,
+        )
+        session = _store.get(session_id)
+        out["warnings"] = _warn_dicts(
+            [
+                nondeterministic_founders_warning(session),
+                threads_not_pinned_warning(engine.threads_are_pinned()),
+                indistinguishable_warning(out),
+                overlap_but_different_warning(out),
             ]
         )
         return out

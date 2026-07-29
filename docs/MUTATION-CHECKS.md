@@ -52,6 +52,27 @@ described a server that was broken for every real client after its first request
 A test that cannot fail in the process it runs in is not covering the thing it
 names.
 
+## Round 6 — paired comparison and species
+
+| # | mutant | test that went red |
+| - | ------ | ------------------ |
+| 13 | arm B seeded independently (`seed + 7919`), breaking the pairing | `test_comparison.py::test_pairing_uses_the_same_seed_for_both_arms` |
+| 14 | `_verdict` returns the sign of the mean instead of reading the interval | `test_comparison.py::test_verdict_reads_the_interval_not_the_mean` |
+| 15 | `species` validation disabled (`if False`) | `test_diagnostics_and_server.py::test_species_is_validated_not_passed_through` |
+
+Mutant 13 is the one that quantifies the feature. Breaking the pairing made two
+IDENTICAL programmes differ by 0.169 and 0.271 — the same order as the sd 0.247
+that the replicate floor exists for. That is precisely the noise common random
+numbers removes, and it is why a comparison assembled from two independent
+`run_program` calls can invent a winner out of nothing.
+
+Mutant 14 exposed a real coverage gap rather than confirming coverage. The
+identical-arms test cannot catch it: its difference is exactly zero, so a verdict
+returning the sign of the mean still answers `None` and passes. The interval
+logic needed a test built on literals, where a positive mean can be paired with
+an interval that straddles zero. **A test whose subject is always zero cannot
+discriminate a rule about signs.**
+
 ## Not mutated, and why
 
 `diagnostics.BLOCKING_CODES` is empty by design, so there is nothing to disable.

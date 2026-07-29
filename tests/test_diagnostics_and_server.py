@@ -69,6 +69,7 @@ def test_server_registers_exactly_the_expected_tools():
         "list_methods",
         "found_population",
         "run_program",
+        "compare_programs",
         "describe_session",
     }
 
