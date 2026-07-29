@@ -18,14 +18,12 @@ interval. There is no flag that collapses it to a point estimate.
 ## Status
 
 [![ci](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/breedsim-mcp)](https://pypi.org/project/breedsim-mcp/)
 
-Phase 1 complete, plus paired comparison: 5 tools, 38 tests against real AlphaSimR, and 15
-mutation checks all confirmed red ([docs/MUTATION-CHECKS.md](docs/MUTATION-CHECKS.md)). CI
-installs R and compiles
-AlphaSimR, so the suite runs against the real engine on Python 3.11, 3.12 and 3.13 — not
-against a mock.
-
-Not on PyPI; install from git (below).
+**0.1.0 is on PyPI.** 5 tools, 38 tests against real AlphaSimR, and 15 mutation checks all
+confirmed red ([docs/MUTATION-CHECKS.md](docs/MUTATION-CHECKS.md)). CI installs R and
+compiles AlphaSimR, so the suite runs against the real engine on Python 3.11, 3.12 and
+3.13 — not against a mock.
 
 ## Install tax — read this first
 
@@ -39,7 +37,7 @@ Heavier than `uv pip install`, and the reasons are not negotiable:
 ```bash
 sudo apt-get install -y r-base r-base-dev libtirpc-dev
 R -e 'install.packages("AlphaSimR", repos="https://cloud.r-project.org")'
-uv add git+https://github.com/musharna/breedsim-mcp
+uv add breedsim-mcp
 ```
 
 If you build against a **conda** Python, rpy2 will fail to load `libR.so` with
