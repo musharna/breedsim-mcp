@@ -20,7 +20,7 @@ interval. There is no flag that collapses it to a point estimate.
 [![ci](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/breedsim-mcp)](https://pypi.org/project/breedsim-mcp/)
 
-**0.1.0 is on PyPI.** 5 tools, 38 tests against real AlphaSimR, and 15 mutation checks all
+**0.1.1 is on PyPI.** 5 tools, 42 tests against real AlphaSimR, and 17 mutation checks all
 confirmed red ([docs/MUTATION-CHECKS.md](docs/MUTATION-CHECKS.md)). CI installs R and
 compiles AlphaSimR, so the suite runs against the real engine on Python 3.11, 3.12 and
 3.13 — not against a mock.
@@ -106,6 +106,15 @@ matter — AlphaSimR upper-cases it, so this does too.
 
 Note the scope that implies: **two plants and an animal.** Despite the default of
 `MAIZE`, this is not a plant-only simulator.
+
+### Limits
+
+Every size parameter has a ceiling, reported by `list_methods()` under `limits` so a
+caller can size a request rather than discover the bound by being refused. R runs as a
+single interpreter here and tool calls are serialised, so one oversized call blocks every
+other call until it finishes — there is no second worker. The caps are set where a call
+stops being slow and starts being an outage. For genuinely large jobs, drive AlphaSimR
+directly rather than through this server.
 
 ### What `run_program` returns
 
