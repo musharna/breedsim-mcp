@@ -25,7 +25,7 @@ from .diagnostics import (
     threads_not_pinned_warning,
     variance_exhausted_warning,
 )
-from .founding import GENERATORS, found_population
+from .founding import GENERATORS, RUNMACS_RNG_NOTE, found_population
 from .replication import (
     DEFAULT_REPLICATES,
     MIN_REPLICATES,
@@ -35,7 +35,7 @@ from .session import SessionStore
 
 _store = SessionStore()
 
-INSTRUCTIONS = """\
+INSTRUCTIONS = f"""\
 Breeding-scheme simulation, driving AlphaSimR.
 
 Work in this order: found_population -> run_program.
@@ -48,9 +48,9 @@ as the differences people try to compare. One run is a draw from a distribution,
 not an answer, so there is no option to request one.
 
 Read `reproducible` on every response. Two independent things break reproducibility:
-founders generated with runMacs (its coalescent RNG ignores R's set.seed), and
-OpenMP running multi-threaded. Use generator="quickHaplo" and keep threads pinned
-if you need a result someone else can repeat.
+founders generated with runMacs ({RUNMACS_RNG_NOTE}), and OpenMP running
+multi-threaded. Use generator="quickHaplo" and keep threads pinned if you need a
+result someone else can repeat.
 
 Read the `warnings` array. `replicates_too_few` means the interval is too wide to
 support the comparison being made. `variance_exhausted` means selection has used up
@@ -154,9 +154,9 @@ def build_server() -> FastMCP:
             "notes": env.notes,
             "guidance": (
                 "quickHaplo is reproducible from a seed; runMacs gives realistic "
-                "coalescent linkage disequilibrium but IGNORES set.seed, so a "
-                "runMacs session cannot be repeated. Results are always "
-                "distributions across replicates — there is no single-run mode."
+                f"coalescent linkage disequilibrium but {RUNMACS_RNG_NOTE}. "
+                "Results are always distributions across replicates — there is "
+                "no single-run mode."
             ),
         }
 

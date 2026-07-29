@@ -5,10 +5,19 @@ OpenMP initialises, so setting it afterwards is a silent no-op. Measured: with
 founders held fixed, a pinned process reproduces `meanG=2.01451853` from seed 7
 twice, while an unpinned one gives 2.397 then 2.125.
 
-rpy2 is deliberately NOT imported at module level. If it were, ruff's import
-sorter would hoist it above the environment assignment below and quietly destroy
-the guarantee this module exists to provide. It is imported lazily instead, so the
-ordering cannot be refactored away by a formatter.
+rpy2 is never imported by a module-level `import` STATEMENT: ruff's import sorter
+would hoist it above the environment assignment below and quietly destroy the
+guarantee this module exists to provide. It is imported from inside a function,
+which a formatter will not move.
+
+That function is nevertheless CALLED at module scope, and that part is also
+load-bearing. rpy2 publishes its conversion rules into a `contextvars.ContextVar`
+at import time, so whichever context performs the import owns them. Importing
+lazily inside a tool call put those rules in a per-request context that was
+discarded when the call returned — measured through the MCP layer in a fresh
+process, call 1 (`list_methods`) succeeded and call 2 (`found_population`) died
+with "Conversion rules for `rpy2.robjects` appear to be missing". Binding at
+module scope puts them in the root context, which every task inherits.
 """
 
 import os
@@ -23,6 +32,24 @@ RPY2_PREIMPORTED: bool = "rpy2" in sys.modules
 # trade reproducibility for speed is making a legitimate choice. We record that
 # they did (threads_are_pinned() -> False) rather than overriding them.
 os.environ.setdefault("OMP_NUM_THREADS", "1")
+
+
+def _bind_rpy2():
+    """Import rpy2, AFTER the pin above. Inside a function so isort cannot hoist it."""
+    import rpy2.robjects as ro
+
+    return ro
+
+
+# Called here, at module scope, and not lazily on first use. See the module
+# docstring: this is what puts rpy2's conversion-rule ContextVar in the root
+# context instead of in a per-request one that dies with the request.
+try:
+    _RO = _bind_rpy2()
+    _RPY2_IMPORT_ERROR: Exception | None = None
+except Exception as exc:  # noqa: BLE001 — any failure here means R is unusable
+    _RO = None
+    _RPY2_IMPORT_ERROR = exc
 
 
 class EngineError(Exception):
@@ -74,12 +101,10 @@ def threads_are_pinned() -> bool:
 
 
 def _rpy2():
-    """Import rpy2 lazily, translating failure into an actionable error."""
-    try:
-        import rpy2.robjects as ro
-    except Exception as exc:  # deliberately blind: any failure here means R is unusable
-        raise MissingDependencyError.for_r() from exc
-    return ro
+    """Return the rpy2 module bound at import time, or fail with an actionable error."""
+    if _RO is None:
+        raise MissingDependencyError.for_r() from _RPY2_IMPORT_ERROR
+    return _RO
 
 
 def r_eval(code: str):

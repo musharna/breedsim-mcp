@@ -21,7 +21,9 @@ class Advisory:
 
 
 def nondeterministic_founders_warning(session) -> "Advisory | None":
-    """Fires when founders came from runMacs, which ignores set.seed."""
+    """Fires when founders came from runMacs, whose coalescent RNG is seeded once
+    per R session — so a repeat seeded call in this process gives different
+    founders. The detail lives in `session.reason`; this only routes it."""
     if session.reproducible:
         return None
     return Advisory(
