@@ -4,7 +4,7 @@ All notable changes to `breedsim-mcp` are recorded here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0] - 2026-07-29
 
 Phase 1. Breeding-scheme simulation over MCP, driving AlphaSimR 2.1.0 through rpy2.
 
@@ -96,8 +96,10 @@ Phase 1. Breeding-scheme simulation over MCP, driving AlphaSimR 2.1.0 through rp
 - `uv` is pinned to a managed CPython: conda ships a `libstdc++` older than system
   `libicuuc` needs, so rpy2's `dlopen` of `libR.so` fails with `GLIBCXX_3.4.30 not found`.
 
-### Not included (phase 2)
+### Not included
 
 Genomic selection models (GBLUP/RR-BLUP), multi-trait and G×E, optimal contribution
-selection, crossing-block optimisation, genotype-matrix export, and `compare_programs`
-for a paired A/B of two schemes.
+selection, crossing-block optimisation, and genotype-matrix export. `compare_programs`
+was originally listed here and shipped in this release instead.
+
+[0.1.0]: https://github.com/musharna/breedsim-mcp/releases/tag/v0.1.0
