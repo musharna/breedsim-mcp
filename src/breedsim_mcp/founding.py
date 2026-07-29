@@ -14,6 +14,7 @@ Both generators are offered, because `runMacs` gives realistic coalescent LD tha
 import hashlib
 
 from .engine import r_eval, require_alphasimr
+from .limits import check_all
 from .session import Session, SessionStore
 
 GENERATORS: tuple[str, ...] = ("quickHaplo", "runMacs")
@@ -90,6 +91,9 @@ def found_population(
             'fails inside R with "No rules for species". Note that CATTLE is '
             "supported: this server simulates animal breeding as well as plant."
         )
+    check_all(
+        n_ind=n_ind, n_chr=n_chr, seg_sites=seg_sites, n_qtl_per_chr=n_qtl_per_chr
+    )
     for name, value in (("n_ind", n_ind), ("n_chr", n_chr), ("seg_sites", seg_sites)):
         if value < 1:
             raise ValueError(f"{name} must be >= 1, got {value}")

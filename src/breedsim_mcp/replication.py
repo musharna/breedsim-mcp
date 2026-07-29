@@ -16,6 +16,7 @@ segmentation overlay — make the honest answer the only reachable one.
 
 import statistics
 
+from .limits import check_all
 from .program import run_replicate
 from .session import SessionStore
 
@@ -77,6 +78,7 @@ def run_program(
     Raises TooFewReplicatesError below MIN_REPLICATES. That is the point of the
     module, not a limitation of it.
     """
+    check_all(replicates=replicates, cycles=cycles)
     if replicates < MIN_REPLICATES:
         raise TooFewReplicatesError(
             f"replicates={replicates} is below the minimum of {MIN_REPLICATES}. "

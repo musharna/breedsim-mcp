@@ -73,6 +73,26 @@ logic needed a test built on literals, where a positive mean can be paired with
 an interval that straddles zero. **A test whose subject is always zero cannot
 discriminate a rule about signs.**
 
+## Round 7 — post-0.1.0 audit
+
+| # | mutant | test that went red |
+| - | ------ | ------------------ |
+| 16 | `_free_r_state` restored to the version that shipped in 0.1.0 | `test_session_eviction.py::test_eviction_frees_every_object_the_session_owned` |
+| 17 | `check_upper` made a no-op (no ceilings, the 0.1.0 state) | `test_session_eviction.py::test_oversized_requests_are_refused_at_every_entry_point` |
+
+Mutant 16 is a released bug, not a hypothetical: it restores real 0.1.0 code and
+the test goes red with `evicted session leaked R objects: [...]`, five of them.
+
+The instructive part is why no test caught it originally. The obvious eviction
+test — list the globals, assert they are gone — **passes against the broken code**
+if it lists them with a bare `ls()`, because that is precisely the call that
+cannot see dot-prefixed names. The harness would have inherited the bug it was
+meant to detect and reported success. The test therefore uses
+`ls(all.names=TRUE)`, and the docstring says why.
+
+**A test that reuses the failing component's own assumption cannot detect that
+assumption being wrong.**
+
 ## Not mutated, and why
 
 `diagnostics.BLOCKING_CODES` is empty by design, so there is nothing to disable.

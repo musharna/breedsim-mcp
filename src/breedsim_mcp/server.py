@@ -29,6 +29,7 @@ from .diagnostics import (
     variance_exhausted_warning,
 )
 from .founding import GENERATORS, RUNMACS_RNG_NOTE, found_population
+from .limits import LIMITS
 from .replication import (
     DEFAULT_REPLICATES,
     MIN_REPLICATES,
@@ -152,6 +153,9 @@ class MethodsInfo(TypedDict):
     default_replicates: int
     threads_pinned: bool
     reproducible: bool
+    # Published so a caller can size a request instead of discovering the
+    # ceiling by having one refused.
+    limits: dict[str, int]
     notes: list[str]
     guidance: str
 
@@ -186,6 +190,7 @@ def build_server() -> FastMCP:
             "default_replicates": DEFAULT_REPLICATES,
             "threads_pinned": env.threads_pinned,
             "reproducible": env.reproducible,
+            "limits": dict(LIMITS),
             "notes": env.notes,
             "guidance": (
                 "quickHaplo is reproducible from a seed; runMacs gives realistic "
