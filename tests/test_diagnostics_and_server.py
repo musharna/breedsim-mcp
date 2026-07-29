@@ -14,9 +14,9 @@ from breedsim_mcp.diagnostics import (
     threads_not_pinned_warning,
     variance_exhausted_warning,
 )
-from breedsim_mcp.founding import found_population
+from breedsim_mcp.founding import RUNMACS_RNG_NOTE, found_population
 from breedsim_mcp.replication import MIN_REPLICATES, run_program
-from breedsim_mcp.server import build_server
+from breedsim_mcp.server import INSTRUCTIONS, build_server
 from breedsim_mcp.session import SessionStore
 
 SMALL = {"n_ind": 40, "n_chr": 4, "seg_sites": 40, "n_qtl_per_chr": 5, "h2": 0.4}
@@ -166,3 +166,37 @@ def test_store_is_shared_between_tools():
     s = found_population(store, generator="quickHaplo", seed=9, **SMALL)
     out = run_program(store, s.session_id, cycles=1, replicates=MIN_REPLICATES)
     assert out["session_id"] == s.session_id
+
+
+def test_agent_facing_text_derives_from_one_source():
+    """Every surface that explains runMacs must interpolate RUNMACS_RNG_NOTE.
+
+    This is not a style rule. The fact was hand-restated in four places; when the
+    original overstatement ("runMacs ignores set.seed") was corrected in
+    founding.py, server.py kept shipping the false version -- including in
+    INSTRUCTIONS, which is the text an agent reads to decide how to drive the
+    engine. A grep for the bad string would only ever catch that one wording, so
+    this asserts the invariant instead: the surfaces derive, they do not paraphrase.
+
+    It also catches the opposite failure. Interpolation is easy to break silently:
+    ruff strips an `f` prefix from a string that has no placeholder yet, so adding
+    the prefix before the placeholder leaves a literal "{RUNMACS_RNG_NOTE}" in the
+    prompt. Both directions are checked.
+    """
+    guidance = asyncio.run(build_server().call_tool("list_methods", {}))
+    guidance = guidance[1] if isinstance(guidance, tuple) else guidance
+    store = SessionStore()
+    reason = found_population(store, generator="runMacs", seed=3, **SMALL).reason
+
+    surfaces = {
+        "INSTRUCTIONS": INSTRUCTIONS,
+        "list_methods.guidance": guidance["guidance"],
+        "session.reason": reason,
+    }
+    for name, text in surfaces.items():
+        assert RUNMACS_RNG_NOTE in text, f"{name} paraphrases instead of deriving"
+        assert "{RUNMACS" not in text, f"{name} leaked an uninterpolated placeholder"
+
+    # Positive control: the assertion can fail. A surface that never mentions
+    # runMacs must NOT contain the note, or the check above would pass on anything.
+    assert RUNMACS_RNG_NOTE not in build_server().name

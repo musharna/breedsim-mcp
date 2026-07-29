@@ -18,6 +18,20 @@ from .session import Session, SessionStore
 
 GENERATORS: tuple[str, ...] = ("quickHaplo", "runMacs")
 
+# The single canonical statement of runMacs' RNG behaviour.
+#
+# This exists because the fact was hand-restated in four places, and when the
+# original overstatement ("runMacs ignores set.seed") was corrected here, the
+# copies in server.py — including the INSTRUCTIONS an agent reads to decide how
+# to drive the engine — kept asserting the false version. Paraphrase is the
+# mechanism; a shared constant removes it. Every agent-facing surface
+# interpolates THIS string rather than restating it.
+RUNMACS_RNG_NOTE = (
+    "its MaCS coalescent RNG is seeded ONCE PER R SESSION and advances across "
+    "calls, so set.seed does not reset it and repeating a seeded call inside "
+    "this long-lived process yields different founders"
+)
+
 
 def _founder_hash(session: Session) -> str:
     """Hash the actual haplotype matrix.
@@ -94,10 +108,7 @@ def found_population(
             None
             if reproducible
             else (
-                "Founders were generated with runMacs. Its MaCS coalescent RNG is "
-                "seeded ONCE PER R SESSION and advances across calls, so set.seed "
-                "does not reset it: calling found_population again with the SAME "
-                "seed in this long-lived server process yields DIFFERENT founders. "
+                f"Founders were generated with runMacs: {RUNMACS_RNG_NOTE}. "
                 "(Measured: within one session, two seeded runMacs calls differ; "
                 "across fresh processes the same call sequence does reproduce.) Use "
                 "generator='quickHaplo' if you need repeatable founders here."

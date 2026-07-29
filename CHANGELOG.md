@@ -8,6 +8,29 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Phase 1. Breeding-scheme simulation over MCP, driving AlphaSimR 2.1.0 through rpy2.
 
+### Fixed
+
+- **P0: the server failed on every tool call after the first.** rpy2 publishes its
+  conversion rules into a `contextvars.ContextVar` at import time, and `engine._rpy2()`
+  imported lazily — i.e. inside whichever request first touched R. Those rules lived in
+  that request's context and were discarded when it returned, so the next call raised
+  `Conversion rules for rpy2.robjects appear to be missing`. Measured in a fresh process
+  driven only through the MCP layer: `list_methods` succeeded, `found_population` died.
+  rpy2 is now bound at module scope, in the root context that every task inherits. The
+  import still lives inside a function so an import sorter cannot hoist it above the
+  `OMP_NUM_THREADS` pin, which is a separate guarantee this module exists to provide.
+
+  The 27-test suite passed against the broken code. Every test called the library
+  directly, which imports rpy2 into the pytest process's root context and masks the bug
+  entirely; the regression test therefore runs a **subprocess** that touches R only
+  through `call_tool`, and it ships with a positive control proving it can fail.
+
+- The `runMacs` explanation is now interpolated from a single `RUNMACS_RNG_NOTE`
+  constant. It had been hand-restated in four places, and when the overstated version
+  ("runMacs ignores `set.seed`") was corrected in `founding.py`, the copies in
+  `server.py` — including the `INSTRUCTIONS` an agent reads to decide how to drive the
+  engine — kept asserting the false claim.
+
 ### Added
 
 - Four MCP tools — `list_methods`, `found_population`, `run_program`,
@@ -37,7 +60,7 @@ Phase 1. Breeding-scheme simulation over MCP, driving AlphaSimR 2.1.0 through rp
   plateau, not progress).
 - Precise install errors naming the missing piece and the command that fixes it. The
   server never installs R packages for you.
-- 27 tests against real AlphaSimR — no mocked R — plus `docs/MUTATION-CHECKS.md`
+- 30 tests against real AlphaSimR — no mocked R — plus `docs/MUTATION-CHECKS.md`
   recording ten mutants, all confirmed red.
 - CI across Python 3.11/3.12/3.13, installing R and caching the AlphaSimR compile.
 

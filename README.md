@@ -19,7 +19,7 @@ interval. There is no flag that collapses it to a point estimate.
 
 [![ci](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml)
 
-Phase 1 complete: 4 tools, 27 tests against real AlphaSimR, 10 mutation checks all confirmed
+Phase 1 complete: 4 tools, 30 tests against real AlphaSimR, 12 mutation checks all confirmed
 red ([docs/MUTATION-CHECKS.md](docs/MUTATION-CHECKS.md)). CI installs R and compiles
 AlphaSimR, so the suite runs against the real engine on Python 3.11, 3.12 and 3.13 — not
 against a mock.
