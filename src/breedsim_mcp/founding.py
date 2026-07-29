@@ -18,6 +18,15 @@ from .session import Session, SessionStore
 
 GENERATORS: tuple[str, ...] = ("quickHaplo", "runMacs")
 
+# The species runMacs actually has demographic histories for. Read out of
+# `body(runMacs)` in AlphaSimR 2.1.0, not from documentation: the function
+# branches on these four and ends in `stop("No rules for species ...")`.
+#
+# Note what this list says about scope. Two of the four are plants and one is an
+# animal, so this server is NOT plant-only, whatever its `plant-breeding` topic
+# suggests. The value used to be interpolated into R with no check at all.
+SPECIES: tuple[str, ...] = ("GENERIC", "CATTLE", "WHEAT", "MAIZE")
+
 # The single canonical statement of runMacs' RNG behaviour.
 #
 # This exists because the fact was hand-restated in four places, and when the
@@ -68,6 +77,18 @@ def found_population(
             f"Unknown generator {generator!r}. Valid: {list(GENERATORS)}. "
             "'quickHaplo' is reproducible from a seed; 'runMacs' gives realistic "
             "coalescent linkage disequilibrium but is NOT reproducible."
+        )
+    # AlphaSimR upper-cases this itself, so accept any casing and normalise —
+    # then check it, which the old passthrough never did. Validated even for
+    # quickHaplo, which ignores the value: silently accepting a species that
+    # will not be used is how a typo survives long enough to look deliberate.
+    species = species.upper()
+    if species not in SPECIES:
+        raise ValueError(
+            f"Unknown species {species!r}. Valid: {list(SPECIES)}. These are the "
+            "only four runMacs has a demographic history for; anything else "
+            'fails inside R with "No rules for species". Note that CATTLE is '
+            "supported: this server simulates animal breeding as well as plant."
         )
     for name, value in (("n_ind", n_ind), ("n_chr", n_chr), ("seg_sites", seg_sites)):
         if value < 1:

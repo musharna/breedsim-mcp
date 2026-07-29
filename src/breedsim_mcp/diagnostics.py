@@ -102,3 +102,52 @@ def variance_exhausted_warning(
             "gain — a still-rising mean is a plateau, not progress."
         ),
     )
+
+
+def indistinguishable_warning(comparison: dict) -> "Advisory | None":
+    """Fires when the paired difference interval contains zero.
+
+    The point is to stop a larger mean being read as a better programme. With
+    the interval straddling zero, the ordering of the two means is not
+    established by this run — more replicates, or a real difference, would be
+    needed to establish it.
+    """
+    if comparison.get("favours") is not None:
+        return None
+    diff = comparison["cycles"][-1]["difference"]
+    return Advisory(
+        code="difference_indistinguishable",
+        message=(
+            f"The paired difference is {diff['mean']:.3f} with a 95% interval of "
+            f"[{diff['ci_low']:.3f}, {diff['ci_high']:.3f}], which contains zero. "
+            f"These two programmes are NOT distinguishable at {diff['n']} "
+            "replicates. Do not report the larger mean as the better programme; "
+            "either raise replicates or accept that the difference is too small "
+            "to resolve."
+        ),
+    )
+
+
+def overlap_but_different_warning(comparison: dict) -> "Advisory | None":
+    """Fires when the per-arm intervals overlap but the PAIRED difference does not.
+
+    This is the case a naive reading gets backwards. Two overlapping confidence
+    intervals do not imply no difference: pairing removes the seed-to-seed
+    variation that made both intervals wide, so a contrast can be firmly
+    resolved while the individual intervals still overlap heavily.
+    """
+    if comparison.get("favours") is None:
+        return None
+    if not comparison.get("intervals_overlap"):
+        return None
+    winner = comparison["programs"][comparison["favours"]]["label"]
+    return Advisory(
+        code="overlap_but_different",
+        message=(
+            "The two programmes' individual confidence intervals OVERLAP, but the "
+            f"paired difference excludes zero and favours {winner}. Read the "
+            "difference, not the overlap — pairing cancels the shared seed noise "
+            "that widens both individual intervals, which is why it can resolve a "
+            "contrast that eyeballing the two intervals cannot."
+        ),
+    )

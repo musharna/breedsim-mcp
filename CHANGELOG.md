@@ -33,6 +33,25 @@ Phase 1. Breeding-scheme simulation over MCP, driving AlphaSimR 2.1.0 through rp
 
 ### Added
 
+- **`compare_programs` — paired A/B comparison.** Runs two programmes on shared founders
+  with **common random numbers**: replicate *i* of each arm starts from identical founders
+  under the same seed, and the difference is taken WITHIN the pair, so the shared luck of
+  that seed cancels rather than being counted twice. Returns the difference as a
+  distribution with its own confidence interval.
+  - `favours` is `null` whenever that interval contains zero — the two programmes are not
+    distinguishable at that replicate count, and the larger mean is not the winner.
+  - `overlap_but_different` fires when the per-arm intervals overlap but the paired
+    difference excludes zero. Measured live at 12-of-100 vs 18-of-100: the arms span
+    1.900–2.192 and 1.552–1.909 (overlapping), while the paired difference is
+    `[+0.100, +0.531]`. **Two overlapping intervals do not imply no difference**, and that
+    is the easiest way to get a breeding comparison wrong.
+  - The replicate floor applies here too, with a blunter message: a comparison needs more
+    replication than a single programme, not less.
+  - Breaking the pairing in a mutation check made two identical programmes differ by 0.169
+    and 0.271 — the same order as the sd 0.247 the floor exists for.
+
+
+
 - Four MCP tools — `list_methods`, `found_population`, `run_program`,
   `describe_session` — each publishing a title, read-only annotations and an
   `outputSchema` derived from a typed return.
@@ -60,7 +79,7 @@ Phase 1. Breeding-scheme simulation over MCP, driving AlphaSimR 2.1.0 through rp
   plateau, not progress).
 - Precise install errors naming the missing piece and the command that fixes it. The
   server never installs R packages for you.
-- 30 tests against real AlphaSimR — no mocked R — plus `docs/MUTATION-CHECKS.md`
+- 38 tests against real AlphaSimR — no mocked R — plus `docs/MUTATION-CHECKS.md`
   recording ten mutants, all confirmed red.
 - CI across Python 3.11/3.12/3.13, installing R and caching the AlphaSimR compile.
 

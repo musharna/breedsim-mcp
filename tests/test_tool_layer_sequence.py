@@ -38,9 +38,15 @@ s = call("found_population", {"generator": "quickHaplo", "seed": 1, "n_ind": 20,
                               "n_chr": 2, "seg_sites": 20, "n_qtl_per_chr": 3,
                               "h2": 0.4})
 r = call("run_program", {"session_id": s["session_id"], "cycles": 1, "replicates": 5})
+c = call("compare_programs", {"session_id": s["session_id"], "cycles": 1,
+                              "replicates": 5, "a_n_select": 3, "b_n_select": 15})
 call("describe_session", {"session_id": s["session_id"]})
 
 assert r["cycles"][0]["genetic_gain"]["n"] == 5
+# favours is legitimately None when the arms do not separate; what must survive
+# the tool layer is the difference itself, which is the whole point of the tool.
+assert "difference" in c["cycles"][0]
+assert c["paired"] is True
 print("SEQUENCE_OK")
 """
 
