@@ -4,6 +4,44 @@ All notable changes to `breedsim-mcp` are recorded here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Session eviction freed nothing.** `_free_r_state` intersected its target names
+  against a bare `ls(envir=.GlobalEnv)`, which omits dot-prefixed names unless
+  `all.names=TRUE` — and the session prefix starts with a dot by design. The
+  intersection was therefore always empty and the `rm()` a permanent no-op. Measured:
+  after eviction, all five of the session's R objects survived. Since the server is
+  deliberately long-lived, every founded-then-evicted session leaked a whole
+  population for the life of the process.
+
+  The replacement removes by **prefix** rather than by enumerated name, which also
+  fixes a second defect hiding underneath: the old two-name list would still have
+  missed `_p0`, `_pop` and `_pop_sel` — the populations, i.e. the large objects —
+  even once `all.names=TRUE` was added.
+
+  Eviction had **no test at all**, which is why this shipped. It has one now, and it
+  asserts against `ls(all.names=TRUE)` deliberately: a test written with the same
+  bare `ls()` as the code would have seen zero survivors and passed against the
+  broken version.
+
+### Added
+
+- **Upper bounds on every size parameter** (`limits.py`). 0.1.0 validated floors only.
+  R is a single interpreter and the tools are synchronous, so one oversized call
+  blocks every other call until it finishes — and the caller is a language model,
+  which will ask for `replicates=10000` because the number sounds thorough. The caps
+  are published through `list_methods` so a caller can size a request rather than
+  discover the ceiling by being refused.
+
+### Changed
+
+- `session.py`'s "the genotype matrix never crosses the boundary" was imprecise. No
+  matrix is ever returned to the caller, but `_founder_hash` does pull the whole
+  haplotype matrix into Python once per `found_population` — 200,000 values at the
+  default sizes. Reworded to say what is actually true.
+
 ## [0.1.0] - 2026-07-29
 
 Phase 1. Breeding-scheme simulation over MCP, driving AlphaSimR 2.1.0 through rpy2.

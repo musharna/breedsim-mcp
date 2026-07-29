@@ -8,6 +8,7 @@ not a result. See `replication.run_program`.
 from dataclasses import dataclass
 
 from .engine import r_eval
+from .limits import check_all
 from .session import Session
 
 
@@ -31,6 +32,7 @@ def run_replicate(
     spread across replicates measures the stochasticity of the breeding process
     rather than of the founder sample.
     """
+    check_all(cycles=cycles, n_select=n_select, n_cross=n_cross)
     if cycles < 1:
         raise ValueError(f"cycles must be >= 1, got {cycles}")
     if n_select < 1 or n_cross < 1:

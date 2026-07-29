@@ -30,6 +30,7 @@ fires exactly there.
 
 from dataclasses import dataclass
 
+from .limits import check_all
 from .program import run_replicate
 from .replication import MIN_REPLICATES, TooFewReplicatesError, summarise
 from .session import SessionStore
@@ -80,6 +81,8 @@ def compare_programs(
     `difference` is A minus B on final-cycle genetic gain, so a positive interval
     means A gained more.
     """
+    # Doubled work: this runs each replicate through BOTH arms.
+    check_all(replicates=replicates, cycles=cycles)
     if replicates < MIN_REPLICATES:
         raise TooFewReplicatesError(
             f"replicates={replicates} is below the minimum of {MIN_REPLICATES}. "
