@@ -200,3 +200,42 @@ def test_agent_facing_text_derives_from_one_source():
     # Positive control: the assertion can fail. A surface that never mentions
     # runMacs must NOT contain the note, or the check above would pass on anything.
     assert RUNMACS_RNG_NOTE not in build_server().name
+
+
+def test_species_is_validated_not_passed_through():
+    """An unknown species must be refused here, not interpolated into R.
+
+    It used to reach AlphaSimR unchecked. Both halves are asserted in one test:
+    the bad value raises, and a legitimate one still works — otherwise a
+    validator that rejected everything would look identical to a working one.
+    """
+    store = SessionStore()
+
+    with pytest.raises(ValueError, match="Unknown species"):
+        found_population(store, generator="quickHaplo", seed=1, species="MAZE", **SMALL)
+
+    # Positive control, same test: the valid path is untouched.
+    s = found_population(
+        store, generator="quickHaplo", seed=1, species="WHEAT", **SMALL
+    )
+    assert s.session_id
+
+    # AlphaSimR upper-cases species itself, so casing must not decide validity.
+    lower = found_population(
+        store, generator="quickHaplo", seed=1, species="wheat", **SMALL
+    )
+    assert lower.session_id
+
+
+def test_cattle_is_accepted_because_this_is_not_plant_only():
+    """CATTLE is one of runMacs' four histories, so it must be allowed.
+
+    Pinned deliberately: the repo's metadata reads plant-first, and a future
+    tightening to plants-only should have to delete this test on purpose rather
+    than discover the restriction by accident.
+    """
+    store = SessionStore()
+    s = found_population(
+        store, generator="quickHaplo", seed=1, species="CATTLE", **SMALL
+    )
+    assert s.session_id

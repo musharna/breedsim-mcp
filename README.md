@@ -96,6 +96,16 @@ can currently produce reproducible results**.
 
 Typical loop: `found_population` → `run_program` → read the CI and the warnings.
 
+### Species
+
+`species` applies only to `runMacs`, which carries demographic histories for exactly
+four: **`GENERIC`, `CATTLE`, `WHEAT`, `MAIZE`** (read out of `body(runMacs)`, not the
+docs). Anything else is refused here rather than failing inside R. Casing does not
+matter — AlphaSimR upper-cases it, so this does too.
+
+Note the scope that implies: **two plants and an animal.** Despite the default of
+`MAIZE`, this is not a plant-only simulator.
+
 ### What `run_program` returns
 
 Verbatim, for `cycles=2, replicates=10`, abridged to one cycle:

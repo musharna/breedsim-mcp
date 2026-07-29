@@ -179,6 +179,9 @@ def build_server() -> FastMCP:
 
         generator="quickHaplo" is reproducible; "runMacs" is not, and says so in
         `reproducible` and `reason`.
+
+        species only affects "runMacs", which has demographic histories for
+        GENERIC, CATTLE, WHEAT and MAIZE — animal breeding as well as plant.
         """
         s = found_population(
             _store,
