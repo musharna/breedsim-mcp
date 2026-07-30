@@ -20,8 +20,8 @@ interval. There is no flag that collapses it to a point estimate.
 [![ci](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/breedsim-mcp)](https://pypi.org/project/breedsim-mcp/)
 
-**0.1.1 is on PyPI**; genomic selection has landed on `master` and is not yet released.
-5 tools, 57 tests against real AlphaSimR, and 20 mutation checks all confirmed red
+**0.2.0 is on PyPI**, adding genomic selection. 5 tools, 57 tests against real
+AlphaSimR, and 20 mutation checks all confirmed red
 ([docs/MUTATION-CHECKS.md](docs/MUTATION-CHECKS.md)). CI installs R and compiles
 AlphaSimR, so the suite runs against the real engine on Python 3.11, 3.12 and 3.13 —
 not against a mock.
