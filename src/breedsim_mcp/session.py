@@ -40,6 +40,12 @@ class Session:
     reason: str | None = None
     cycles_run: int = 0
     notes: list[str] = field(default_factory=list)
+    # 0 means the founders were not genotyped, which makes genomic selection
+    # impossible for this session — a SNP chip is added at founding or not at all.
+    n_snp_per_chr: int = 0
+    # Measured founder linkage disequilibrium; None when there is no chip to
+    # measure it on. See genomic.measure_ld for what the numbers mean.
+    ld: dict | None = None
 
     @property
     def founders(self) -> str:

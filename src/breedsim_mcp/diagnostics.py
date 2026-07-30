@@ -128,6 +128,72 @@ def indistinguishable_warning(comparison: dict) -> "Advisory | None":
     )
 
 
+def no_linkage_disequilibrium_warning(session) -> "Advisory | None":
+    """Fires when the founder markers carry no linkage structure.
+
+    Genomic prediction works by borrowing information from markers correlated with
+    the causal loci. With no LD there is no such correlation, so a fitted model
+    returns numbers shaped like breeding values that contain nothing.
+
+    Keyed on the MEASURED ratio rather than on the generator's name. A name-based
+    check would pass a runMacs configuration whose parameters had destroyed the
+    LD, which is exactly the case a guard is supposed to catch.
+    """
+    ld = getattr(session, "ld", None)
+    if not ld or ld.get("has_linkage_disequilibrium"):
+        return None
+    return Advisory(
+        code="no_linkage_disequilibrium",
+        message=(
+            f"Founder markers show no linkage disequilibrium: adjacent-marker "
+            f"correlation is {ld['adjacent']:.4f} against a background of "
+            f"{ld['background']:.4f} between distant markers, a ratio of "
+            f"{ld['ratio']:.2f} where linkage would give substantially more than 1. "
+            "Genomic prediction has nothing to learn from these markers, so any "
+            "estimated breeding value here is noise. Measured on this engine, "
+            "quickHaplo founders always land in this regime — it samples "
+            "haplotypes with no coalescent history. Use generator='runMacs' for "
+            "genomic selection, and note the trade that forces: runMacs founders "
+            "are NOT reproducible in a long-lived process. On this engine "
+            "reproducibility and genomic realism cannot currently be had at once."
+        ),
+    )
+
+
+def prediction_accuracy_low_warning(
+    accuracy_summary: dict | None, floor: float = 0.15
+) -> "Advisory | None":
+    """Fires when the fitted model did not predict.
+
+    **Its silence is not a certificate.** A healthy accuracy does not establish
+    that genomic selection is working for the reason a breeder assumes. Measured
+    at 20 replicates, a population with a linkage-disequilibrium ratio of 1.00 —
+    no LD whatever — reached accuracy 0.208 by cycle 3, because in a closed
+    population markers predict partly by tracking relatedness rather than by being
+    linked to causal loci. That is why the LD advisory is a separate check on a
+    separate measurement instead of being folded into this threshold: this one
+    cannot discriminate the case it would appear to cover.
+    """
+    if not accuracy_summary:
+        return None
+    mean = accuracy_summary.get("mean", 0.0)
+    if mean >= floor:
+        return None
+    return Advisory(
+        code="prediction_accuracy_low",
+        message=(
+            f"Out-of-sample prediction accuracy is {mean:.3f} "
+            f"[{accuracy_summary.get('ci_low', 0.0):.3f}, "
+            f"{accuracy_summary.get('ci_high', 0.0):.3f}], below {floor}. The "
+            "marker model is not predicting breeding value, so selecting on it is "
+            "close to selecting at random. Gains reported for this run are what "
+            "drift and inbreeding produced, not what genomic selection produced. "
+            "Check the founder linkage disequilibrium first, then the size of the "
+            "training generation."
+        ),
+    )
+
+
 def overlap_but_different_warning(comparison: dict) -> "Advisory | None":
     """Fires when the per-arm intervals overlap but the PAIRED difference does not.
 

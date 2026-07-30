@@ -22,6 +22,10 @@ LIMITS: dict[str, int] = {
     "n_chr": 40,
     "seg_sites": 5_000,
     "n_qtl_per_chr": 1_000,
+    # Markers are pulled into Python as a dense n_ind x (n_snp_per_chr * n_chr)
+    # matrix for the LD measurement, and RRBLUP solves over the same width once
+    # per cycle per replicate, so this ceiling is lower than the others.
+    "n_snp_per_chr": 1_000,
     "cycles": 50,
     "replicates": 200,
     "n_select": 5_000,

@@ -43,6 +43,7 @@ class ProgramSpec:
     label: str
     n_select: int
     n_cross: int
+    selection_method: str = "phenotypic"
 
 
 def _verdict(diff: dict) -> str | None:
@@ -75,11 +76,20 @@ def compare_programs(
     base_seed: int = 1000,
     a_label: str = "A",
     b_label: str = "B",
+    a_selection_method: str = "phenotypic",
+    b_selection_method: str = "phenotypic",
 ) -> dict:
     """Run two programmes on shared founders with paired seeds; return the difference.
 
     `difference` is A minus B on final-cycle genetic gain, so a positive interval
     means A gained more.
+
+    The arms may differ in selection METHOD as well as in intensity, which is what
+    makes "is genomic selection worth it on these founders?" a single paired call
+    rather than two runs eyeballed against each other. That contrast needs pairing
+    more than most: the gap between genomic and phenotypic selection is frequently
+    smaller than the sd 0.247 of seed-to-seed noise, so two independent runs cannot
+    resolve it in either direction.
     """
     # Doubled work: this runs each replicate through BOTH arms.
     check_all(replicates=replicates, cycles=cycles)
@@ -94,10 +104,16 @@ def compare_programs(
     session = store.get(session_id)
     default_cross = session.spec["n_ind"]
     a = ProgramSpec(
-        a_label, a_n_select, a_n_cross if a_n_cross is not None else default_cross
+        a_label,
+        a_n_select,
+        a_n_cross if a_n_cross is not None else default_cross,
+        a_selection_method,
     )
     b = ProgramSpec(
-        b_label, b_n_select, b_n_cross if b_n_cross is not None else default_cross
+        b_label,
+        b_n_select,
+        b_n_cross if b_n_cross is not None else default_cross,
+        b_selection_method,
     )
 
     per_cycle_a: list[list[float]] = [[] for _ in range(cycles)]
@@ -107,8 +123,12 @@ def compare_programs(
     for i in range(replicates):
         # The SAME seed for both arms. This is the pairing.
         seed = base_seed + i
-        ra = run_replicate(session, cycles, a.n_select, a.n_cross, seed)
-        rb = run_replicate(session, cycles, b.n_select, b.n_cross, seed)
+        ra = run_replicate(
+            session, cycles, a.n_select, a.n_cross, seed, a.selection_method
+        )
+        rb = run_replicate(
+            session, cycles, b.n_select, b.n_cross, seed, b.selection_method
+        )
         for c in range(cycles):
             per_cycle_a[c].append(ra[c].genetic_gain)
             per_cycle_b[c].append(rb[c].genetic_gain)
@@ -132,8 +152,18 @@ def compare_programs(
         "replicates": replicates,
         "paired": True,
         "programs": {
-            "a": {"label": a.label, "n_select": a.n_select, "n_cross": a.n_cross},
-            "b": {"label": b.label, "n_select": b.n_select, "n_cross": b.n_cross},
+            "a": {
+                "label": a.label,
+                "n_select": a.n_select,
+                "n_cross": a.n_cross,
+                "selection_method": a.selection_method,
+            },
+            "b": {
+                "label": b.label,
+                "n_select": b.n_select,
+                "n_cross": b.n_cross,
+                "selection_method": b.selection_method,
+            },
         },
         "cycles": cycle_records,
         "difference_is": "a_minus_b_final_cycle_genetic_gain",

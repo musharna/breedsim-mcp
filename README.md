@@ -20,10 +20,11 @@ interval. There is no flag that collapses it to a point estimate.
 [![ci](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/breedsim-mcp)](https://pypi.org/project/breedsim-mcp/)
 
-**0.1.1 is on PyPI.** 5 tools, 42 tests against real AlphaSimR, and 17 mutation checks all
-confirmed red ([docs/MUTATION-CHECKS.md](docs/MUTATION-CHECKS.md)). CI installs R and
-compiles AlphaSimR, so the suite runs against the real engine on Python 3.11, 3.12 and
-3.13 — not against a mock.
+**0.1.1 is on PyPI**; genomic selection has landed on `master` and is not yet released.
+5 tools, 57 tests against real AlphaSimR, and 20 mutation checks all confirmed red
+([docs/MUTATION-CHECKS.md](docs/MUTATION-CHECKS.md)). CI installs R and compiles
+AlphaSimR, so the suite runs against the real engine on Python 3.11, 3.12 and 3.13 —
+not against a mock.
 
 ## Install tax — read this first
 
@@ -86,16 +87,17 @@ can currently produce reproducible results**.
 
 ## Tools
 
-| tool                                                        | returns                                                          |
-| ----------------------------------------------------------- | ---------------------------------------------------------------- |
-| `list_methods()`                                            | engine versions, generators, replicate floor, determinism status |
-| `found_population(generator, seed, n_ind, n_chr, ...)`      | `session_id` + founder provenance + `reproducible`               |
-| `run_program(session_id, cycles, replicates, ...)`          | per-cycle **distributions** — mean, sd, 95% CI                   |
-| `compare_programs(session_id, a_n_select, b_n_select, ...)` | the **paired difference** between two programmes, with a CI      |
-| `describe_session(session_id)`                              | provenance, trait architecture, cycles run                       |
+| tool                                                           | returns                                                           |
+| -------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `list_methods()`                                               | engine versions, generators, selection methods, replicate floor   |
+| `found_population(generator, seed, n_ind, n_snp_per_chr, ...)` | `session_id`, founder provenance, `reproducible`, measured **LD** |
+| `run_program(session_id, cycles, replicates, ...)`             | per-cycle **distributions** — mean, sd, 95% CI                    |
+| `compare_programs(session_id, a_n_select, b_n_select, ...)`    | the **paired difference** between two programmes, with a CI       |
+| `describe_session(session_id)`                                 | provenance, trait architecture, cycles run                        |
 
 Typical loop: `found_population` → `run_program` → read the CI and the warnings.
 Comparing two schemes: `found_population` → `compare_programs` → read `difference`.
+Both run tools take `selection_method="phenotypic"` or `"genomic"`.
 
 ### Species
 
@@ -218,11 +220,72 @@ cannot. That is what `overlap_but_different` is for.
 easiest way to get a breeding comparison wrong, and it is why the tool reports a difference
 rather than two numbers.
 
+### Genomic selection — and the trap under it
+
+`selection_method="genomic"` fits RRBLUP to the marker genotypes each cycle and
+selects on the estimated breeding value instead of the phenotype. It needs a SNP
+chip, which is a **founding** decision:
+
+```python
+found_population(generator="runMacs", n_snp_per_chr=50)  # note the generator
+run_program(session_id, selection_method="genomic")
+```
+
+Note the generator, because this is where genomic selection goes quietly wrong.
+Markers predict a trait only through **linkage disequilibrium** with the causal
+loci — that is the whole mechanism. And `quickHaplo`, the default generator and
+the only reproducible one, **has none**:
+
+| generator    | mean \|r\| adjacent SNP | mean \|r\| distant pairs | ratio    | out-of-sample accuracy |
+| ------------ | ----------------------- | ------------------------ | -------- | ---------------------- |
+| `quickHaplo` | 0.0444                  | 0.0462                   | **0.96** | 0.097                  |
+| `runMacs`    | 0.1979                  | 0.0495                   | **4.00** | 0.351                  |
+
+Adjacent markers in `quickHaplo` are no more correlated than randomly chosen
+distant ones — it samples haplotypes with no coalescent history, so there is no
+linkage to learn from. Every `found_population` call with a chip therefore returns
+a measured `linkage_disequilibrium` block, and a `no_linkage_disequilibrium`
+warning when the ratio says the markers are uninformative.
+
+**So on this engine, reproducibility and genomic realism cannot be had at the same
+time.** `quickHaplo` reproduces and cannot support genomic selection; `runMacs`
+supports it and does not reproduce in a long-lived process. That is a real
+constraint of the underlying simulator, and the server states it rather than
+letting you find it as a wrong answer.
+
+#### Why the guard measures LD instead of accuracy
+
+The obvious alternative — fit the model, warn if accuracy is poor — cannot do the
+job. Measured at 20 replicates, 200 individuals, three cycles:
+
+| selection | `quickHaplo` (LD ratio 1.00) | `runMacs` (LD ratio 3.7)  |
+| --------- | ---------------------------- | ------------------------- |
+| 10% kept  | 0.104 → 0.159 → **0.208**    | 0.105 → 0.130 → 0.167     |
+| 50% kept  | 0.162 → 0.207 → 0.226        | 0.217 → 0.257 → **0.253** |
+
+A population with **no linkage disequilibrium at all reaches 0.208**, and at 10%
+selection it beats the population that has real LD. Accuracy also climbs every
+cycle in both. Neither is a paradox: out-of-sample accuracy in a closed population
+conflates LD with the causal loci and plain **relatedness** between training and
+target individuals. As descendants of a few selected parents fill the population,
+markers predict by tracking pedigree — and `quickHaplo`'s mutually uncorrelated
+markers tag pedigree _more_ efficiently than `runMacs`' markers, which are partly
+redundant with each other precisely because they are in LD.
+
+An accuracy threshold would therefore wave through the exact population it claimed
+to catch. Only the LD measurement discriminates, so that is what gates the warning.
+Accuracy is still reported on every genomic cycle, measured **out-of-sample** on
+progeny the model never saw — reporting its in-sample fit instead would have read
+0.448 where the truth was 0.097. Read it as a property of the model in front of
+you, not as proof that genomic selection is working for the reason you assume.
+
 ### Warnings
 
 | code                           | meaning                                                                  |
 | ------------------------------ | ------------------------------------------------------------------------ |
 | `nondeterministic_founders`    | founders came from `runMacs`; a repeat call will differ                  |
+| `no_linkage_disequilibrium`    | founder markers carry no linkage; genomic prediction cannot work here    |
+| `prediction_accuracy_low`      | the marker model is not predicting — gain came from drift, not selection |
 | `difference_indistinguishable` | the paired difference interval contains zero — no winner at this n       |
 | `overlap_but_different`        | the per-arm intervals overlap but the paired difference resolves         |
 | `threads_not_pinned`           | `OMP_NUM_THREADS != 1`, so the same seed will not reproduce              |
@@ -249,12 +312,15 @@ the repeat case is the one you hit — hence `reproducible: false`.
 The server pins threads at import, before rpy2 loads, and reports whether it succeeded. With
 founders fixed and threads pinned, seed 7 reproduces exactly: `meanG=2.01451853`, twice.
 
-## Limitations (phase 1)
+## Limitations
 
-No genomic selection models (GBLUP/RR-BLUP), no multi-trait or G×E, no optimal contribution
-selection, no crossing-block optimisation, no genotype-matrix export. Truncation selection on
-phenotype only. Genomic selection is the next thing worth building; `compare_programs` has
-landed.
+No multi-trait or G×E, no optimal contribution selection, no crossing-block optimisation, no
+genotype-matrix export. Genomic selection is RRBLUP only — the `RRBLUP_D`, `_GCA` and `_SCA`
+variants AlphaSimR provides for dominance and combining ability are not exposed. Selection is
+truncation on a single trait, by phenotype or by estimated breeding value.
+
+The `prediction_accuracy_low` and `no_linkage_disequilibrium` warnings are advisory: like every
+other warning here, they explain rather than refuse.
 
 Sessions are in-memory and capped (8, LRU); they do not survive a restart.
 

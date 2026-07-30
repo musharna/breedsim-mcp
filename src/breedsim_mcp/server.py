@@ -17,18 +17,26 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
-from typing_extensions import TypedDict
+
+# NotRequired must come from the same module as TypedDict. This TypedDict is
+# typing_extensions' deliberately — pydantic rejects the stdlib one under Python
+# < 3.12, which this package supports — so pairing it with typing.NotRequired
+# risks the same runtime-introspection mismatch.
+from typing_extensions import NotRequired, TypedDict  # noqa: UP035
 
 from .comparison import compare_programs
 from .diagnostics import (
     indistinguishable_warning,
+    no_linkage_disequilibrium_warning,
     nondeterministic_founders_warning,
     overlap_but_different_warning,
+    prediction_accuracy_low_warning,
     replicates_too_few_warning,
     threads_not_pinned_warning,
     variance_exhausted_warning,
 )
 from .founding import GENERATORS, RUNMACS_RNG_NOTE, found_population
+from .genomic import SELECTION_METHODS
 from .limits import LIMITS
 from .replication import (
     DEFAULT_REPLICATES,
@@ -60,6 +68,22 @@ identical programme gave gains spanning 1.151 to 1.841 — sd 0.247, the same or
 as the differences people try to compare. One run is a draw from a distribution,
 not an answer, so there is no option to request one.
 
+GENOMIC SELECTION requires two things that are easy to get wrong. First, a SNP
+chip, which exists only if found_population was called with n_snp_per_chr > 0 —
+it cannot be added later. Second, and less obvious, the founders must actually
+carry LINKAGE DISEQUILIBRIUM, because that is the entire mechanism by which a
+marker says anything about a trait. Measured on this engine, quickHaplo founders
+carry NONE: adjacent markers correlate 0.0444 against a background of 0.0462
+between distant ones, and out-of-sample prediction accuracy is 0.097 against 0.351
+for runMacs. Genomic selection on quickHaplo founders is noise wearing the shape
+of a breeding value. Use generator="runMacs" for it, and understand the trade:
+runMacs founders are NOT reproducible here. Reproducibility and genomic realism
+cannot currently be had at the same time, so choose deliberately rather than by
+accident. Read `linkage_disequilibrium` in the found_population response and
+`prediction_accuracy` in every genomic run — the latter is measured out-of-sample
+on progeny the model never saw, and near zero means the gain you are looking at
+came from drift, not from selection.
+
 Read `reproducible` on every response. Two independent things break reproducibility:
 founders generated with runMacs ({RUNMACS_RNG_NOTE}), and OpenMP running
 multi-threaded. Use generator="quickHaplo" and keep threads pinned if you need a
@@ -83,6 +107,20 @@ class CycleDict(TypedDict):
     cycle: int
     genetic_gain: SummaryDict
     genetic_variance: SummaryDict
+    # Present only under genomic selection. Absent rather than null under
+    # phenotypic selection, where no model is fitted and a zero would read as a
+    # model that failed rather than as no model at all.
+    prediction_accuracy: NotRequired[SummaryDict]
+
+
+class LdDict(TypedDict):
+    """Measured founder linkage disequilibrium. See genomic.measure_ld."""
+
+    adjacent: float
+    background: float
+    ratio: float
+    n_markers: int
+    has_linkage_disequilibrium: bool
 
 
 class WarningDict(TypedDict):
@@ -98,6 +136,9 @@ class FoundResult(TypedDict):
     reproducible: bool
     reason: str | None
     spec: dict[str, Any]
+    # None when the founders were not genotyped. Reported at founding so that a
+    # caller learns the markers are uninformative BEFORE paying for replicates.
+    linkage_disequilibrium: LdDict | None
     warnings: list[WarningDict]
 
 
@@ -142,6 +183,7 @@ class SessionInfo(TypedDict):
     reason: str | None
     spec: dict[str, Any]
     cycles_run: int
+    linkage_disequilibrium: LdDict | None
 
 
 class MethodsInfo(TypedDict):
@@ -149,6 +191,7 @@ class MethodsInfo(TypedDict):
     alphasimr_version: str | None
     rpy2_version: str
     generators: list[str]
+    selection_methods: list[str]
     min_replicates: int
     default_replicates: int
     threads_pinned: bool
@@ -186,6 +229,7 @@ def build_server() -> FastMCP:
             "alphasimr_version": env.alphasimr_version,
             "rpy2_version": env.rpy2_version,
             "generators": list(GENERATORS),
+            "selection_methods": list(SELECTION_METHODS),
             "min_replicates": MIN_REPLICATES,
             "default_replicates": DEFAULT_REPLICATES,
             "threads_pinned": env.threads_pinned,
@@ -214,6 +258,7 @@ def build_server() -> FastMCP:
         n_qtl_per_chr: int = 10,
         h2: float = 0.4,
         species: str = "MAIZE",
+        n_snp_per_chr: int = 0,
     ) -> FoundResult:
         """Found a population and its trait architecture, and keep it for later runs.
 
@@ -222,6 +267,14 @@ def build_server() -> FastMCP:
 
         species only affects "runMacs", which has demographic histories for
         GENERIC, CATTLE, WHEAT and MAIZE — animal breeding as well as plant.
+
+        n_snp_per_chr > 0 adds a SNP chip, which genomic selection needs and which
+        can only be added here, at founding. The response then carries
+        `linkage_disequilibrium`: READ IT BEFORE RUNNING GENOMIC SELECTION. If
+        `has_linkage_disequilibrium` is false the markers are uninformative and any
+        breeding value estimated from them is noise. Measured on this engine,
+        quickHaplo founders are ALWAYS in that state — use generator="runMacs" for
+        genomic selection, accepting that runMacs founders are not reproducible.
         """
         s = found_population(
             _store,
@@ -233,6 +286,7 @@ def build_server() -> FastMCP:
             n_qtl_per_chr=n_qtl_per_chr,
             h2=h2,
             species=species,
+            n_snp_per_chr=n_snp_per_chr,
         )
         return {
             "session_id": s.session_id,
@@ -242,10 +296,12 @@ def build_server() -> FastMCP:
             "reproducible": s.reproducible,
             "reason": s.reason,
             "spec": s.spec,
+            "linkage_disequilibrium": s.ld,  # type: ignore[typeddict-item]
             "warnings": _warn_dicts(
                 [
                     nondeterministic_founders_warning(s),
                     threads_not_pinned_warning(engine.threads_are_pinned()),
+                    no_linkage_disequilibrium_warning(s),
                 ]
             ),
         }
@@ -262,11 +318,20 @@ def build_server() -> FastMCP:
         n_select: int = 10,
         n_cross: int | None = None,
         base_seed: int = 1000,
+        selection_method: str = "phenotypic",
     ) -> RunResult:
         """Run the programme `replicates` times; return per-cycle mean, sd and 95% CI.
 
         There is no way to request a single run. Measured spread across seeds was
         sd 0.247 on genetic gain, so one replicate is noise rather than a result.
+
+        selection_method="genomic" fits RRBLUP to the marker genotypes each cycle
+        and selects on the estimated breeding value instead of the phenotype. It
+        requires a session founded with n_snp_per_chr > 0, and each cycle then
+        reports `prediction_accuracy` — the OUT-OF-SAMPLE correlation between
+        predicted and true breeding value, measured on progeny the model never
+        saw. Read it: if it is near zero the model is not predicting, and the run's
+        gain came from drift rather than from selection.
         """
         out = run_program(
             _store,
@@ -276,9 +341,11 @@ def build_server() -> FastMCP:
             n_select=n_select,
             n_cross=n_cross,
             base_seed=base_seed,
+            selection_method=selection_method,
         )
         session = _store.get(session_id)
-        last_gain = out["cycles"][-1]["genetic_gain"]
+        last_cycle = out["cycles"][-1]
+        last_gain = last_cycle["genetic_gain"]
         variances = [c["genetic_variance"] for c in out["cycles"]]
         out["warnings"] = _warn_dicts(
             [
@@ -286,6 +353,10 @@ def build_server() -> FastMCP:
                 threads_not_pinned_warning(engine.threads_are_pinned()),
                 replicates_too_few_warning(last_gain),
                 variance_exhausted_warning(variances),
+                no_linkage_disequilibrium_warning(session)
+                if selection_method == "genomic"
+                else None,
+                prediction_accuracy_low_warning(last_cycle.get("prediction_accuracy")),
             ]
         )
         return out
@@ -306,8 +377,16 @@ def build_server() -> FastMCP:
         base_seed: int = 1000,
         a_label: str = "A",
         b_label: str = "B",
+        a_selection_method: str = "phenotypic",
+        b_selection_method: str = "phenotypic",
     ) -> CompareResult:
         """Compare two programmes on shared founders using paired seeds.
+
+        Set a_selection_method/b_selection_method to contrast genomic against
+        phenotypic selection — THE way to ask "is genotyping worth it on these
+        founders". That contrast needs the pairing more than most, because the
+        gap between the two methods is often smaller than the sd 0.247 of
+        seed-to-seed noise, which two independent runs cannot see past.
 
         Read `difference` and `favours`, NOT the two per-programme means. The
         arms are paired replicate-by-replicate on the same seed, so the shared
@@ -333,14 +412,18 @@ def build_server() -> FastMCP:
             base_seed=base_seed,
             a_label=a_label,
             b_label=b_label,
+            a_selection_method=a_selection_method,
+            b_selection_method=b_selection_method,
         )
         session = _store.get(session_id)
+        uses_genomic = "genomic" in (a_selection_method, b_selection_method)
         out["warnings"] = _warn_dicts(
             [
                 nondeterministic_founders_warning(session),
                 threads_not_pinned_warning(engine.threads_are_pinned()),
                 indistinguishable_warning(out),
                 overlap_but_different_warning(out),
+                no_linkage_disequilibrium_warning(session) if uses_genomic else None,
             ]
         )
         return out
@@ -358,6 +441,7 @@ def build_server() -> FastMCP:
             "reason": s.reason,
             "spec": s.spec,
             "cycles_run": s.cycles_run,
+            "linkage_disequilibrium": s.ld,  # type: ignore[typeddict-item]
         }
 
     return mcp

@@ -72,11 +72,18 @@ def run_program(
     n_select: int = 10,
     n_cross: int | None = None,
     base_seed: int = 1000,
+    selection_method: str = "phenotypic",
 ) -> dict:
     """Run a selection programme `replicates` times; return per-cycle distributions.
 
     Raises TooFewReplicatesError below MIN_REPLICATES. That is the point of the
     module, not a limitation of it.
+
+    Under `selection_method="genomic"` each cycle also carries a
+    `prediction_accuracy` distribution — the out-of-sample correlation between
+    predicted and true breeding value. It is summarised across replicates like
+    everything else here, because a single replicate's accuracy is as much a draw
+    from a distribution as a single replicate's gain.
     """
     check_all(replicates=replicates, cycles=cycles)
     if replicates < MIN_REPLICATES:
@@ -94,21 +101,32 @@ def run_program(
 
     # Each replicate gets its own seed; the founders are shared and fixed.
     per_replicate = [
-        run_replicate(session, cycles, n_select, crosses, base_seed + i)
+        run_replicate(
+            session, cycles, n_select, crosses, base_seed + i, selection_method
+        )
         for i in range(replicates)
     ]
 
     cycle_records = []
     for c in range(cycles):
-        cycle_records.append(
-            {
-                "cycle": c + 1,
-                "genetic_gain": summarise([r[c].genetic_gain for r in per_replicate]),
-                "genetic_variance": summarise(
-                    [r[c].genetic_variance for r in per_replicate]
-                ),
-            }
-        )
+        record = {
+            "cycle": c + 1,
+            "genetic_gain": summarise([r[c].genetic_gain for r in per_replicate]),
+            "genetic_variance": summarise(
+                [r[c].genetic_variance for r in per_replicate]
+            ),
+        }
+        # Absent rather than null under phenotypic selection: no model was fitted,
+        # so there is no accuracy that could be reported as zero without implying
+        # a model that predicted nothing.
+        accuracies: list[float] = [
+            acc
+            for acc in (r[c].prediction_accuracy for r in per_replicate)
+            if acc is not None
+        ]
+        if accuracies:
+            record["prediction_accuracy"] = summarise(accuracies)
+        cycle_records.append(record)
 
     session.cycles_run = cycles
     return {
@@ -122,5 +140,6 @@ def run_program(
             "n_select": n_select,
             "n_cross": crosses,
             "base_seed": base_seed,
+            "selection_method": selection_method,
         },
     }

@@ -4,6 +4,61 @@ All notable changes to `breedsim-mcp` are recorded here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Genomic selection.** `run_program` and `compare_programs` take
+  `selection_method="genomic"`, which fits RRBLUP to marker genotypes each cycle
+  and selects on the estimated breeding value rather than the phenotype.
+  `found_population` gains `n_snp_per_chr` to add the SNP chip it needs — a
+  founding decision, since the markers must exist before anything can be predicted
+  from them. Setting the two arms of `compare_programs` to different methods makes
+  "is genotyping worth it on these founders" a single paired call, which that
+  contrast needs more than most: the gap between methods is routinely smaller than
+  the sd 0.247 of seed-to-seed noise.
+
+- **Measured founder linkage disequilibrium**, reported by `found_population` and
+  `describe_session` as `linkage_disequilibrium`, with a
+  `no_linkage_disequilibrium` advisory.
+
+  This exists because genomic prediction on this engine has a trap with no warning
+  label. LD with the causal loci is the entire mechanism by which a marker says
+  anything about a trait, and **`quickHaplo` founders have none**: measured,
+  adjacent markers correlate 0.0444 against a background of 0.0462 between distant
+  markers, a ratio of 0.96. Adjacent is not merely low — it is indistinguishable
+  from unlinked, because `quickHaplo` samples haplotypes with no coalescent
+  history. `runMacs` gives 0.1979 against 0.0495, a ratio of 4.0. Out-of-sample
+  accuracy on progeny follows: 0.097 versus 0.351 at 500 founders.
+
+  Since `quickHaplo` is the default generator and the only reproducible one, the
+  consequence is stated rather than buried: **on this engine, reproducibility and
+  genomic realism cannot currently be had at the same time.**
+
+- **Out-of-sample prediction accuracy** on every genomic cycle, summarised across
+  replicates like everything else here. It is measured on progeny the fitted model
+  never saw. Scoring it on its own training generation was the easy alternative and
+  would have overstated it badly — measured 0.448 in-sample against 0.097
+  out-of-sample on the same population.
+
+### Changed
+
+- `list_methods` reports `selection_methods`, and `limits` gains `n_snp_per_chr`.
+- `found_population` refuses `n_snp_per_chr + n_qtl_per_chr > seg_sites`. Both are
+  drawn from the same segregating sites, and R's own failure is
+  `Not enough eligible sites`, which names none of the three numbers involved.
+
+### Notes
+
+The LD advisory keys on the **measurement**, never on the generator's name, and an
+accuracy threshold is deliberately not used in its place. Measured at 20
+replicates, a population with an LD ratio of 1.00 reached accuracy **0.208** by
+cycle three — beating a genuinely linked population at the same selection
+intensity — because in a closed population markers predict by tracking relatedness
+as well as by linkage. An accuracy gate would therefore pass precisely the case it
+claimed to detect. Accuracy is still reported; it is simply not evidence that
+genomic selection is working for the reason a breeder assumes.
+
 ## [0.1.1] - 2026-07-29
 
 ### Fixed
@@ -72,7 +127,7 @@ Phase 1. Breeding-scheme simulation over MCP, driving AlphaSimR 2.1.0 through rp
 ### Added
 
 - **`compare_programs` — paired A/B comparison.** Runs two programmes on shared founders
-  with **common random numbers**: replicate *i* of each arm starts from identical founders
+  with **common random numbers**: replicate _i_ of each arm starts from identical founders
   under the same seed, and the difference is taken WITHIN the pair, so the shared luck of
   that seed cancels rather than being counted twice. Returns the difference as a
   distribution with its own confidence interval.
@@ -87,8 +142,6 @@ Phase 1. Breeding-scheme simulation over MCP, driving AlphaSimR 2.1.0 through rp
     replication than a single programme, not less.
   - Breaking the pairing in a mutation check made two identical programmes differ by 0.169
     and 0.271 — the same order as the sd 0.247 the floor exists for.
-
-
 
 - Four MCP tools — `list_methods`, `found_population`, `run_program`,
   `describe_session` — each publishing a title, read-only annotations and an
