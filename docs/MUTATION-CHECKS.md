@@ -35,10 +35,10 @@ zero interval would defeat it while appearing to strengthen it.
 
 ## Round 5 — the tool-layer sequence (added after a P0)
 
-| # | mutant | test that went red |
-| - | ------ | ------------------ |
-| 11 | `engine._rpy2()` reverted to importing rpy2 lazily on first use | `test_tool_layer_sequence.py::test_four_tool_calls_in_one_fresh_process` |
-| 12 | `INSTRUCTIONS` f-prefix removed, leaking a literal `{RUNMACS_RNG_NOTE}` | `test_diagnostics_and_server.py::test_agent_facing_text_derives_from_one_source` |
+| #   | mutant                                                                  | test that went red                                                               |
+| --- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 11  | `engine._rpy2()` reverted to importing rpy2 lazily on first use         | `test_tool_layer_sequence.py::test_four_tool_calls_in_one_fresh_process`         |
+| 12  | `INSTRUCTIONS` f-prefix removed, leaking a literal `{RUNMACS_RNG_NOTE}` | `test_diagnostics_and_server.py::test_agent_facing_text_derives_from_one_source` |
 
 Mutant 11 is the one worth reading. It restores the code that shipped, and the
 whole rest of the suite stays green against it — because every other test imports
@@ -54,11 +54,11 @@ names.
 
 ## Round 6 — paired comparison and species
 
-| # | mutant | test that went red |
-| - | ------ | ------------------ |
-| 13 | arm B seeded independently (`seed + 7919`), breaking the pairing | `test_comparison.py::test_pairing_uses_the_same_seed_for_both_arms` |
-| 14 | `_verdict` returns the sign of the mean instead of reading the interval | `test_comparison.py::test_verdict_reads_the_interval_not_the_mean` |
-| 15 | `species` validation disabled (`if False`) | `test_diagnostics_and_server.py::test_species_is_validated_not_passed_through` |
+| #   | mutant                                                                  | test that went red                                                             |
+| --- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 13  | arm B seeded independently (`seed + 7919`), breaking the pairing        | `test_comparison.py::test_pairing_uses_the_same_seed_for_both_arms`            |
+| 14  | `_verdict` returns the sign of the mean instead of reading the interval | `test_comparison.py::test_verdict_reads_the_interval_not_the_mean`             |
+| 15  | `species` validation disabled (`if False`)                              | `test_diagnostics_and_server.py::test_species_is_validated_not_passed_through` |
 
 Mutant 13 is the one that quantifies the feature. Breaking the pairing made two
 IDENTICAL programmes differ by 0.169 and 0.271 — the same order as the sd 0.247
@@ -75,10 +75,10 @@ discriminate a rule about signs.**
 
 ## Round 7 — post-0.1.0 audit
 
-| # | mutant | test that went red |
-| - | ------ | ------------------ |
-| 16 | `_free_r_state` restored to the version that shipped in 0.1.0 | `test_session_eviction.py::test_eviction_frees_every_object_the_session_owned` |
-| 17 | `check_upper` made a no-op (no ceilings, the 0.1.0 state) | `test_session_eviction.py::test_oversized_requests_are_refused_at_every_entry_point` |
+| #   | mutant                                                        | test that went red                                                                   |
+| --- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| 16  | `_free_r_state` restored to the version that shipped in 0.1.0 | `test_session_eviction.py::test_eviction_frees_every_object_the_session_owned`       |
+| 17  | `check_upper` made a no-op (no ceilings, the 0.1.0 state)     | `test_session_eviction.py::test_oversized_requests_are_refused_at_every_entry_point` |
 
 Mutant 16 is a released bug, not a hypothetical: it restores real 0.1.0 code and
 the test goes red with `evicted session leaked R objects: [...]`, five of them.
@@ -92,6 +92,41 @@ meant to detect and reported success. The test therefore uses
 
 **A test that reuses the failing component's own assumption cannot detect that
 assumption being wrong.**
+
+## Round 8 — genomic selection
+
+| #   | mutant                                                                                              | test that went red                                                                 |
+| --- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| 18  | `no_linkage_disequilibrium_warning` keyed on `generator == "runMacs"` instead of the measured ratio | `test_genomic.py::test_ld_advisory_keys_on_the_measurement_not_the_generator_name` |
+| 19  | the second `setEBV` dropped, so accuracy is scored on the model's own training generation           | `test_genomic.py::test_reported_accuracy_is_out_of_sample_not_the_models_own_fit`  |
+| 20  | genomic branch selects with `use="pheno"`                                                           | `test_genomic.py::test_the_two_methods_take_different_paths`                       |
+
+Mutant 18 is the one worth dwelling on, because the name-based guard **agrees with
+the measured guard on every population AlphaSimR actually produces**: runMacs always
+has LD, quickHaplo never does. Real founders therefore cannot separate the two
+implementations. The test constructs sessions whose generator name and measured LD
+disagree — a runMacs population measured flat, a quickHaplo population measured
+linked — because those are the only inputs on which the two guards differ. **When
+two candidate predicates agree on all natural data, the test has to supply
+unnatural data or it is not testing the predicate at all.**
+
+Mutant 19 restores what an obvious simplification would produce. It matters because
+the resulting number stays entirely plausible — an in-sample fit looks like a
+perfectly reasonable accuracy — so nothing in the output would look wrong. The test
+pins it by recomputing the in-sample value and requiring the reported one to differ.
+
+### Not mutated: an accuracy threshold in place of the LD check
+
+Tempting, and it cannot work, so the test asserts the negative directly rather than
+mutating toward it. Measured at 20 replicates, a population with an LD ratio of 1.00
+reached out-of-sample accuracy **0.208** by cycle three — above any floor worth
+setting — because in a closed population markers predict by tracking relatedness as
+well as by linkage. An accuracy gate would pass exactly the population it claimed to
+catch. `test_accuracy_advisory_cannot_substitute_for_the_ld_check` encodes that
+measured counterexample.
+
+**A guard has to be measured on the mechanism it names, not on a downstream symptom
+that several mechanisms share.**
 
 ## Not mutated, and why
 

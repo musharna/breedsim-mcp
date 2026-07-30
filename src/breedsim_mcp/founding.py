@@ -14,6 +14,7 @@ Both generators are offered, because `runMacs` gives realistic coalescent LD tha
 import hashlib
 
 from .engine import r_eval, require_alphasimr
+from .genomic import measure_ld
 from .limits import check_all
 from .session import Session, SessionStore
 
@@ -71,8 +72,15 @@ def found_population(
     n_qtl_per_chr: int = 10,
     h2: float = 0.4,
     species: str = "MAIZE",
+    n_snp_per_chr: int = 0,
 ) -> Session:
-    """Create a founder population and its trait architecture, and persist both."""
+    """Create a founder population and its trait architecture, and persist both.
+
+    `n_snp_per_chr` > 0 adds a SNP chip, which is what genomic selection predicts
+    from. Genotyping is a founding decision because the markers have to exist
+    before any breeding value can be estimated from them; a session founded
+    without a chip cannot run genomic selection at all.
+    """
     if generator not in GENERATORS:
         raise ValueError(
             f"Unknown generator {generator!r}. Valid: {list(GENERATORS)}. "
@@ -92,13 +100,30 @@ def found_population(
             "supported: this server simulates animal breeding as well as plant."
         )
     check_all(
-        n_ind=n_ind, n_chr=n_chr, seg_sites=seg_sites, n_qtl_per_chr=n_qtl_per_chr
+        n_ind=n_ind,
+        n_chr=n_chr,
+        seg_sites=seg_sites,
+        n_qtl_per_chr=n_qtl_per_chr,
+        n_snp_per_chr=n_snp_per_chr,
     )
     for name, value in (("n_ind", n_ind), ("n_chr", n_chr), ("seg_sites", seg_sites)):
         if value < 1:
             raise ValueError(f"{name} must be >= 1, got {value}")
     if not 0 < h2 <= 1:
         raise ValueError(f"h2 must be in (0, 1], got {h2}")
+    if n_snp_per_chr < 0:
+        raise ValueError(f"n_snp_per_chr must be >= 0, got {n_snp_per_chr}")
+    # QTL and SNP markers are drawn from the same pool of segregating sites, so
+    # asking for more of both than exist fails inside R with "Not enough eligible
+    # sites" — measured. Caught here so the message names the three numbers that
+    # have to add up.
+    if n_snp_per_chr and n_snp_per_chr + n_qtl_per_chr > seg_sites:
+        raise ValueError(
+            f"n_snp_per_chr={n_snp_per_chr} plus n_qtl_per_chr={n_qtl_per_chr} "
+            f"exceeds seg_sites={seg_sites}. QTL and SNP markers are both drawn "
+            "from the segregating sites on each chromosome, so their total cannot "
+            "exceed what is there. Raise seg_sites, or lower either count."
+        )
 
     require_alphasimr()
     prefix = store.new_prefix()
@@ -113,11 +138,18 @@ def found_population(
 
     # simParam is passed explicitly everywhere: several AlphaSimR helpers default
     # to a GLOBAL named `SP` and error with "object 'SP' not found" otherwise.
+    # Only emitted when a chip is asked for, so a session founded without one
+    # consumes exactly the RNG draws it did before this parameter existed.
+    snp_chip = (
+        f"\n    {prefix}_SP$addSnpChip(nSnpPerChr={n_snp_per_chr})"
+        if n_snp_per_chr
+        else ""
+    )
     r_eval(f"""
     set.seed({seed})
     {prefix}_founders <- {founder_call}
     {prefix}_SP <- SimParam$new({prefix}_founders)
-    {prefix}_SP$addTraitA(nQtlPerChr={n_qtl_per_chr})
+    {prefix}_SP$addTraitA(nQtlPerChr={n_qtl_per_chr}){snp_chip}
     {prefix}_SP$setVarE(h2={h2})
     """)
 
@@ -146,7 +178,14 @@ def found_population(
             "n_qtl_per_chr": n_qtl_per_chr,
             "h2": h2,
             "species": species if generator == "runMacs" else None,
+            "n_snp_per_chr": n_snp_per_chr,
         },
+        n_snp_per_chr=n_snp_per_chr,
     )
     session.founder_hash = _founder_hash(session)
+    # Measured at founding, not at selection time: a caller who is about to spend
+    # replicates on genomic selection should learn here that the markers carry no
+    # information, rather than after paying for the run.
+    if n_snp_per_chr:
+        session.ld = measure_ld(session)
     return store.add(session)
