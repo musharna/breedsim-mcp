@@ -15,7 +15,11 @@ from . import engine  # noqa: I001
 # isort: on
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
+# mcp 2.x renamed FastMCP to MCPServer and removed mcp.server.fastmcp. Same
+# class, same decorator, same `annotations` and `structured_output` kwargs — a
+# rename, not a rewrite. ToolAnnotations below did not move modules, though its
+# fields are snake_case now.
+from mcp.server.mcpserver import MCPServer
 from mcp.types import ToolAnnotations
 
 # NotRequired must come from the same module as TypedDict. This TypedDict is
@@ -207,14 +211,18 @@ def _warn_dicts(advisories) -> list[WarningDict]:
     return [{"code": a.code, "message": a.message} for a in advisories if a]
 
 
-def build_server() -> FastMCP:
-    mcp = FastMCP("breedsim-mcp", instructions=INSTRUCTIONS)
+def build_server() -> MCPServer:
+    mcp = MCPServer("breedsim-mcp", instructions=INSTRUCTIONS)
 
+    # snake_case since mcp 2.x. The camelCase spellings still work as constructor
+    # kwargs — pydantic keeps them as aliases — but the ATTRIBUTES are snake_case
+    # now, so leaving these camelCase would read fine here and break wherever the
+    # annotations are inspected. Matching the attribute names keeps one spelling.
     READ_ONLY = ToolAnnotations(
-        readOnlyHint=True,
-        destructiveHint=False,
-        idempotentHint=False,  # each call advances RNG state
-        openWorldHint=False,
+        read_only_hint=True,
+        destructive_hint=False,
+        idempotent_hint=False,  # each call advances RNG state
+        open_world_hint=False,
     )
 
     @mcp.tool(

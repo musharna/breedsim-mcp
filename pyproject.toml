@@ -28,8 +28,12 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 dependencies = [
-    # 1.28.1 is a SECURITY floor, not a feature floor.
-    "mcp>=1.28.1,<2",
+    # 2.x only. The old 1.28.1 floor was a SECURITY floor rather than a feature
+    # one, and every 2.x release clears it. The range MOVES rather than widening
+    # to <3: this package imports mcp.server.mcpserver, which does not exist in
+    # 1.x, so a range spanning both majors could resolve to a version that cannot
+    # import the server. mcp 2.x requires Python >=3.10, below our >=3.11 floor.
+    "mcp>=2,<3",
     # rpy2 >=3.6 requires R >= 4.4 (it binds R_getVar, absent in 4.3). Pinning
     # below 3.6 keeps us working on R 4.3.x, which is what Debian/Ubuntu ship.
     "rpy2>=3.5,<3.6",
