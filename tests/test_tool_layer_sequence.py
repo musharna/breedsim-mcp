@@ -30,8 +30,12 @@ from breedsim_mcp.server import build_server
 srv = build_server()
 
 def call(name, args):
-    out = asyncio.run(srv.call_tool(name, args))
-    return out[1] if isinstance(out, tuple) else out
+    # mcp 2.x returns a CallToolResult; 1.x returned a (content, structured)
+    # tuple, which is what the old `out[1] if isinstance(out, tuple)` handled.
+    # We are 2.x-only now, so read the field rather than sniffing the shape --
+    # a shape sniff would silently hand back the RESULT OBJECT if the field
+    # were ever renamed again, and the failure would surface far from here.
+    return asyncio.run(srv.call_tool(name, args)).structured_content
 
 call("list_methods", {})
 s = call("found_population", {"generator": "quickHaplo", "seed": 1, "n_ind": 20,

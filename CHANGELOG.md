@@ -4,6 +4,40 @@ All notable changes to `breedsim-mcp` are recorded here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Migrated to `mcp` 2.x.** `FastMCP` was renamed, not removed: it is now
+  `mcp.server.mcpserver.MCPServer`, same class and same kwargs. The dependency
+  **moves** to `mcp>=2,<3` rather than widening to `<3` — this package imports
+  `mcp.server.mcpserver`, absent in 1.x, so a range spanning both majors could
+  resolve to a version that cannot import the server. mcp 2.x requires Python
+
+  > =3.10, below this package's >=3.11 floor, so the support matrix is unchanged.
+
+- **`call_tool` now returns a `CallToolResult` instead of a
+  `(content, structured)` tuple.** This is a genuine API change rather than a
+  rename, and it is the part of the 2.x move that actually required work here.
+  Tests read `.structured_content` directly; the old
+  `out[1] if isinstance(out, tuple) else out` shim is gone rather than extended,
+  since a shape sniff would silently hand back the result object if the field
+  were renamed again, surfacing the failure far from its cause.
+
+- **`mcp.types` fields are snake_case** (`outputSchema` → `output_schema`,
+  `readOnlyHint` → `read_only_hint`). The camelCase spellings survive as pydantic
+  aliases, so _constructing_ `ToolAnnotations` still works either way — but that
+  rescue does not extend to attribute access, which is what the tests do. Both
+  the construction and the reads now use one spelling.
+
+### Fixed
+
+- **`test_single_replicate_is_refused_through_the_tool_layer` used
+  `pytest.raises(Exception)`.** During this migration it caught an unrelated
+  `TypeError` from a break three lines above it, and only the `match="replicates"`
+  kept it from passing for the wrong reason. It now expects `ToolError`, so it can
+  distinguish the refusal under test from any other failure on the way to it.
+
 ## [0.2.0] - 2026-07-29
 
 ### Added

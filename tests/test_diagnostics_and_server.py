@@ -7,6 +7,7 @@ same function, so an always-fires bug cannot masquerade as detection.
 import asyncio
 
 import pytest
+from mcp.server.mcpserver.exceptions import ToolError
 
 from breedsim_mcp.diagnostics import (
     nondeterministic_founders_warning,
@@ -78,16 +79,19 @@ def test_every_tool_has_title_and_readonly_annotations():
     for t in asyncio.run(build_server().list_tools()):
         assert t.title, f"{t.name} has no title"
         assert t.annotations is not None, f"{t.name} has no annotations"
-        assert t.annotations.readOnlyHint is True, f"{t.name} not read-only"
-        assert t.annotations.openWorldHint is False, f"{t.name} not closed-world"
+        # snake_case since mcp 2.x. The camelCase spellings survive as pydantic
+        # ALIASES, so constructing annotations still works either way — but that
+        # rescue does not extend to attribute access, which is what this reads.
+        assert t.annotations.read_only_hint is True, f"{t.name} not read-only"
+        assert t.annotations.open_world_hint is False, f"{t.name} not closed-world"
 
 
 def test_every_tool_publishes_an_output_schema():
     """Asserts the RULE for every tool, not a named list — a new tool added with a
     bare `-> dict` must fail this without anyone remembering to update it."""
     for t in asyncio.run(build_server().list_tools()):
-        assert t.outputSchema is not None, (
-            f"{t.name} publishes no outputSchema — annotate its return with a "
+        assert t.output_schema is not None, (
+            f"{t.name} publishes no output_schema — annotate its return with a "
             "TypedDict from typing_extensions"
         )
 
@@ -116,7 +120,7 @@ def test_run_program_over_the_real_mcp_layer_returns_a_distribution():
             },
         )
     )
-    payload = found[1] if isinstance(found, tuple) else found
+    payload = found.structured_content
     assert payload["reproducible"] is True
     sid = payload["session_id"]
 
@@ -126,7 +130,7 @@ def test_run_program_over_the_real_mcp_layer_returns_a_distribution():
             {"session_id": sid, "cycles": 2, "replicates": MIN_REPLICATES},
         )
     )
-    res = out[1] if isinstance(out, tuple) else out
+    res = out.structured_content
     assert res["replicates"] == MIN_REPLICATES
     gain = res["cycles"][0]["genetic_gain"]
     assert {"mean", "sd", "ci_low", "ci_high"} <= set(gain)
@@ -150,8 +154,13 @@ def test_single_replicate_is_refused_through_the_tool_layer():
             },
         )
     )
-    payload = found[1] if isinstance(found, tuple) else found
-    with pytest.raises(Exception, match="replicates"):
+    payload = found.structured_content
+    # ToolError, not bare Exception. During the mcp 2.x migration this line was
+    # `pytest.raises(Exception, match="replicates")` and it caught a TypeError
+    # from an unrelated break three lines up — only the `match=` stopped it
+    # passing for the wrong reason. A bare Exception cannot tell the refusal
+    # under test from any other failure on the way to it.
+    with pytest.raises(ToolError, match="replicates"):
         asyncio.run(
             server.call_tool(
                 "run_program",
@@ -184,8 +193,9 @@ def test_agent_facing_text_derives_from_one_source():
     the prefix before the placeholder leaves a literal "{RUNMACS_RNG_NOTE}" in the
     prompt. Both directions are checked.
     """
-    guidance = asyncio.run(build_server().call_tool("list_methods", {}))
-    guidance = guidance[1] if isinstance(guidance, tuple) else guidance
+    guidance = asyncio.run(
+        build_server().call_tool("list_methods", {})
+    ).structured_content
     store = SessionStore()
     reason = found_population(store, generator="runMacs", seed=3, **SMALL).reason
 
