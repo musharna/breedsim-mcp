@@ -20,11 +20,14 @@ interval. There is no flag that collapses it to a point estimate.
 [![ci](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/breedsim-mcp)](https://pypi.org/project/breedsim-mcp/)
 
-**0.2.0 is on PyPI**, adding genomic selection. 5 tools, 57 tests against real
-AlphaSimR, and 20 mutation checks all confirmed red
+On PyPI — the badge above is the released version, so it cannot go stale the way
+a number typed here would. Genomic selection included. 5 tools, 57 tests against
+real AlphaSimR, and 20 mutation checks all confirmed red
 ([docs/MUTATION-CHECKS.md](docs/MUTATION-CHECKS.md)). CI installs R and compiles
 AlphaSimR, so the suite runs against the real engine on Python 3.11, 3.12 and 3.13 —
 not against a mock.
+
+Requires `mcp` 2.x.
 
 ## Install tax — read this first
 
