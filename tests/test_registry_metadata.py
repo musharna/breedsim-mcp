@@ -51,7 +51,7 @@ def test_readme_marker_matches_the_declared_server_name():
         "the marker only reaches PyPI if the README is the long_description"
     )
 
-    marker = re.search(r"mcp-name:\s*(\S+?)\s*(?:-->|$)", README, re.M)
+    marker = re.search(r"mcp-name:\s*(\S+?)\s*(?:-->|$)", README, re.MULTILINE)
     assert marker is not None, "README carries no mcp-name marker"
     assert marker.group(1) == name, (
         f"README marker names {marker.group(1)!r}, server.json names {name!r}"
