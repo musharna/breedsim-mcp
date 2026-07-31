@@ -4,6 +4,34 @@ All notable changes to `breedsim-mcp` are recorded here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-07-31
+
+### Added
+
+- **Published to the official MCP registry** (`io.github.musharna/breedsim-mcp`)
+  via `server.json` and an OIDC workflow, so the server is discoverable from MCP
+  clients and directories rather than only from PyPI.
+
+  This needed a release rather than a docs commit. The registry proves PyPI
+  ownership by finding an `mcp-name` marker in the package README **as published
+  to PyPI**, and PyPI captures `long_description` at release time — so a marker
+  sitting on `master` verifies nothing. It is the same mechanism that kept
+  `plantcv-mcp`'s "Not published to PyPI" line live on its project page after the
+  fix had merged.
+
+- **`tests/test_registry_metadata.py`.** `server.json` states the version in three
+  places, and nothing else makes them agree with `pyproject.toml`; a stale one is
+  rejected by the registry during a release, after the version is spent. The
+  README marker is checked against the name `server.json` declares for the same
+  reason — that string is exactly what the registry greps for. All three
+  assertions were confirmed red against mutants (drifted version, wrong marker
+  name, transport declared `http`) before being kept.
+
+### Notes
+
+No functional change. The simulation, the tools, the replicate floor and the
+dependency pins are identical to 0.3.0.
+
 ## [0.3.0] - 2026-07-30
 
 ### Changed
@@ -227,6 +255,7 @@ Genomic selection models (GBLUP/RR-BLUP), multi-trait and G×E, optimal contribu
 selection, crossing-block optimisation, and genotype-matrix export. `compare_programs`
 was originally listed here and shipped in this release instead.
 
+[0.3.1]: https://github.com/musharna/breedsim-mcp/releases/tag/v0.3.1
 [0.3.0]: https://github.com/musharna/breedsim-mcp/releases/tag/v0.3.0
 [0.2.0]: https://github.com/musharna/breedsim-mcp/releases/tag/v0.2.0
 [0.1.1]: https://github.com/musharna/breedsim-mcp/releases/tag/v0.1.1

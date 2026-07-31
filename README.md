@@ -15,6 +15,8 @@ interval. There is no flag that collapses it to a point estimate.
 > Unofficial. Not affiliated with, endorsed by, or sponsored by the AlphaSimR authors, the
 > University of Edinburgh, or the R Foundation. See [NOTICE](NOTICE).
 
+<!-- mcp-name: io.github.musharna/breedsim-mcp -->
+
 ## Status
 
 [![ci](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml)
