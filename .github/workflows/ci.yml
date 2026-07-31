@@ -22,7 +22,7 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # libtirpc-dev is NOT optional: without it rpy2 fails to link with
       # "cannot find -ltirpc". r-base-dev provides the R headers.
@@ -35,7 +35,7 @@ jobs:
       # cached on the R version rather than rebuilt every run.
       - name: Cache AlphaSimR
         id: cache-alphasimr
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/R/library
           key: alphasimr-${{ runner.os }}-${{ hashFiles('.github/workflows/ci.yml') }}
@@ -46,7 +46,7 @@ jobs:
           mkdir -p ~/R/library
           Rscript -e 'install.packages("AlphaSimR", lib="~/R/library", repos="https://cloud.r-project.org", Ncpus=4)'
 
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           enable-cache: true
 
@@ -67,8 +67,8 @@ jobs:
   package:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
 
       - name: Build
         run: uv build
