@@ -227,6 +227,7 @@ Genomic selection models (GBLUP/RR-BLUP), multi-trait and G×E, optimal contribu
 selection, crossing-block optimisation, and genotype-matrix export. `compare_programs`
 was originally listed here and shipped in this release instead.
 
+[0.3.0]: https://github.com/musharna/breedsim-mcp/releases/tag/v0.3.0
 [0.2.0]: https://github.com/musharna/breedsim-mcp/releases/tag/v0.2.0
 [0.1.1]: https://github.com/musharna/breedsim-mcp/releases/tag/v0.1.1
 [0.1.0]: https://github.com/musharna/breedsim-mcp/releases/tag/v0.1.0
