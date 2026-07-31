@@ -2,7 +2,7 @@
   "upload_type": "software",
   "title": "breedsim-mcp: breeding-scheme simulation over the Model Context Protocol, returning distributions rather than single runs",
   "description": "A Model Context Protocol (MCP) server for breeding-scheme simulation, driving AlphaSimR through rpy2. It enforces one structural rule: a single simulation run is not a result, and the API will not return one. Every programme is run over a replicate floor and reported as a per-cycle mean, standard deviation and confidence interval, because the seed-to-seed spread of an identical scheme is the same order as the effects being compared. Paired A/B comparison uses common random numbers so shared luck cancels within the pair, and genomic selection is gated on measured founder linkage disequilibrium rather than on the name of the founder generator.",
-  "license": "GPL-3.0-or-later",
+  "license": "gpl-3.0-or-later",
   "creators": [
     {
       "name": "Arnold, Jaret",
