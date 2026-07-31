@@ -21,6 +21,7 @@ interval. There is no flag that collapses it to a point estimate.
 
 [![ci](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/breedsim-mcp)](https://pypi.org/project/breedsim-mcp/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21713210.svg)](https://doi.org/10.5281/zenodo.21713210)
 
 On PyPI — the badge above is the released version, so it cannot go stale the way
 a number typed here would. Genomic selection included. 5 tools, 57 tests against

@@ -20,6 +20,7 @@ authors:
     given-names: Jaret
     orcid: "https://orcid.org/0009-0003-4055-5238"
 repository-code: "https://github.com/musharna/breedsim-mcp"
+doi: 10.5281/zenodo.21713210
 url: "https://pypi.org/project/breedsim-mcp/"
 license: GPL-3.0-or-later
 version: 0.3.2
