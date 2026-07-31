@@ -17,8 +17,12 @@ from .session import Session
 @dataclass(frozen=True)
 class CycleRecord:
     cycle: int
-    genetic_gain: float
-    genetic_variance: float
+    # One value PER TRAIT. A single-trait programme carries a one-element tuple
+    # rather than a scalar, so aggregation has ONE shape to handle instead of
+    # two — a scalar-or-list union is how the wrong element ends up being read
+    # as "the" gain.
+    genetic_gain: tuple[float, ...]
+    genetic_variance: tuple[float, ...]
     # None under phenotypic selection, where no model is fitted and there is
     # therefore no prediction whose accuracy could be reported.
     prediction_accuracy: float | None = None
@@ -31,6 +35,7 @@ def run_replicate(
     n_cross: int,
     seed: int,
     selection_method: str = "phenotypic",
+    index_weights: list[float] | None = None,
 ) -> list[CycleRecord]:
     """Run `cycles` of truncation selection from the session's founders.
 
@@ -66,6 +71,9 @@ def run_replicate(
             f"({session.spec['n_ind']}); nothing would be selected against."
         )
 
+    n_traits = int(session.spec.get("n_traits", 1) or 1)
+    index_clause = _index_clause(index_weights, n_traits)
+
     p = f"{session.r_prefix}_pop"
     sp = session.sim_param
     r_eval(f"set.seed({seed}); {p} <- newPop({session.founders}, simParam={sp})")
@@ -75,7 +83,7 @@ def run_replicate(
         accuracy: float | None = None
         if selection_method == "phenotypic":
             r_eval(f"""
-        {p}_sel <- selectInd({p}, nInd={n_select}, use="pheno", simParam={sp})
+        {p}_sel <- selectInd({p}, nInd={n_select}, use="pheno"{index_clause}, simParam={sp})
         {p} <- randCross({p}_sel, nCrosses={n_cross}, simParam={sp})
         """)
         else:
@@ -86,7 +94,7 @@ def run_replicate(
             r_eval(f"""
         {p}_sol <- RRBLUP({p}, simParam={sp})
         {p} <- setEBV({p}, {p}_sol, simParam={sp})
-        {p}_sel <- selectInd({p}, nInd={n_select}, use="ebv", simParam={sp})
+        {p}_sel <- selectInd({p}, nInd={n_select}, use="ebv"{index_clause}, simParam={sp})
         {p} <- randCross({p}_sel, nCrosses={n_cross}, simParam={sp})
         {p} <- setEBV({p}, {p}_sol, simParam={sp})
         {p}_acc <- suppressWarnings(cor(as.numeric(ebv({p})[, 1]),
@@ -98,12 +106,72 @@ def run_replicate(
             # reported as no predictive ability rather than dropped, so that the
             # low-accuracy advisory still sees it.
             accuracy = 0.0 if math.isnan(raw) else raw
+        # meanG/varG return one value PER TRAIT. Reading [0] would silently
+        # report trait 1 as the whole answer on a multi-trait programme.
+        gains = tuple(float(v) for v in r_eval(f"meanG({p})"))
+        variances = tuple(float(v) for v in _diag_or_vector(f"varG({p})"))
         records.append(
             CycleRecord(
                 cycle=i,
-                genetic_gain=float(r_eval(f"meanG({p})")[0]),
-                genetic_variance=float(r_eval(f"varG({p})")[0]),
+                genetic_gain=gains,
+                genetic_variance=variances,
                 prediction_accuracy=accuracy,
             )
         )
     return records
+
+
+def _diag_or_vector(expr: str) -> list[float]:
+    """varG returns a scalar for one trait and a COVARIANCE MATRIX for several.
+
+    Taking the whole matrix would report covariances as if they were variances;
+    taking element [0] would report trait 1's variance as the programme's. The
+    diagonal is the per-trait variance, which is what the summary means.
+    """
+    values = [float(v) for v in r_eval(expr)]
+    n = len(values)
+    root = round(n**0.5)
+    if root > 1 and root * root == n:
+        return [values[j * root + j] for j in range(root)]
+    return values
+
+
+def _index_clause(index_weights: list[float] | None, n_traits: int) -> str:
+    """The `trait=selIndex, b=..., scale=TRUE` fragment, or nothing.
+
+    Selection on several traits needs an explicit economic weighting: there is
+    no defensible default, because the weights ARE the breeding objective.
+    Without them AlphaSimR silently selects on trait 1 alone, which looks like a
+    multi-trait programme and is not one — so a multi-trait session without
+    weights is refused rather than quietly reduced to its first trait.
+    """
+    if index_weights is None:
+        if n_traits > 1:
+            raise ValueError(
+                f"This session has {n_traits} traits, so run_program needs "
+                "index_weights — one economic weight per trait. Without them "
+                "selection would fall back to trait 1 alone and the other "
+                f"{n_traits - 1} would be along for the ride while appearing to "
+                "be selected on."
+            )
+        return ""
+    if n_traits == 1:
+        raise ValueError(
+            "index_weights was given but this session has a single trait. Found "
+            "the population with a LIST of heritabilities to build a multi-trait "
+            "architecture."
+        )
+    if len(index_weights) != n_traits:
+        raise ValueError(
+            f"index_weights has {len(index_weights)} weights but the session has "
+            f"{n_traits} traits. One weight per trait, in trait order."
+        )
+    if not any(index_weights):
+        raise ValueError(
+            "index_weights are all zero, so the index cannot rank anything."
+        )
+    weights = ", ".join(str(float(w)) for w in index_weights)
+    # scale=TRUE puts the traits on a common scale before weighting. Without it
+    # the weights would be applied to raw units, so a trait measured in tonnes
+    # and one in percent would be weighted by their units as much as by intent.
+    return f", trait=selIndex, b=c({weights}), scale=TRUE"

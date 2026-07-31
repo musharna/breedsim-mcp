@@ -107,10 +107,25 @@ class SummaryDict(TypedDict):
     n: int
 
 
-class CycleDict(TypedDict):
-    cycle: int
+class TraitCycleDict(TypedDict):
+    """One trait's distributions within a cycle, on a multi-trait programme."""
+
+    trait: int
     genetic_gain: SummaryDict
     genetic_variance: SummaryDict
+
+
+class CycleDict(TypedDict):
+    cycle: int
+    # EXACTLY ONE of these two shapes is present, and which one is decided by the
+    # session's trait count, not by a flag:
+    #   single trait -> genetic_gain / genetic_variance
+    #   several      -> traits[]
+    # A multi-trait cycle deliberately publishes NO bare genetic_gain, because
+    # that key could only mean trait 1 and would be read as the whole objective.
+    genetic_gain: NotRequired[SummaryDict]
+    genetic_variance: NotRequired[SummaryDict]
+    traits: NotRequired[list[TraitCycleDict]]
     # Present only under genomic selection. Absent rather than null under
     # phenotypic selection, where no model is fitted and a zero would read as a
     # model that failed rather than as no model at all.
@@ -264,9 +279,10 @@ def build_server() -> MCPServer:
         n_chr: int = 10,
         seg_sites: int = 100,
         n_qtl_per_chr: int = 10,
-        h2: float = 0.4,
+        h2: float | list[float] = 0.4,
         species: str = "MAIZE",
         n_snp_per_chr: int = 0,
+        trait_correlation: float = 0.0,
     ) -> FoundResult:
         """Found a population and its trait architecture, and keep it for later runs.
 
@@ -283,6 +299,13 @@ def build_server() -> MCPServer:
         breeding value estimated from them is noise. Measured on this engine,
         quickHaplo founders are ALWAYS in that state — use generator="runMacs" for
         genomic selection, accepting that runMacs founders are not reproducible.
+
+        h2 as a LIST builds a MULTI-TRAIT architecture — one heritability per
+        trait, e.g. [0.4, 0.25] for two. trait_correlation sets the genetic
+        correlation between every pair of traits (one number, so with three or
+        more traits all pairs are equally correlated). A multi-trait session then
+        REQUIRES index_weights on run_program: the weights are the breeding
+        objective, and without them selection would silently act on trait 1 alone.
         """
         s = found_population(
             _store,
@@ -295,6 +318,7 @@ def build_server() -> MCPServer:
             h2=h2,
             species=species,
             n_snp_per_chr=n_snp_per_chr,
+            trait_correlation=trait_correlation,
         )
         return {
             "session_id": s.session_id,
@@ -327,6 +351,7 @@ def build_server() -> MCPServer:
         n_cross: int | None = None,
         base_seed: int = 1000,
         selection_method: str = "phenotypic",
+        index_weights: list[float] | None = None,
     ) -> RunResult:
         """Run the programme `replicates` times; return per-cycle mean, sd and 95% CI.
 
@@ -340,6 +365,14 @@ def build_server() -> MCPServer:
         predicted and true breeding value, measured on progeny the model never
         saw. Read it: if it is near zero the model is not predicting, and the run's
         gain came from drift rather than from selection.
+
+        index_weights is REQUIRED for a multi-trait session — one economic weight
+        per trait, in trait order. The weights are the breeding objective, so
+        there is no default; without them AlphaSimR would select on trait 1 alone
+        while the response still looked multi-trait. Each cycle then reports a
+        `traits` array instead of a bare `genetic_gain`, deliberately: a single
+        `genetic_gain` key would have to mean trait 1, and a caller reading the
+        familiar name would take one trait for the whole objective.
         """
         out = run_program(
             _store,
@@ -350,17 +383,28 @@ def build_server() -> MCPServer:
             n_cross=n_cross,
             base_seed=base_seed,
             selection_method=selection_method,
+            index_weights=index_weights,
         )
         session = _store.get(session_id)
         last_cycle = out["cycles"][-1]
-        last_gain = last_cycle["genetic_gain"]
-        variances = [c["genetic_variance"] for c in out["cycles"]]
+        # Multi-trait cycles carry `traits`, single-trait ones a bare
+        # `genetic_gain`. The advisories run over EVERY trait rather than trait 1,
+        # so a programme whose second trait has run out of variance still says so.
+        if "traits" in last_cycle:
+            gain_series = [t["genetic_gain"] for t in last_cycle["traits"]]
+            variance_series = [
+                [c["traits"][t]["genetic_variance"] for c in out["cycles"]]
+                for t in range(len(last_cycle["traits"]))
+            ]
+        else:
+            gain_series = [last_cycle["genetic_gain"]]
+            variance_series = [[c["genetic_variance"] for c in out["cycles"]]]
         out["warnings"] = _warn_dicts(
             [
                 nondeterministic_founders_warning(session),
                 threads_not_pinned_warning(engine.threads_are_pinned()),
-                replicates_too_few_warning(last_gain),
-                variance_exhausted_warning(variances),
+                *[replicates_too_few_warning(g) for g in gain_series],
+                *[variance_exhausted_warning(v) for v in variance_series],
                 no_linkage_disequilibrium_warning(session)
                 if selection_method == "genomic"
                 else None,

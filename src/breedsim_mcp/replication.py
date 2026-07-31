@@ -73,6 +73,7 @@ def run_program(
     n_cross: int | None = None,
     base_seed: int = 1000,
     selection_method: str = "phenotypic",
+    index_weights: list[float] | None = None,
 ) -> dict:
     """Run a selection programme `replicates` times; return per-cycle distributions.
 
@@ -102,20 +103,46 @@ def run_program(
     # Each replicate gets its own seed; the founders are shared and fixed.
     per_replicate = [
         run_replicate(
-            session, cycles, n_select, crosses, base_seed + i, selection_method
+            session,
+            cycles,
+            n_select,
+            crosses,
+            base_seed + i,
+            selection_method,
+            index_weights=index_weights,
         )
         for i in range(replicates)
     ]
 
+    n_traits = int(session.spec.get("n_traits", 1) or 1)
     cycle_records = []
     for c in range(cycles):
-        record = {
-            "cycle": c + 1,
-            "genetic_gain": summarise([r[c].genetic_gain for r in per_replicate]),
-            "genetic_variance": summarise(
-                [r[c].genetic_variance for r in per_replicate]
-            ),
-        }
+        record: dict = {"cycle": c + 1}
+        if n_traits == 1:
+            record["genetic_gain"] = summarise(
+                [r[c].genetic_gain[0] for r in per_replicate]
+            )
+            record["genetic_variance"] = summarise(
+                [r[c].genetic_variance[0] for r in per_replicate]
+            )
+        else:
+            # No bare `genetic_gain` on a multi-trait programme, deliberately.
+            # Emitting one would have to mean trait 1, and a caller reading the
+            # familiar key would take a single trait for the whole objective.
+            # Make them read per-trait, the way the summary is only ever
+            # reachable as a distribution.
+            record["traits"] = [
+                {
+                    "trait": t + 1,
+                    "genetic_gain": summarise(
+                        [r[c].genetic_gain[t] for r in per_replicate]
+                    ),
+                    "genetic_variance": summarise(
+                        [r[c].genetic_variance[t] for r in per_replicate]
+                    ),
+                }
+                for t in range(n_traits)
+            ]
         # Absent rather than null under phenotypic selection: no model was fitted,
         # so there is no accuracy that could be reported as zero without implying
         # a model that predicted nothing.
@@ -141,5 +168,7 @@ def run_program(
             "n_cross": crosses,
             "base_seed": base_seed,
             "selection_method": selection_method,
+            "n_traits": n_traits,
+            "index_weights": list(index_weights) if index_weights else None,
         },
     }

@@ -135,3 +135,34 @@ Unlike `plantcv-mcp`, no warning here withholds a result: outputs are always
 distributions, so a caller can already see when an answer is too noisy to use.
 
 Re-run these whenever a guard's logic changes.
+
+
+## Multi-trait index selection
+
+| mutant                                          | result |
+| ----------------------------------------------- | ------ |
+| index clause never reaches `selectInd`          | RED    |
+| missing `index_weights` silently allowed        | RED    |
+| `varG` matrix returned whole instead of diagonal | RED (see below) |
+| multi-trait cycle also publishes a bare `genetic_gain` | RED |
+| single-trait path routed through the multi-trait `addTraitA` | **SURVIVES — equivalent** |
+
+Two of these are worth recording properly.
+
+**The `varG` mutant survived the first time.** The tests checked that two traits
+came back with the right summary keys, which a covariance matrix satisfies just
+as well as a diagonal. It is caught now by asserting each per-trait variance is
+POSITIVE — a covariance between negatively-correlated traits is not.
+
+**The last mutant survives, and it is an EQUIVALENT mutant, not a coverage gap.**
+Forcing the single-trait case through the multi-trait `addTraitA(..., mean=c(0),
+var=c(1), corA=matrix(1))` call produces a byte-identical downstream result:
+the seeded gain stays at 1.1495833871545191. The separate single-trait branch is
+therefore insurance against AlphaSimR changing, not a load-bearing difference,
+and it is reported as surviving rather than dressed up as caught.
+
+It also corrected a mistake in the test that chased it. That test first pinned
+`founder_hash`, on the theory that a changed `addTraitA` call would move the
+founders. It does not: the founders come out of `quickHaplo` BEFORE any trait is
+added, so the hash cannot see trait construction at all. The invariant is now
+pinned downstream, on a seeded run's gain, where a change would actually show.

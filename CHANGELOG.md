@@ -4,6 +4,46 @@ All notable changes to `breedsim-mcp` are recorded here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Multi-trait architecture and index selection.** `found_population` takes `h2`
+  as a LIST — one heritability per trait — plus `trait_correlation` for the
+  genetic correlation between them. `run_program` then takes `index_weights`, one
+  economic weight per trait, and selects on the weighted index via AlphaSimR's
+  `selIndex` with `scale=TRUE`.
+
+  **A multi-trait session without `index_weights` is refused.** AlphaSimR's
+  `selectInd` defaults to `trait=1`, so omitting the index would select on the
+  first trait alone while the response still looked multi-trait — a plausible
+  result in which every other trait was merely along for the ride. The weights
+  are the breeding objective; there is no defensible default for them.
+
+  **A multi-trait cycle publishes `traits[]` and NO bare `genetic_gain`.** That
+  key could only mean trait 1, and a caller reading the familiar name would take
+  one trait for the whole objective. Same principle as refusing to return a
+  single replicate: make the honest answer the only reachable one.
+
+  `varG` returns a covariance MATRIX for several traits, not a vector. Its
+  diagonal is taken; handing it back whole would report trait 2's "variance" as
+  the trait1-trait2 covariance, a different quantity that can be negative.
+
+### Changed
+
+- `compare_programs` refuses multi-trait sessions. It returns one paired verdict,
+  which needs ONE criterion; with several traits that criterion is the index, and
+  AlphaSimR does not report gain in index units. Any verdict would be this server
+  choosing which trait counts. Use `run_program` per programme instead.
+
+### Not included
+
+The `RRBLUP_D`, `_GCA` and `_SCA` variants are still not exposed. They estimate
+dominance and combining-ability effects, which requires a trait built with
+`addTraitAD` rather than the additive-only `addTraitA` used here — fitting them
+against an additive trait would estimate dominance that does not exist. Dominance
+founding comes first.
+
 ## [0.3.2] - 2026-07-31
 
 ### Added
