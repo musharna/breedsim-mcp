@@ -1,0 +1,52 @@
+cff-version: 1.2.0
+message: >-
+  If you use breedsim-mcp in your work, please cite it as below. AlphaSimR is the
+  simulation engine this server drives and must be cited separately — see
+  references.
+title: breedsim-mcp
+abstract: >-
+  A Model Context Protocol (MCP) server for breeding-scheme simulation, driving
+  AlphaSimR through rpy2. It enforces one structural rule: a single simulation
+  run is not a result, and the API will not return one. Every programme is run
+  over a replicate floor and reported as a per-cycle mean, standard deviation and
+  confidence interval, because the seed-to-seed spread of an identical scheme is
+  the same order as the effects being compared. Paired A/B comparison uses common
+  random numbers so shared luck cancels within the pair, and genomic selection is
+  gated on measured founder linkage disequilibrium rather than on the name of the
+  founder generator.
+type: software
+authors:
+  - family-names: Arnold
+    given-names: Jaret
+    orcid: "https://orcid.org/0009-0003-4055-5238"
+repository-code: "https://github.com/musharna/breedsim-mcp"
+url: "https://pypi.org/project/breedsim-mcp/"
+license: GPL-3.0-or-later
+version: 0.3.1
+date-released: "2026-07-31"
+keywords:
+  - plant-breeding
+  - simulation
+  - alphasimr
+  - quantitative-genetics
+  - genomic-selection
+  - model-context-protocol
+  - mcp
+references:
+  - type: article
+    title: "AlphaSimR: an R package for breeding program simulations"
+    authors:
+      - family-names: Gaynor
+        given-names: R. Chris
+      - family-names: Gorjanc
+        given-names: Gregor
+      - family-names: Hickey
+        given-names: John M.
+    journal: "G3 Genes|Genomes|Genetics"
+    volume: 11
+    issue: 2
+    year: 2021
+    doi: 10.1093/g3journal/jkaa017
+    notes: >-
+      The simulation engine this server drives. Cite AlphaSimR for any published
+      result produced with this tool; citing the wrapper does not discharge that.
