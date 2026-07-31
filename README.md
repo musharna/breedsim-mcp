@@ -26,7 +26,9 @@ interval. There is no flag that collapses it to a point estimate.
 On PyPI — the badge above is the released version, so it cannot go stale the way
 a number typed here would. Genomic selection included. 5 tools, 57 tests against
 real AlphaSimR, and 20 mutation checks all confirmed red
-([docs/MUTATION-CHECKS.md](docs/MUTATION-CHECKS.md)). CI installs R and compiles
+([docs/MUTATION-CHECKS.md](docs/MUTATION-CHECKS.md)). The simulation is also checked against the
+breeder's equation `R = h²S` rather than only against itself
+([docs/EVAL.md](docs/EVAL.md)). CI installs R and compiles
 AlphaSimR, so the suite runs against the real engine on Python 3.11, 3.12 and 3.13 —
 not against a mock.
 
