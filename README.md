@@ -320,10 +320,15 @@ founders fixed and threads pinned, seed 7 reproduces exactly: `meanG=2.01451853`
 
 ## Limitations
 
-No multi-trait or G×E, no optimal contribution selection, no crossing-block optimisation, no
-genotype-matrix export. Genomic selection is RRBLUP only — the `RRBLUP_D`, `_GCA` and `_SCA`
-variants AlphaSimR provides for dominance and combining ability are not exposed. Selection is
-truncation on a single trait, by phenotype or by estimated breeding value.
+Multi-trait selection is supported: pass `h2` as a list to build several traits and
+`index_weights` to select on a weighted index. `compare_programs` remains single-trait — one
+paired verdict needs one criterion, and with several traits that criterion is the index, which
+AlphaSimR does not report a gain for.
+
+No G×E, no optimal contribution selection, no crossing-block optimisation, no genotype-matrix
+export. Genomic selection is RRBLUP only — the `RRBLUP_D`, `_GCA` and `_SCA` variants are not
+exposed, because they estimate dominance and combining-ability effects that an additive-only
+`addTraitA` architecture does not contain.
 
 The `prediction_accuracy_low` and `no_linkage_disequilibrium` warnings are advisory: like every
 other warning here, they explain rather than refuse.

@@ -102,6 +102,17 @@ def compare_programs(
         )
 
     session = store.get(session_id)
+    n_traits = session.spec.get("n_traits") or 1
+    if n_traits > 1:
+        raise ValueError(
+            f"This session has {n_traits} traits, and compare_programs returns a "
+            "single paired verdict — which needs ONE criterion. With several "
+            "traits the criterion is the selection index, and AlphaSimR does not "
+            "report gain in index units, so any verdict here would be a choice "
+            "this server made on your behalf about which trait counts. Use "
+            "run_program on each programme and compare the per-trait "
+            "distributions yourself."
+        )
     default_cross = session.spec["n_ind"]
     a = ProgramSpec(
         a_label,
@@ -130,10 +141,12 @@ def compare_programs(
             session, cycles, b.n_select, b.n_cross, seed, b.selection_method
         )
         for c in range(cycles):
-            per_cycle_a[c].append(ra[c].genetic_gain)
-            per_cycle_b[c].append(rb[c].genetic_gain)
+            # [0] is safe and not a silent truncation: a multi-trait session is
+            # refused above, so this arm only ever runs with exactly one trait.
+            per_cycle_a[c].append(ra[c].genetic_gain[0])
+            per_cycle_b[c].append(rb[c].genetic_gain[0])
             # Differenced WITHIN the pair, before any averaging.
-            per_cycle_diff[c].append(ra[c].genetic_gain - rb[c].genetic_gain)
+            per_cycle_diff[c].append(ra[c].genetic_gain[0] - rb[c].genetic_gain[0])
 
     cycle_records = [
         {
