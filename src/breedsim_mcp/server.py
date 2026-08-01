@@ -32,6 +32,7 @@ from .comparison import compare_programs
 from .diagnostics import (
     indistinguishable_warning,
     no_linkage_disequilibrium_warning,
+    no_selection_warning,
     nondeterministic_founders_warning,
     overlap_but_different_warning,
     prediction_accuracy_low_warning,
@@ -399,11 +400,21 @@ def build_server() -> MCPServer:
         else:
             gain_series = [last_cycle["genetic_gain"]]
             variance_series = [[c["genetic_variance"] for c in out["cycles"]]]
+        # When every individual was selected there is no effect to estimate, so
+        # `replicates_too_few` is withheld: it would read the near-zero mean as a
+        # power problem and send the caller to buy replicates against a quantity
+        # that is zero by construction. `no_selection` says the true thing instead.
+        no_selection = no_selection_warning(n_select, session.spec["n_ind"])
         out["warnings"] = _warn_dicts(
             [
                 nondeterministic_founders_warning(session),
                 threads_not_pinned_warning(engine.threads_are_pinned()),
-                *[replicates_too_few_warning(g) for g in gain_series],
+                no_selection,
+                *(
+                    []
+                    if no_selection
+                    else [replicates_too_few_warning(g) for g in gain_series]
+                ),
                 *[variance_exhausted_warning(v) for v in variance_series],
                 no_linkage_disequilibrium_warning(session)
                 if selection_method == "genomic"

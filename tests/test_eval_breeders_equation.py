@@ -20,6 +20,21 @@ tell you the number is WRONG.
 recovered h2 came out at 0.1987 / 0.4875 / 0.7950 against true 0.2 / 0.5 / 0.8 —
 relative errors of 0.6%, 2.5% and 0.6%, with a replicate-to-replicate sd of
 about 0.03.
+
+## What this eval does NOT cover
+
+It writes its own R and calls `r_eval` directly, so the subject is **AlphaSimR
+plus the theory** — not this server's selection path. It never imports
+`program`, `founding` or `replication`.
+
+Measured, so the boundary is not a guess: flipping the server's own selection
+from `use="pheno"` to `use="rand"` — which destroys response to selection
+entirely — leaves this file GREEN. Four other tests catch it, chiefly
+`test_simulation.py::test_gain_rises_and_variance_falls_under_selection`, so the
+behaviour IS covered; it is covered there, not here.
+
+Stated because the file's name invites the opposite reading. An eval whose scope
+is assumed wider than it is licenses more confidence than it earns.
 """
 
 import statistics
