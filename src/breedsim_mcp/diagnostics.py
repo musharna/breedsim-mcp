@@ -79,6 +79,38 @@ def replicates_too_few_warning(
     )
 
 
+def no_selection_warning(n_select: int, n_ind: int) -> "Advisory | None":
+    """Fires when every individual is selected, so no selection happened at all.
+
+    `n_select == n_ind` is permitted on purpose: a no-selection arm is a
+    legitimate drift-only control, and rejecting it would remove a real
+    experiment. What is not legitimate is reporting the result as though it
+    estimated a response to selection. The selection differential is zero, so
+    the expected gain is zero BY CONSTRUCTION, and no number of replicates moves
+    it off zero.
+
+    Without this, the only advisory that fires on such a run is
+    `replicates_too_few` — a mean near zero makes the relative CI width enormous
+    — which tells the caller to spend more compute estimating a quantity whose
+    true value is already known. That advisory cannot tell "underpowered" from
+    "there is no effect to power against", so the distinction is drawn here,
+    where n_select is in scope.
+    """
+    if n_select < n_ind:
+        return None
+    return Advisory(
+        code="no_selection",
+        message=(
+            f"n_select ({n_select}) is the whole population ({n_ind}), so every "
+            f"individual was selected and the selection differential is zero. Any "
+            f"gain shown here is drift: its expected value is zero by construction, "
+            f"and more replicates will not change that. This is a valid drift-only "
+            f"control arm — it is not an estimate of response to selection. To "
+            f"select, set n_select below {n_ind}."
+        ),
+    )
+
+
 def variance_exhausted_warning(
     variance_cycles: list[dict], collapse_fraction: float = 0.2
 ) -> "Advisory | None":

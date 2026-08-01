@@ -20,6 +20,28 @@ from .limits import check_all
 from .program import run_replicate
 from .session import SessionStore
 
+
+def _engine_provenance() -> dict[str, str | None]:
+    """Versions of the stack that produced a result, for the result to carry.
+
+    Cheap enough to call per run: `check_environment` only reads
+    `R.version.string` and package metadata, and R is already up by the time any
+    run finishes. Never raises — provenance that can break a simulation would be
+    worse than provenance that is absent, so a failure degrades to nulls.
+    """
+    from . import engine
+
+    try:
+        env = engine.check_environment()
+    except Exception:  # noqa: BLE001 - see docstring: never break a run over this
+        return {"r_version": None, "alphasimr_version": None, "rpy2_version": None}
+    return {
+        "r_version": env.r_version,
+        "alphasimr_version": env.alphasimr_version,
+        "rpy2_version": env.rpy2_version,
+    }
+
+
 # Below this, the standard deviation is not estimable in any meaningful way.
 MIN_REPLICATES = 5
 DEFAULT_REPLICATES = 10
@@ -170,5 +192,22 @@ def run_program(
             "selection_method": selection_method,
             "n_traits": n_traits,
             "index_weights": list(index_weights) if index_weights else None,
+            # Provenance travels WITH the result. The versions were already
+            # available, but only from list_methods — so a stored or forwarded
+            # result could not say which engine produced it, and two results
+            # could not be told apart. A number you cannot attribute is not a
+            # citable measurement.
+            "engine": _engine_provenance(),
+            # What the gain is measured IN. Deliberately a description of the
+            # scale rather than a unit string: single-trait sessions use
+            # AlphaSimR's addTraitA defaults (genetic mean 0, variance 1) so
+            # gain is in founder additive genetic SD, while a multi-trait
+            # session sets its own variances and the scale is whatever the
+            # caller chose. One hard-coded label would be wrong for one of them.
+            "gain_scale": (
+                "founder additive genetic SD (trait variance set to 1 at founding)"
+                if n_traits == 1
+                else "trait units on the caller-supplied variances from found_population"
+            ),
         },
     }
