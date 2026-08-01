@@ -6,6 +6,21 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- **`server.json`'s description is back under the registry's 100-character cap.**
+  The 0.4.0 audit fix moved the whole install-tax explanation into that field —
+  315 characters — and the MCP registry rejected the submission with a 422. PyPI
+  0.4.0 and the `v0.4.0` tag had already been published by then, because the
+  registry is the last step and the only thing that checks this. The description
+  now names the requirement in one line and leaves the explanation in the README,
+  which is where it always was.
+
+  `test_registry_metadata` gained the length assertion it was missing. That file
+  exists specifically to catch registry constraints locally rather than in a
+  workflow log after a version is burned, and this constraint had simply never
+  been written down — the same failure mode the file's own docstring describes.
+
 ## [0.4.0] - 2026-08-01
 
 ### Added
