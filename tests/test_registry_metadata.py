@@ -63,6 +63,29 @@ def test_readme_marker_matches_the_declared_server_name():
     assert marker.group(1) != "io.github.musharna/not-this-server"
 
 
+# The registry enforces this server-side and returns HTTP 422 on violation. It
+# is asserted here for the same reason as everything else in this file: the only
+# other place it is checked is the publish workflow, which runs on a tag push --
+# after the version is burned. v0.4.0 was tagged and released to PyPI before the
+# registry refused it, because an audit fix had moved the whole install-tax
+# explanation into this field and nothing local measured it.
+DESCRIPTION_MAX = 100
+
+
+def test_the_description_fits_what_the_registry_accepts():
+    description = SERVER_JSON["description"]
+    assert len(description) <= DESCRIPTION_MAX, (
+        f"server.json description is {len(description)} characters; the registry "
+        f"caps it at {DESCRIPTION_MAX} and rejects the submission with a 422. "
+        "Long-form install or usage detail belongs in the README."
+    )
+    # Negative control: the assertion above must be capable of failing. Without
+    # this, a description field that had gone missing entirely would read as a
+    # pass, and so would a mistyped key returning "".
+    assert len(description) > 0, "server.json has no description at all"
+    assert len("x" * (DESCRIPTION_MAX + 1)) > DESCRIPTION_MAX
+
+
 def test_the_package_identifier_is_the_distribution_actually_published():
     pkg = SERVER_JSON["packages"][0]
     assert pkg["identifier"] == PYPROJECT["project"]["name"]
