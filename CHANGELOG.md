@@ -6,6 +6,8 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-01
+
 ### Added
 
 - **Multi-trait architecture and index selection.** `found_population` takes `h2`
@@ -29,12 +31,56 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   diagonal is taken; handing it back whole would report trait 2's "variance" as
   the trait1-trait2 covariance, a different quantity that can be negative.
 
+- **The simulation is now checked against the breeder's equation.** A test drives
+  a single cycle at a known heritability and asserts the realised response lands
+  where R = h²S predicts. Until now every test compared this server against
+  itself: a change that broke the genetics consistently would have kept the whole
+  suite green. This is an external oracle — theory, not our own output.
+
+  Its SCOPE is narrower than its name suggests, and that is recorded rather than
+  papered over: it writes its own R and never imports `program` or `founding`, so
+  mutating the server's selection criterion leaves it passing. The wider suite
+  catches that. The eval validates AlphaSimR-plus-theory, not this package's
+  wiring.
+
+- **Every result states the engine that produced it and the scale it is in.**
+  `recipe.engine` carries the R, AlphaSimR and rpy2 versions, and
+  `recipe.gain_scale` names the units gain is reported in. Both were previously
+  reachable only through a separate introspection call, so a saved result was not
+  self-describing — a number in a notebook six months later could not be traced
+  to the stack that made it, and gain had no stated scale at all.
+
+  `gain_scale` DESCRIBES the scale rather than naming a fixed unit, deliberately:
+  a single-trait session uses AlphaSimR's variance-1 default while a multi-trait
+  session sets its own variances, so one hard-coded label would be false for one
+  of them.
+
 ### Changed
 
 - `compare_programs` refuses multi-trait sessions. It returns one paired verdict,
   which needs ONE criterion; with several traits that criterion is the index, and
   AlphaSimR does not report gain in index units. Any verdict would be this server
   choosing which trait counts. Use `run_program` per programme instead.
+
+- **Selecting everyone is now named as such, and stops asking for replicates.**
+  `n_select == n_ind` was permitted — legally, since a no-selection arm is a real
+  drift-only control — but nothing said the selection differential was nil, so a
+  gain of zero read as a finding rather than as arithmetic. Worse, the advisory
+  that DID fire was `replicates_too_few`, telling the caller to re-run with more
+  replicates against an effect that is zero BY CONSTRUCTION and that no number of
+  replicates can move. A new `no_selection` warning fires instead, and
+  `replicates_too_few` is withheld for that run.
+
+  The run itself is unchanged and still permitted. What changed is that a guard
+  which could not tell "underpowered" from "there is no effect to power against"
+  no longer answers as if it could.
+
+- **`server.json` leads with the install tax.** All three of our servers declare
+  `runtimeHint: "uvx"`, which tells an MCP client to install on demand — but rpy2
+  publishes no Linux wheels, so every Linux install compiles from source against R
+  headers and `libtirpc-dev`. The client surfaced a raw `cannot find -ltirpc`
+  linker error and never showed the README that explains it. The requirement is
+  now in the description the client actually displays.
 
 ### Not included
 
