@@ -47,6 +47,7 @@ dependencies = [
 Homepage = "https://github.com/musharna/breedsim-mcp"
 Repository = "https://github.com/musharna/breedsim-mcp"
 Issues = "https://github.com/musharna/breedsim-mcp/issues"
+Changelog = "https://github.com/musharna/breedsim-mcp/blob/master/CHANGELOG.md"
 
 [project.scripts]
 breedsim-mcp = "breedsim_mcp.server:main"
@@ -66,6 +67,8 @@ include = [
     "tests/**",
     "README.md",
     "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
     "LICENSE",
     "CITATION.cff",
     "NOTICE",

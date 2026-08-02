@@ -6,6 +6,38 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- **Community-health and repo-hygiene files, matching the standard set by
+  `data-aggregator-mcp` and `plant-genomics-mcp`.** An earlier parity audit
+  compared this repo only against `ldraw-mcp`, which is itself thin on these, so
+  the whole tier went unnoticed: `CONTRIBUTING.md`, `SECURITY.md`, issue forms
+  (bug report + feature request + a config pointing security reports at private
+  advisories), a pull-request template, `.editorconfig`, `.mcp.json`, `glama.json`,
+  a CodeQL workflow, and a Dependabot config.
+
+  **Dependabot uses the `uv` ecosystem, not `pip`.** This is a uv-locked project;
+  the pip ecosystem would update `pyproject.toml` and leave `uv.lock` stale, which
+  CI installs with `--frozen` and would fail on. Dependabot's native uv support
+  reads both together.
+
+  `CONTRIBUTING.md` and `SECURITY.md` were added to the sdist allow-list.
+  hatchling's allow-list drops anything unlisted **silently** — verified with
+  `tar tzf` on a real build rather than assumed, the same way a `NOTICE` was
+  previously found missing.
+
+  `SECURITY.md` documents this server's actual trust boundary — verified against the
+  source, not asserted: R statements are built only from pydantic-validated numeric
+  parameters and server-generated `.bs_<uuid4>` identifiers, and a caller's
+  `session_id` is used solely as a dictionary key, so no caller string reaches R.
+
+- **README gained `python`, `licence` and Glama badges**, closing the one badge gap
+  the earlier parity audit recorded and never actioned. All badge endpoints were
+  checked for HTTP 200, with a deliberately bogus name as a negative control to
+  confirm the check could fail.
+
+- **`project.urls` gained `Changelog`.**
+
 ### Fixed
 
 - **`server.json`'s description is back under the registry's 100-character cap.**

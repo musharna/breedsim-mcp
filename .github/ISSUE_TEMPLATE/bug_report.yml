@@ -1,0 +1,69 @@
+name: Bug report
+description: Report a bug in breedsim-mcp
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Please do **not** report security vulnerabilities here —
+        see [SECURITY.md](../SECURITY.md) for private disclosure.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+    validations:
+      required: true
+  - type: dropdown
+    id: tool
+    attributes:
+      label: Which tool?
+      multiple: true
+      options:
+        - list_methods
+        - found_population
+        - run_program
+        - compare_programs
+        - describe_session
+        - not sure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `pip show breedsim-mcp` (or the version `uvx` pulled).
+      placeholder: "0.4.0"
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.11"
+    validations:
+      required: false
+  - type: input
+    id: rver
+    attributes:
+      label: R and AlphaSimR versions
+      description: Output of `list_methods` reports both, or `R -e 'packageVersion("AlphaSimR")'`.
+      placeholder: "R 4.3.3, AlphaSimR 1.6.1"
+    validations:
+      required: false
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The exact tool call and arguments. Include the input you fed it.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error output
+      description: Paste the error or traceback in full. If the server refused to start, include whether R, AlphaSimR and libtirpc-dev are installed.
+      render: shell
+    validations:
+      required: false

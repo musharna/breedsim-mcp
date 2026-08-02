@@ -21,6 +21,9 @@ interval. There is no flag that collapses it to a point estimate.
 
 [![ci](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/breedsim-mcp)](https://pypi.org/project/breedsim-mcp/)
+[![python](https://img.shields.io/pypi/pyversions/breedsim-mcp)](https://pypi.org/project/breedsim-mcp/)
+[![license](https://img.shields.io/pypi/l/breedsim-mcp)](LICENSE)
+[![Glama](https://glama.ai/mcp/servers/musharna/breedsim-mcp/badges/score.svg)](https://glama.ai/mcp/servers/musharna/breedsim-mcp)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21713210.svg)](https://doi.org/10.5281/zenodo.21713210)
 
 On PyPI — the badge above is the released version, so it cannot go stale the way
