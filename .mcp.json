@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "breedsim": {
+      "command": "uvx",
+      "args": [
+        "breedsim-mcp"
+      ]
+    }
+  }
+}

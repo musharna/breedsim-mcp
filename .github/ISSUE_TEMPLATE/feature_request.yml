@@ -1,0 +1,28 @@
+name: Feature request
+description: Suggest an improvement to breedsim-mcp
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This server wraps AlphaSimR. If the behaviour you want is something AlphaSimR itself does not do, it is out of scope here — but say so anyway, since the boundary is worth recording.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the analysis you are trying to run and where the server gets in the way.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+      description: What should the tool accept or return? A sketch of the call and response helps.
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What are you doing instead today?
+    validations:
+      required: false
