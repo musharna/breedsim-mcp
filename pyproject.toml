@@ -34,8 +34,20 @@ dependencies = [
     # 1.x, so a range spanning both majors could resolve to a version that cannot
     # import the server. mcp 2.x requires Python >=3.10, below our >=3.11 floor.
     "mcp>=2,<3",
-    # rpy2 >=3.6 requires R >= 4.4 (it binds R_getVar, absent in 4.3). Pinning
-    # below 3.6 keeps us working on R 4.3.x, which is what Debian/Ubuntu ship.
+    # rpy2 >=3.6 needs a newer R than 4.3. Upstream's own docs for 3.6.x state
+    # **R >= 4.5** (rpy2.github.io/doc/latest/html/overview.html) -- this comment
+    # previously said 4.4, which was wrong and understated the gap.
+    #
+    # The mechanism is real and observed, not inferred: dependabot proposed
+    # `<3.6` -> `<3.7` (PR #25), and all three test jobs died in
+    # `openrlib.rlib.R_getVar(...)` with "The embedded R is not initialized."
+    # against R 4.3.
+    #
+    # Deliberately NOT claiming which R the distros ship: CRAN publishes 4.5
+    # packages for current Ubuntu, so "Debian/Ubuntu ship 4.3" (also previously
+    # asserted here) depends on whether you use the distro archive or CRAN's.
+    # What is verified is that R 4.3.x is still widely in use and is what this
+    # package is developed against.
     "rpy2>=3.5,<3.6",
     "numpy>=1.26",
     # pydantic raises PydanticUserError on stdlib TypedDict under Python < 3.12,

@@ -6,6 +6,23 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- **Corrected the stated reason for the `rpy2<3.6` bound.** The comment at the pin
+  claimed rpy2 >=3.6 "requires R >= 4.4" and that R 4.3 is "what Debian/Ubuntu
+  ship". The first understates it — upstream's own 3.6.x documentation states
+  **R >= 4.5** — and the second is unverified, since CRAN publishes R 4.5
+  packages for current Ubuntu, so which R you get depends on which archive you
+  use. Both claims were repeated into `.github/dependabot.yml`, PR #28 and the
+  v0.4.1 release notes; all are corrected.
+
+  **The bound itself is unchanged and was never in doubt.** The mechanism is now
+  recorded as observed rather than inferred: dependabot's widening proposal (#25)
+  died in all three test jobs inside `openrlib.rlib.R_getVar(...)` with "The
+  embedded R is not initialized." against R 4.3. That is the evidence; the R
+  version number was the part that was wrong.
+
+
 ## [0.4.1] — 2026-08-02
 
 ### Added
