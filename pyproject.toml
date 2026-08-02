@@ -36,7 +36,7 @@ dependencies = [
     "mcp>=2,<3",
     # rpy2 >=3.6 requires R >= 4.4 (it binds R_getVar, absent in 4.3). Pinning
     # below 3.6 keeps us working on R 4.3.x, which is what Debian/Ubuntu ship.
-    "rpy2>=3.5,<3.6",
+    "rpy2>=3.5,<3.7",
     "numpy>=1.26",
     # pydantic raises PydanticUserError on stdlib TypedDict under Python < 3.12,
     # which breaks outputSchema generation on 3.11 only.
