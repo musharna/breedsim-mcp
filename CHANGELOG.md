@@ -21,6 +21,26 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   workflow log after a version is burned, and this constraint had simply never
   been written down — the same failure mode the file's own docstring describes.
 
+- **`server.json` is now validated against the registry's own schema, not against
+  one hand-copied constant.** The length assertion above covers the constraint
+  that happened to bite. It says nothing about the four other length caps, the
+  required-field list, or any of the patterns and enums the registry also
+  enforces — so the next unmeasured constraint would fail exactly the way this
+  one did, at tag-push, in a workflow log.
+
+  `server.json` already declared a dated `$schema`. That document _is_ the
+  registry's statement of what it accepts, so the check is now to validate
+  against it. The schema is vendored at `tests/server.schema.json` rather than
+  fetched, keeping the suite offline and deterministic, and a test asserts the
+  vendored copy's `$id` still matches the declared `$schema` so the pin cannot
+  drift silently. `DESCRIPTION_MAX` is read out of the schema instead of being
+  restated, leaving one source of truth and making it the registry's.
+
+  Verified by mutation rather than assumed: the 371-character description was
+  written back into `server.json` and the suite watched to fail on it, with a
+  non-length failure (a missing required field) and an in-test positive control
+  so a validator that raised on everything could not read as a working guard.
+
 ## [0.4.0] - 2026-08-01
 
 ### Added
