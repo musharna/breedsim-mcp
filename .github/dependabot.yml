@@ -31,13 +31,19 @@ updates:
         update-types: ["minor", "patch"]
     ignore:
       # `rpy2>=3.5,<3.6` is a RUNTIME-COMPATIBILITY bound, not a stale pin. rpy2
-      # >=3.6 binds R_getVar, which does not exist in R 4.3 -- the version Debian
-      # and Ubuntu ship -- so widening it drops support for the R most users have.
-      # The reason is recorded at the pin itself in pyproject.toml.
+      # >=3.6 needs a newer R than 4.3 -- upstream's 3.6.x docs state R >= 4.5.
+      # The full reason is recorded at the pin itself in pyproject.toml.
       #
-      # This is not hypothetical. Dependabot proposed exactly that widening
-      # (#25: `<3.6` -> `<3.7`) and ALL THREE test jobs failed, which is the
-      # evidence this entry exists to act on rather than a precaution.
+      # This is not hypothetical, and the mechanism is observed rather than
+      # inferred. Dependabot proposed exactly that widening (#25: `<3.6` ->
+      # `<3.7`) and ALL THREE test jobs died inside
+      # `openrlib.rlib.R_getVar(...)` with "The embedded R is not initialized."
+      #
+      # Correction to the previous revision of this comment: it said rpy2 >=3.6
+      # "requires R >= 4.4" and that 4.3 is "the version Debian and Ubuntu ship".
+      # The first understates it (upstream says 4.5); the second is unverified --
+      # CRAN publishes 4.5 packages for current Ubuntu, so which R you get
+      # depends on whether you use the distro archive or CRAN's.
       #
       # Grouped minor/patch updates do not protect against this: 3.5.17 -> 3.6.7
       # is a minor bump by semver and landed inside the uv-minor-patch group.
