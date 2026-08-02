@@ -1,6 +1,6 @@
 [project]
 name = "breedsim-mcp"
-version = "0.4.0"
+version = "0.4.1"
 description = "MCP server for breeding-scheme simulation — returns distributions, never a single stochastic run"
 readme = "README.md"
 # GPL, not MIT. AlphaSimR itself is MIT, but rpy2 is GPLv2+ and we import it

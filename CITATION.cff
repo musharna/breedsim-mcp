@@ -23,8 +23,8 @@ repository-code: "https://github.com/musharna/breedsim-mcp"
 doi: 10.5281/zenodo.21713210
 url: "https://pypi.org/project/breedsim-mcp/"
 license: GPL-3.0-or-later
-version: 0.4.0
-date-released: "2026-08-01"
+version: 0.4.1
+date-released: "2026-08-02"
 keywords:
   - plant-breeding
   - simulation
