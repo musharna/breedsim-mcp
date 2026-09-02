@@ -8,6 +8,18 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **Refusals reach the calling agent again under mcp >= 2.1.** mcp 2.1.0
+  (python-sdk #3314) treats any exception other than `ToolError` as a crash:
+  the model sees only `Error executing tool <name>` and the reason stays in the
+  server log. Every refusal this server raises — the replicate floor, a missing
+  SNP chip, an unknown session, a generator that does not exist — is the product,
+  and under 2.0 its text went through regardless, so nothing in the server said
+  so. Each tool is now wrapped at the MCP boundary to re-raise those anticipated
+  errors as `ToolError`; the library keeps its own exception types, and a genuine
+  crash stays masked as the SDK intends. Caught by
+  `test_single_replicate_is_refused_through_the_tool_layer`, which matches the
+  refusal TEXT at the tool layer and is unchanged — it is the guard.
+
 - **Corrected the stated reason for the `rpy2<3.6` bound.** The comment at the pin
   claimed rpy2 >=3.6 "requires R >= 4.4" and that R 4.3 is "what Debian/Ubuntu
   ship". The first understates it — upstream's own 3.6.x documentation states
