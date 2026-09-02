@@ -13,6 +13,7 @@ interleaving inside it.
 from . import engine  # noqa: I001
 
 # isort: on
+import functools
 from typing import Any
 
 # mcp 2.x renamed FastMCP to MCPServer and removed mcp.server.fastmcp. Same
@@ -20,6 +21,7 @@ from typing import Any
 # rename, not a rewrite. ToolAnnotations below did not move modules, though its
 # fields are snake_case now.
 from mcp.server.mcpserver import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
 # NotRequired must come from the same module as TypedDict. This TypedDict is
@@ -41,14 +43,15 @@ from .diagnostics import (
     variance_exhausted_warning,
 )
 from .founding import GENERATORS, RUNMACS_RNG_NOTE, found_population
-from .genomic import SELECTION_METHODS
+from .genomic import SELECTION_METHODS, NoSnpChipError
 from .limits import LIMITS
 from .replication import (
     DEFAULT_REPLICATES,
     MIN_REPLICATES,
+    TooFewReplicatesError,
     run_program,
 )
-from .session import SessionStore
+from .session import SessionStore, UnknownSessionError
 
 _store = SessionStore()
 
@@ -227,6 +230,40 @@ def _warn_dicts(advisories) -> list[WarningDict]:
     return [{"code": a.code, "message": a.message} for a in advisories if a]
 
 
+# Every refusal this package raises on purpose. The message IS the product: the
+# replicate floor, the missing SNP chip, an unknown session, a generator that
+# does not exist — each one tells the calling agent what to do instead.
+# LimitExceededError is a ValueError and is covered by it.
+_REFUSALS = (
+    ValueError,
+    TooFewReplicatesError,
+    UnknownSessionError,
+    NoSnpChipError,
+    engine.EngineError,
+)
+
+
+def _surfaces_refusals(fn):
+    """Re-raise an anticipated refusal as ToolError so its text reaches the model.
+
+    Since mcp 2.1 (python-sdk #3314) MCPServer treats any exception other than
+    ToolError as a crash: the model sees only `Error executing tool <name>` and
+    the reason stays in the server log. Under mcp 2.0 the text went through
+    regardless, which is why nothing here needed to say so. The library keeps its
+    own exception types — it is usable without MCP — and the conversion happens
+    once, at this boundary. Anything not in _REFUSALS IS a crash and stays masked.
+    """
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except _REFUSALS as exc:
+            raise ToolError(str(exc)) from exc
+
+    return wrapper
+
+
 def build_server() -> MCPServer:
     mcp = MCPServer("breedsim-mcp", instructions=INSTRUCTIONS)
 
@@ -244,6 +281,7 @@ def build_server() -> MCPServer:
     @mcp.tool(
         title="List engine capabilities and determinism status", annotations=READ_ONLY
     )
+    @_surfaces_refusals
     def list_methods() -> MethodsInfo:
         """Engine versions, available founder generators, replicate floor, and
         whether THIS process is currently able to produce reproducible results."""
@@ -273,6 +311,7 @@ def build_server() -> MCPServer:
         title="Create a founder population",
         annotations=READ_ONLY,
     )
+    @_surfaces_refusals
     def found_population_tool(
         generator: str = "quickHaplo",
         seed: int = 1,
@@ -344,6 +383,7 @@ def build_server() -> MCPServer:
         title="Run a selection programme (returns distributions)",
         annotations=READ_ONLY,
     )
+    @_surfaces_refusals
     def run_program_tool(
         session_id: str,
         cycles: int = 3,
@@ -429,6 +469,7 @@ def build_server() -> MCPServer:
         title="Compare two programmes (paired, returns the difference)",
         annotations=READ_ONLY,
     )
+    @_surfaces_refusals
     def compare_programs_tool(
         session_id: str,
         a_n_select: int = 10,
@@ -492,6 +533,7 @@ def build_server() -> MCPServer:
         return out
 
     @mcp.tool(title="Describe a session", annotations=READ_ONLY)
+    @_surfaces_refusals
     def describe_session(session_id: str) -> SessionInfo:
         """Founder provenance, trait architecture, cycles run, reproducibility."""
         s = _store.get(session_id)
