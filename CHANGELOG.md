@@ -16,9 +16,29 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   and under 2.0 its text went through regardless, so nothing in the server said
   so. Each tool is now wrapped at the MCP boundary to re-raise those anticipated
   errors as `ToolError`; the library keeps its own exception types, and a genuine
-  crash stays masked as the SDK intends. Caught by
-  `test_single_replicate_is_refused_through_the_tool_layer`, which matches the
-  refusal TEXT at the tool layer and is unchanged — it is the guard.
+  crash stays masked as the SDK intends.
+  `test_single_replicate_is_refused_through_the_tool_layer` matches the refusal
+  TEXT at the tool layer, which is what makes it able to fail at all: asserting
+  only that the call errored is byte-identical whether the reason survived or
+  was masked.
+
+### Added
+
+- **Guards that the refusal boundary covers every tool and every exception, not
+  just the one under test.** The wrapper is applied by hand, per tool, and the
+  text assertion above pins a single tool — it passes unchanged on the day a
+  sixth tool is registered without the decorator, or a seventh exception class
+  is raised that `_REFUSALS` does not name. Both are the same bug returning with
+  nothing red. `tests/test_refusal_boundary.py` asserts three things: every tool
+  in the built server's registry came out of `_surfaces_refusals`, identified by
+  code object rather than `__wrapped__` or `__name__` (`functools.wraps` copies
+  the wrapped function's name onto the wrapper, so neither distinguishes this
+  boundary from any other decorator); every exception class the package defines
+  is one `_REFUSALS` recognises, found by walking the package rather than from a
+  hand-kept list that would go stale at exactly the moment it matters; and that
+  the boundary converts a refusal while still letting a genuine `TypeError`
+  propagate, asserted in one test so that widening it to `except Exception`
+  cannot pass by destroying the SDK's crash signal.
 
 - **Corrected the stated reason for the `rpy2<3.6` bound.** The comment at the pin
   claimed rpy2 >=3.6 "requires R >= 4.4" and that R 4.3 is "what Debian/Ubuntu
