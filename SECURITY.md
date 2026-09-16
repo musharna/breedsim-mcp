@@ -3,13 +3,13 @@
 ## Supported versions
 
 `breedsim-mcp` ships fixes against the latest released version only. The current
-release is **v0.4.1**. Please reproduce any issue on the latest release
+release is **v0.4.2**. Please reproduce any issue on the latest release
 (`uvx breedsim-mcp` always pulls it) before reporting.
 
-| Version         | Supported          |
-| --------------- | ------------------ |
+| Version        | Supported          |
+| -------------- | ------------------ |
 | latest (0.4.x) | :white_check_mark: |
-| < latest        | :x:                |
+| < latest       | :x:                |
 
 ## Reporting a vulnerability
 

@@ -6,6 +6,11 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-09-16
+
+The fix below merged on 2026-09-08 (#36) and sat unreleased; PyPI 0.4.1 on
+mcp >= 2.1 masked every refusal as `Error executing tool <name>`.
+
 ### Fixed
 
 - **Refusals reach the calling agent again under mcp >= 2.1.** mcp 2.1.0
@@ -53,7 +58,6 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   died in all three test jobs inside `openrlib.rlib.R_getVar(...)` with "The
   embedded R is not initialized." against R 4.3. That is the evidence; the R
   version number was the part that was wrong.
-
 
 ## [0.4.1] — 2026-08-02
 
