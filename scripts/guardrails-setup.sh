@@ -9,4 +9,6 @@ if ! command -v R >/dev/null; then
 fi
 mkdir -p ~/R/library
 export R_LIBS_USER=~/R/library
+# Later steps (uv run pytest) are separate shells: persist the library path for them.
+if [ -n "${GITHUB_ENV:-}" ]; then echo "R_LIBS_USER=$HOME/R/library" >> "$GITHUB_ENV"; fi
 Rscript -e 'if (!requireNamespace("AlphaSimR", quietly = TRUE)) install.packages("AlphaSimR", lib = Sys.getenv("R_LIBS_USER"), repos = "https://cloud.r-project.org", Ncpus = 4)'
