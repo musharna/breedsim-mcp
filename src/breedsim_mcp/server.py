@@ -118,6 +118,8 @@ class TraitCycleDict(TypedDict):
     trait: int
     genetic_gain: SummaryDict
     genetic_variance: SummaryDict
+    # Genomic selection only: this trait's out-of-sample accuracy.
+    prediction_accuracy: NotRequired[SummaryDict]
 
 
 class CycleDict(TypedDict):
@@ -131,9 +133,10 @@ class CycleDict(TypedDict):
     genetic_gain: NotRequired[SummaryDict]
     genetic_variance: NotRequired[SummaryDict]
     traits: NotRequired[list[TraitCycleDict]]
-    # Present only under genomic selection. Absent rather than null under
-    # phenotypic selection, where no model is fitted and a zero would read as a
-    # model that failed rather than as no model at all.
+    # Present only under genomic selection on a SINGLE-trait session (a
+    # multi-trait one carries it per entry of `traits`). Absent rather than null
+    # under phenotypic selection, where no model is fitted and a zero would read
+    # as a model that failed rather than as no model at all.
     prediction_accuracy: NotRequired[SummaryDict]
 
 
@@ -427,7 +430,9 @@ def build_server() -> MCPServer:
         reports `prediction_accuracy` — the OUT-OF-SAMPLE correlation between
         predicted and true breeding value, measured on progeny the model never
         saw. Read it: if it is near zero the model is not predicting, and the run's
-        gain came from drift rather than from selection.
+        gain came from drift rather than from selection. On a multi-trait session
+        one model is fitted per trait, the index is applied to their estimated
+        breeding values, and each `traits` entry carries its own accuracy.
 
         index_weights is REQUIRED for a multi-trait session — one economic weight
         per trait, in trait order. The weights are the breeding objective, so
@@ -459,9 +464,19 @@ def build_server() -> MCPServer:
                 [c["traits"][t]["genetic_variance"] for c in out["cycles"]]
                 for t in range(len(last_cycle["traits"]))
             ]
+            accuracy_series = [
+                t.get("prediction_accuracy") for t in last_cycle["traits"]
+            ]
         else:
             gain_series = [last_cycle["genetic_gain"]]
             variance_series = [[c["genetic_variance"] for c in out["cycles"]]]
+            accuracy_series = [last_cycle.get("prediction_accuracy")]
+        # None on a single-trait programme, whose advisories need no trait label.
+        trait_numbers = (
+            [t["trait"] for t in last_cycle["traits"]]
+            if "traits" in last_cycle
+            else [None]
+        )
         # When every individual was selected there is no effect to estimate, so
         # `replicates_too_few` is withheld: it would read the near-zero mean as a
         # power problem and send the caller to buy replicates against a quantity
@@ -481,7 +496,10 @@ def build_server() -> MCPServer:
                 no_linkage_disequilibrium_warning(session)
                 if selection_method == "genomic"
                 else None,
-                prediction_accuracy_low_warning(last_cycle.get("prediction_accuracy")),
+                *[
+                    prediction_accuracy_low_warning(a, trait=trait)
+                    for trait, a in zip(trait_numbers, accuracy_series, strict=True)
+                ],
             ]
         )
         return out

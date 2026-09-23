@@ -20,6 +20,12 @@ class Advisory:
     message: str
 
 
+def _trait_label(trait: int | None) -> str:
+    """'Trait 2: ' on a multi-trait programme, so per-trait advisories that fire
+    together are not identical sentences the caller cannot tell apart."""
+    return "" if trait is None else f"Trait {trait}: "
+
+
 def nondeterministic_founders_warning(session) -> "Advisory | None":
     """Fires when founders came from runMacs, whose coalescent RNG is seeded once
     per R session — so a repeat seeded call in this process gives different
@@ -193,7 +199,7 @@ def no_linkage_disequilibrium_warning(session) -> "Advisory | None":
 
 
 def prediction_accuracy_low_warning(
-    accuracy_summary: dict | None, floor: float = 0.15
+    accuracy_summary: dict | None, floor: float = 0.15, trait: int | None = None
 ) -> "Advisory | None":
     """Fires when the fitted model did not predict.
 
@@ -214,7 +220,7 @@ def prediction_accuracy_low_warning(
     return Advisory(
         code="prediction_accuracy_low",
         message=(
-            f"Out-of-sample prediction accuracy is {mean:.3f} "
+            f"{_trait_label(trait)}Out-of-sample prediction accuracy is {mean:.3f} "
             f"[{accuracy_summary.get('ci_low', 0.0):.3f}, "
             f"{accuracy_summary.get('ci_high', 0.0):.3f}], below {floor}. The "
             "marker model is not predicting breeding value, so selecting on it is "

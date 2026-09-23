@@ -59,6 +59,22 @@ def test_variance_exhausted_fires_on_collapse_only():
     assert variance_exhausted_warning(healthy) is None
 
 
+def test_server_info_reports_the_package_version():
+    """serverInfo.version was '' -- MCPServer's default -- on every connection."""
+    import importlib.metadata
+
+    from mcp.client.client import Client
+
+    async def info():
+        async with Client(build_server()) as client:
+            return client.server_info
+
+    got = asyncio.run(info())
+    assert got.name == "breedsim-mcp"
+    assert got.version == importlib.metadata.version("breedsim-mcp")
+    assert got.version, "empty version"
+
+
 # --------------------------------------------------------------------------
 # MCP surface
 # --------------------------------------------------------------------------

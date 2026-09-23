@@ -13,10 +13,12 @@ Both generators are offered, because `runMacs` gives realistic coalescent LD tha
 
 import hashlib
 
+import numpy as np
+
 from .engine import r_eval, require_alphasimr
 from .genomic import measure_ld
-from .limits import check_all
-from .session import Session, SessionStore
+from .limits import check_all, check_seed_range
+from .session import Session, SessionStore, free_r_objects
 
 GENERATORS: tuple[str, ...] = ("quickHaplo", "runMacs")
 
@@ -65,22 +67,62 @@ def _founder_hash(session: Session) -> str:
 MAX_TRAITS = 10
 
 
-def _cor_matrix_r(n_traits: int, correlation: float) -> str:
-    """R literal for an equicorrelation matrix: 1 on the diagonal, rho elsewhere.
+# Numerical slack for the eigenvalue check. The boundary case — e.g. rho = -0.5
+# with three traits — is exactly singular, and floating point puts its smallest
+# eigenvalue a few ulps either side of zero.
+_PSD_TOLERANCE = 1e-10
+
+
+def _cor_matrix(n_traits: int, correlation: float) -> np.ndarray:
+    """An equicorrelation matrix: 1 on the diagonal, rho elsewhere.
 
     One scalar rather than a full matrix, and said plainly rather than implied:
     with three or more traits this makes EVERY pair equally correlated, which is
-    a simplification. An arbitrary correlation structure would need the caller to
-    supply a whole matrix and would need checking for positive-definiteness —
-    AlphaSimR fails inside R otherwise, with a message naming neither the matrix
-    nor the traits.
+    a simplification.
     """
-    rows = []
-    for i in range(n_traits):
-        rows.append(
-            ", ".join("1" if i == j else str(correlation) for j in range(n_traits))
-        )
-    return f"matrix(c({', '.join(rows)}), nrow={n_traits})"
+    matrix = np.full((n_traits, n_traits), float(correlation))
+    np.fill_diagonal(matrix, 1.0)
+    return matrix
+
+
+def _require_valid_correlation(matrix: np.ndarray, correlation: float) -> None:
+    """Refuse a correlation matrix that no set of traits can have.
+
+    A correlation matrix must be positive semi-definite. With n equicorrelated
+    traits that means rho >= -1/(n-1): three traits cannot all be correlated -0.9
+    with each other, because if A opposes B and B opposes C then A and C must
+    move together. AlphaSimR does not refuse such a matrix — `transMat` warns and
+    substitutes the nearest valid one — so before this check the session was
+    founded, the spec echoed -0.9, and the realised founder correlations were
+    -0.40 to -0.58 (measured, 1000 founders). The number the caller asked for and
+    the one they got disagreed, and only an R warning in the server log said so.
+
+    Checked on the matrix actually sent to R, not on a closed-form bound for the
+    equicorrelation case, so the check stays right if the structure changes.
+    """
+    n = matrix.shape[0]
+    smallest = float(np.linalg.eigvalsh(matrix).min())
+    if smallest >= -_PSD_TOLERANCE:
+        return
+    bound = -1.0 / (n - 1)
+    raise ValueError(
+        f"trait_correlation={correlation} is impossible for {n} traits: every "
+        f"pair cannot be correlated that strongly in the negative direction at "
+        f"once (the correlation matrix is not positive semi-definite; smallest "
+        f"eigenvalue {smallest:.3f}). With {n} equally correlated traits the "
+        f"lowest achievable value is -1/(n-1) = {bound:.4f}. AlphaSimR would "
+        "silently substitute the nearest valid matrix, so the founders would not "
+        "have the correlation you asked for."
+    )
+
+
+def _cor_matrix_r(matrix: np.ndarray) -> str:
+    """R literal for `matrix`. Symmetric, so row- vs column-major is moot."""
+    n = matrix.shape[0]
+    values = ", ".join(
+        "1" if i == j else repr(float(matrix[i, j])) for i in range(n) for j in range(n)
+    )
+    return f"matrix(c({values}), nrow={n})"
 
 
 def found_population(
@@ -128,9 +170,26 @@ def found_population(
         n_qtl_per_chr=n_qtl_per_chr,
         n_snp_per_chr=n_snp_per_chr,
     )
-    for name, value in (("n_ind", n_ind), ("n_chr", n_chr), ("seg_sites", seg_sites)):
+    for name, value in (
+        ("n_ind", n_ind),
+        ("n_chr", n_chr),
+        ("seg_sites", seg_sites),
+        ("n_qtl_per_chr", n_qtl_per_chr),
+    ):
         if value < 1:
             raise ValueError(f"{name} must be >= 1, got {value}")
+    # QTL are drawn from the segregating sites whether or not a chip is added, so
+    # this bound holds on its own and not only inside the chip check below.
+    # Without it n_qtl_per_chr > seg_sites died in R with "Not enough eligible
+    # sites" and reached the caller as a bare `Error executing tool`.
+    if n_qtl_per_chr > seg_sites:
+        raise ValueError(
+            f"n_qtl_per_chr={n_qtl_per_chr} exceeds seg_sites={seg_sites}. QTL "
+            "are drawn from the segregating sites on each chromosome, so there "
+            "cannot be more of them than sites. Raise seg_sites or lower "
+            "n_qtl_per_chr."
+        )
+    check_seed_range("seed", seed)
     # h2 as a LIST is what declares a multi-trait architecture: one heritability
     # per trait. A separate n_traits argument could disagree with the length of
     # h2, and then one of the two would silently win.
@@ -156,6 +215,9 @@ def found_population(
             "is nothing for it to correlate. Pass a list of heritabilities — one "
             "per trait — to build a multi-trait architecture."
         )
+    cor_matrix = _cor_matrix(n_traits, trait_correlation)
+    if n_traits > 1:
+        _require_valid_correlation(cor_matrix, trait_correlation)
     if n_snp_per_chr < 0:
         raise ValueError(f"n_snp_per_chr must be >= 0, got {n_snp_per_chr}")
     # QTL and SNP markers are drawn from the same pool of segregating sites, so
@@ -199,7 +261,7 @@ def found_population(
         trait_call = f"{prefix}_SP$addTraitA(nQtlPerChr={n_qtl_per_chr})"
         var_e = f"{prefix}_SP$setVarE(h2={h2_list[0]})"
     else:
-        cor_a = _cor_matrix_r(n_traits, trait_correlation)
+        cor_a = _cor_matrix_r(cor_matrix)
         means = ", ".join("0" for _ in range(n_traits))
         variances = ", ".join("1" for _ in range(n_traits))
         trait_call = (
@@ -208,6 +270,52 @@ def found_population(
         )
         var_e = f"{prefix}_SP$setVarE(h2=c({', '.join(str(v) for v in h2_list)}))"
 
+    # Everything from the first R assignment to store.add() is one unit: a
+    # failure anywhere in it leaves R objects under a prefix no session owns, so
+    # eviction — which frees by session — can never reach them. Measured before
+    # this: each failed founding left two or three `.bs_*` globals behind for the
+    # life of the process.
+    try:
+        return _found_in_r(
+            store,
+            prefix,
+            seed=seed,
+            generator=generator,
+            founder_call=founder_call,
+            trait_call=trait_call,
+            snp_chip=snp_chip,
+            var_e=var_e,
+            spec={
+                "n_ind": n_ind,
+                "n_chr": n_chr,
+                "seg_sites": seg_sites,
+                "n_qtl_per_chr": n_qtl_per_chr,
+                "h2": h2_list[0] if n_traits == 1 else h2_list,
+                "n_traits": n_traits,
+                "trait_correlation": trait_correlation if n_traits > 1 else None,
+                "species": species if generator == "runMacs" else None,
+                "n_snp_per_chr": n_snp_per_chr,
+            },
+            n_snp_per_chr=n_snp_per_chr,
+        )
+    except BaseException:
+        free_r_objects(prefix)
+        raise
+
+
+def _found_in_r(
+    store: SessionStore,
+    prefix: str,
+    *,
+    seed: int,
+    generator: str,
+    founder_call: str,
+    trait_call: str,
+    snp_chip: str,
+    var_e: str,
+    spec: dict,
+    n_snp_per_chr: int,
+) -> Session:
     r_eval(f"""
     set.seed({seed})
     {prefix}_founders <- {founder_call}
@@ -234,17 +342,7 @@ def found_population(
                 "generator='quickHaplo' if you need repeatable founders here."
             )
         ),
-        spec={
-            "n_ind": n_ind,
-            "n_chr": n_chr,
-            "seg_sites": seg_sites,
-            "n_qtl_per_chr": n_qtl_per_chr,
-            "h2": h2_list[0] if n_traits == 1 else h2_list,
-            "n_traits": n_traits,
-            "trait_correlation": trait_correlation if n_traits > 1 else None,
-            "species": species if generator == "runMacs" else None,
-            "n_snp_per_chr": n_snp_per_chr,
-        },
+        spec=spec,
         n_snp_per_chr=n_snp_per_chr,
     )
     session.founder_hash = _founder_hash(session)

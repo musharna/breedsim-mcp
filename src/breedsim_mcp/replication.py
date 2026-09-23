@@ -18,7 +18,7 @@ import functools
 import statistics
 
 from .engine import r_eval
-from .limits import check_all
+from .limits import check_all, check_seed_range
 from .program import run_replicate
 from .session import SessionStore
 
@@ -118,6 +118,8 @@ def run_program(
             f"{MIN_REPLICATES} replicates."
         )
 
+    check_seed_range("base_seed", base_seed, replicates)
+
     session = store.get(session_id)
     crosses = n_cross if n_cross is not None else session.spec["n_ind"]
 
@@ -166,14 +168,22 @@ def run_program(
             ]
         # Absent rather than null under phenotypic selection: no model was fitted,
         # so there is no accuracy that could be reported as zero without implying
-        # a model that predicted nothing.
-        accuracies: list[float] = [
-            acc
-            for acc in (r[c].prediction_accuracy for r in per_replicate)
-            if acc is not None
+        # a model that predicted nothing. Per trait on a multi-trait programme,
+        # inside each `traits` entry, for the same reason there is no bare
+        # genetic_gain there: a single accuracy would have to be trait 1's.
+        accuracies = [
+            r[c].prediction_accuracy
+            for r in per_replicate
+            if r[c].prediction_accuracy is not None
         ]
         if accuracies:
-            record["prediction_accuracy"] = summarise(accuracies)
+            if n_traits == 1:
+                record["prediction_accuracy"] = summarise([a[0] for a in accuracies])
+            else:
+                for t, trait_record in enumerate(record["traits"]):
+                    trait_record["prediction_accuracy"] = summarise(
+                        [a[t] for a in accuracies]
+                    )
         cycle_records.append(record)
 
     session.cycles_run = cycles
