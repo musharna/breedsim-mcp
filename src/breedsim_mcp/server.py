@@ -14,6 +14,7 @@ from . import engine  # noqa: I001
 
 # isort: on
 import functools
+import importlib.metadata
 from typing import Any
 
 # mcp 2.x renamed FastMCP to MCPServer and removed mcp.server.fastmcp. Same
@@ -117,6 +118,8 @@ class TraitCycleDict(TypedDict):
     trait: int
     genetic_gain: SummaryDict
     genetic_variance: SummaryDict
+    # Genomic selection only: this trait's out-of-sample accuracy.
+    prediction_accuracy: NotRequired[SummaryDict]
 
 
 class CycleDict(TypedDict):
@@ -130,9 +133,10 @@ class CycleDict(TypedDict):
     genetic_gain: NotRequired[SummaryDict]
     genetic_variance: NotRequired[SummaryDict]
     traits: NotRequired[list[TraitCycleDict]]
-    # Present only under genomic selection. Absent rather than null under
-    # phenotypic selection, where no model is fitted and a zero would read as a
-    # model that failed rather than as no model at all.
+    # Present only under genomic selection on a SINGLE-trait session (a
+    # multi-trait one carries it per entry of `traits`). Absent rather than null
+    # under phenotypic selection, where no model is fitted and a zero would read
+    # as a model that failed rather than as no model at all.
     prediction_accuracy: NotRequired[SummaryDict]
 
 
@@ -234,12 +238,21 @@ def _warn_dicts(advisories) -> list[WarningDict]:
 # replicate floor, the missing SNP chip, an unknown session, a generator that
 # does not exist — each one tells the calling agent what to do instead.
 # LimitExceededError is a ValueError and is covered by it.
-_REFUSALS = (
+#
+# engine.EngineError also covers engine.RError: an R-level stop() inside
+# AlphaSimR on code this package sent it. Those are not bugs in the sense the SDK
+# masks for — R's message is the only explanation the caller can act on — and
+# listing R's failure modes one per check is what let n_qtl_per_chr=-3, an
+# out-of-range seed and n_select=1 all reach the caller as `Error executing
+# tool`. rpy2's own RRuntimeError is named as well, for any R call that does not
+# go through engine.r_eval.
+_REFUSALS: tuple[type[BaseException], ...] = (
     ValueError,
     TooFewReplicatesError,
     UnknownSessionError,
     NoSnpChipError,
     engine.EngineError,
+    *engine.r_runtime_error_types(),
 )
 
 
@@ -264,8 +277,20 @@ def _surfaces_refusals(fn):
     return wrapper
 
 
+def _package_version() -> str:
+    """The installed distribution's version, reported as serverInfo.version.
+
+    Read from package metadata rather than restated here: a literal is a second
+    copy of pyproject's version that drifts, and MCPServer's default is '' —
+    which is what every client saw until this was passed.
+    """
+    return importlib.metadata.version("breedsim-mcp")
+
+
 def build_server() -> MCPServer:
-    mcp = MCPServer("breedsim-mcp", instructions=INSTRUCTIONS)
+    mcp = MCPServer(
+        "breedsim-mcp", version=_package_version(), instructions=INSTRUCTIONS
+    )
 
     # snake_case since mcp 2.x. The camelCase spellings still work as constructor
     # kwargs — pydantic keeps them as aliases — but the ATTRIBUTES are snake_case
@@ -405,7 +430,9 @@ def build_server() -> MCPServer:
         reports `prediction_accuracy` — the OUT-OF-SAMPLE correlation between
         predicted and true breeding value, measured on progeny the model never
         saw. Read it: if it is near zero the model is not predicting, and the run's
-        gain came from drift rather than from selection.
+        gain came from drift rather than from selection. On a multi-trait session
+        one model is fitted per trait, the index is applied to their estimated
+        breeding values, and each `traits` entry carries its own accuracy.
 
         index_weights is REQUIRED for a multi-trait session — one economic weight
         per trait, in trait order. The weights are the breeding objective, so
@@ -437,9 +464,19 @@ def build_server() -> MCPServer:
                 [c["traits"][t]["genetic_variance"] for c in out["cycles"]]
                 for t in range(len(last_cycle["traits"]))
             ]
+            accuracy_series = [
+                t.get("prediction_accuracy") for t in last_cycle["traits"]
+            ]
         else:
             gain_series = [last_cycle["genetic_gain"]]
             variance_series = [[c["genetic_variance"] for c in out["cycles"]]]
+            accuracy_series = [last_cycle.get("prediction_accuracy")]
+        # None on a single-trait programme, whose advisories need no trait label.
+        trait_numbers = (
+            [t["trait"] for t in last_cycle["traits"]]
+            if "traits" in last_cycle
+            else [None]
+        )
         # When every individual was selected there is no effect to estimate, so
         # `replicates_too_few` is withheld: it would read the near-zero mean as a
         # power problem and send the caller to buy replicates against a quantity
@@ -455,11 +492,22 @@ def build_server() -> MCPServer:
                     if no_selection
                     else [replicates_too_few_warning(g) for g in gain_series]
                 ),
-                *[variance_exhausted_warning(v) for v in variance_series],
+                *[
+                    variance_exhausted_warning(founder, v, trait=trait)
+                    for trait, founder, v in zip(
+                        trait_numbers,
+                        session.founder_variance,
+                        variance_series,
+                        strict=True,
+                    )
+                ],
                 no_linkage_disequilibrium_warning(session)
                 if selection_method == "genomic"
                 else None,
-                prediction_accuracy_low_warning(last_cycle.get("prediction_accuracy")),
+                *[
+                    prediction_accuracy_low_warning(a, trait=trait)
+                    for trait, a in zip(trait_numbers, accuracy_series, strict=True)
+                ],
             ]
         )
         return out

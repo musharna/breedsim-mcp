@@ -55,8 +55,61 @@ def test_replicates_too_few_compares_ci_width_to_the_effect():
 def test_variance_exhausted_fires_on_collapse_only():
     collapsed = [{"mean": 0.80}, {"mean": 0.30}, {"mean": 0.03}]
     healthy = [{"mean": 0.80}, {"mean": 0.75}, {"mean": 0.70}]
-    assert variance_exhausted_warning(collapsed) is not None
-    assert variance_exhausted_warning(healthy) is None
+    assert variance_exhausted_warning(1.0, collapsed) is not None
+    assert variance_exhausted_warning(1.0, healthy) is None
+
+
+def test_variance_exhausted_measures_collapse_from_the_founders():
+    """Through the tool, on real runs. The baseline used to be CYCLE 1's variance
+    -- already after one round of selection -- so a one-cycle run could never
+    fire, and a collapse cycle 1 had done most of was invisible.
+
+    Measured with these founders: keeping 2 of 100 takes varG from 1.000 to
+    0.120 in one cycle. Keeping 90 of 100 leaves most of it.
+    """
+    server = build_server()
+    sid = asyncio.run(
+        server.call_tool(
+            "found_population",
+            {"n_ind": 100, "n_chr": 2, "seg_sites": 50, "n_qtl_per_chr": 5, "h2": 0.9},
+        )
+    ).structured_content["session_id"]
+
+    def codes(n_select):
+        out = asyncio.run(
+            server.call_tool(
+                "run_program",
+                {
+                    "session_id": sid,
+                    "cycles": 1,
+                    "replicates": MIN_REPLICATES,
+                    "n_select": n_select,
+                },
+            )
+        ).structured_content
+        return {w["code"]: w["message"] for w in out["warnings"]}
+
+    strong = codes(2)
+    assert "variance_exhausted" in strong, strong
+    assert "in the founders" in strong["variance_exhausted"]
+    # Positive control: mild selection on the same founders does not fire.
+    assert "variance_exhausted" not in codes(90)
+
+
+def test_server_info_reports_the_package_version():
+    """serverInfo.version was '' -- MCPServer's default -- on every connection."""
+    import importlib.metadata
+
+    from mcp.client.client import Client
+
+    async def info():
+        async with Client(build_server()) as client:
+            return client.server_info
+
+    got = asyncio.run(info())
+    assert got.name == "breedsim-mcp"
+    assert got.version == importlib.metadata.version("breedsim-mcp")
+    assert got.version, "empty version"
 
 
 # --------------------------------------------------------------------------

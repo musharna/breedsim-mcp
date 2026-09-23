@@ -213,8 +213,9 @@ def test_reported_accuracy_is_out_of_sample_not_the_models_own_fit():
     s = _genotyped(store, generator="quickHaplo", seed=11)
 
     record = run_replicate(s, 1, 20, 60, seed=99, selection_method="genomic")[0]
-    reported = record.prediction_accuracy
-    assert reported is not None
+    # One accuracy per trait; this session has one trait.
+    assert record.prediction_accuracy is not None
+    (reported,) = record.prediction_accuracy
 
     # Refit exactly what the first cycle fitted, and score it on its OWN
     # training generation. Same seed, same founders, same model.

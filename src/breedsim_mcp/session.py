@@ -24,6 +24,22 @@ from dataclasses import dataclass, field
 from .engine import r_eval
 
 
+def free_r_objects(name_prefix: str) -> None:
+    """Remove every R global whose name starts with `name_prefix`.
+
+    The one place R state is dropped: session eviction, a founding that failed
+    before its session was stored, and a replicate's scratch populations all go
+    through here. `all.names=TRUE` because every prefix this package makes
+    starts with `.`, which a bare `ls()` hides; the `.` is escaped because it is
+    a regex metacharacter in R's `pattern`.
+    """
+    pattern = "^" + name_prefix.replace(".", "\\\\.")
+    r_eval(
+        f'rm(list=ls(envir=.GlobalEnv, all.names=TRUE, pattern="{pattern}"), '
+        "envir=.GlobalEnv)"
+    )
+
+
 class UnknownSessionError(Exception):
     """Raised when a session_id is not in the store."""
 
@@ -46,6 +62,9 @@ class Session:
     # Measured founder linkage disequilibrium; None when there is no chip to
     # measure it on. See genomic.measure_ld for what the numbers mean.
     ld: dict | None = None
+    # Founder additive genetic variance, one value per trait: the starting point
+    # `variance_exhausted` measures collapse against.
+    founder_variance: tuple[float, ...] = ()
 
     @property
     def founders(self) -> str:
@@ -105,11 +124,7 @@ class SessionStore:
         The prefix is escaped because it begins with `.`, which is a regex
         metacharacter in R's `pattern`.
         """
-        pattern = "^" + session.r_prefix.replace(".", "\\\\.")
-        r_eval(
-            f'rm(list=ls(envir=.GlobalEnv, all.names=TRUE, pattern="{pattern}"), '
-            "envir=.GlobalEnv)"
-        )
+        free_r_objects(session.r_prefix)
 
     def __len__(self) -> int:
         return len(self._sessions)

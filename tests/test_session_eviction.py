@@ -43,8 +43,13 @@ def test_eviction_frees_every_object_the_session_owned():
     first = _use(store, 1)
     prefix = first.r_prefix
 
+    # The founders, their SimParam and `_p0`. A replicate's own populations
+    # (`_pop`, `_pop_sel`) are scratch and freed when the replicate ends, so
+    # they are no longer here to be leaked -- `_p0` is the large one left.
     owned = _r_objects(prefix)
-    assert len(owned) >= 4, f"expected several R objects, saw {owned}"
+    assert {f"{prefix}_founders", f"{prefix}_SP", f"{prefix}_p0"} <= set(owned), (
+        f"expected the session's founders, SimParam and _p0, saw {owned}"
+    )
 
     survivors = [_use(store, k) for k in (2, 3)]  # pushes `first` out
 

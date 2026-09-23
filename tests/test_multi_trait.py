@@ -278,3 +278,84 @@ def test_multi_trait_over_the_real_mcp_layer():
     ).structured_content
     assert len(out["cycles"][0]["traits"]) == 2
     assert out["recipe"]["index_weights"] == [1.0, 0.5]
+
+
+def test_genomic_selection_on_a_multi_trait_session_fits_every_trait():
+    """Genomic selection on two traits used to crash on EVERY call: RRBLUP was
+    fitted with its default traits=1, so the EBV matrix had one column and
+    selIndex stopped with "ncol(response) == 1 is not TRUE" -- masked to the
+    caller as `Error executing tool run_program`.
+
+    Running is not enough to pass. The weights must steer which trait gains, as
+    in the phenotypic test above -- which they cannot if only trait 1 has an
+    estimated breeding value -- and each trait must carry its own accuracy.
+    """
+    server = build_server()
+    sid = asyncio.run(
+        server.call_tool(
+            "found_population",
+            {
+                "generator": "quickHaplo",
+                "seed": 3,
+                "h2": [0.5, 0.5],
+                "trait_correlation": -0.5,
+                "n_snp_per_chr": 20,
+                **SMALL,
+            },
+        )
+    ).structured_content["session_id"]
+
+    def run(weights):
+        return asyncio.run(
+            server.call_tool(
+                "run_program",
+                {
+                    "session_id": sid,
+                    "cycles": 3,
+                    "replicates": MIN_REPLICATES,
+                    "selection_method": "genomic",
+                    "index_weights": weights,
+                    "base_seed": 500,
+                },
+            )
+        ).structured_content
+
+    favour_t2, favour_t1 = run([0.0, 1.0]), run([1.0, 0.0])
+    last_t2, last_t1 = favour_t2["cycles"][-1], favour_t1["cycles"][-1]
+    assert (
+        last_t2["traits"][1]["genetic_gain"]["mean"]
+        > last_t1["traits"][1]["genetic_gain"]["mean"]
+    ), "weighting trait 2 did not raise trait 2's genomic gain"
+    assert (
+        last_t1["traits"][0]["genetic_gain"]["mean"]
+        > last_t2["traits"][0]["genetic_gain"]["mean"]
+    ), "weighting trait 1 did not raise trait 1's genomic gain"
+
+    # Accuracy per trait, inside `traits`, and no bare one that would have to
+    # mean trait 1.
+    assert "prediction_accuracy" not in last_t2
+    for trait in last_t2["traits"]:
+        acc = trait["prediction_accuracy"]
+        assert acc["n"] == MIN_REPLICATES
+        assert -1.0 <= acc["mean"] <= 1.0
+
+    # Positive control: single-trait genomic selection keeps its top-level
+    # accuracy, unchanged in shape.
+    single = asyncio.run(
+        server.call_tool(
+            "found_population",
+            {"generator": "quickHaplo", "seed": 3, "n_snp_per_chr": 20, **SMALL},
+        )
+    ).structured_content["session_id"]
+    one = asyncio.run(
+        server.call_tool(
+            "run_program",
+            {
+                "session_id": single,
+                "cycles": 1,
+                "replicates": MIN_REPLICATES,
+                "selection_method": "genomic",
+            },
+        )
+    ).structured_content
+    assert one["cycles"][0]["prediction_accuracy"]["n"] == MIN_REPLICATES

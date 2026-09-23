@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from .engine import r_eval
 from .genomic import require_snp_chip, validate_method
 from .limits import check_all
-from .session import Session
+from .session import Session, free_r_objects
 
 
 @dataclass(frozen=True)
@@ -23,9 +23,10 @@ class CycleRecord:
     # as "the" gain.
     genetic_gain: tuple[float, ...]
     genetic_variance: tuple[float, ...]
-    # None under phenotypic selection, where no model is fitted and there is
-    # therefore no prediction whose accuracy could be reported.
-    prediction_accuracy: float | None = None
+    # One value PER TRAIT under genomic selection, for the same reason as the
+    # two fields above. None under phenotypic selection, where no model is fitted
+    # and there is therefore no prediction whose accuracy could be reported.
+    prediction_accuracy: tuple[float, ...] | None = None
 
 
 def run_replicate(
@@ -45,7 +46,15 @@ def run_replicate(
 
     Under `selection_method="genomic"`, each cycle fits RRBLUP to the current
     generation's markers and phenotypes and selects on the resulting estimated
-    breeding value instead of the phenotype.
+    breeding value instead of the phenotype. On a multi-trait session ONE model
+    is fitted PER TRAIT and the selection index is applied to the resulting
+    matrix of estimated breeding values. Before, RRBLUP was called with its
+    default `traits=1`, so the EBV matrix had one column and `selIndex` stopped
+    with "ncol(response) == 1 is not TRUE" on every multi-trait genomic run.
+    Separate univariate fits rather than AlphaSimR's multivariate RRBLUP:
+    measured on 100 two-trait founders, the multivariate REML printed "did not
+    converge, reached maxIter" on 3 of 12 fits, and says so only on the console,
+    where no caller of this server would see it.
 
     **`prediction_accuracy` is measured out-of-sample, on the progeny.** The model
     is scored against individuals created after it was fitted, which it has never
@@ -61,10 +70,16 @@ def run_replicate(
     check_all(cycles=cycles, n_select=n_select, n_cross=n_cross)
     if cycles < 1:
         raise ValueError(f"cycles must be >= 1, got {cycles}")
-    if n_select < 1 or n_cross < 1:
+    # Two, not one: the selected individuals are then crossed with each other,
+    # and randCross stops with "The population must contain more than 1
+    # individual" on a single parent.
+    if n_select < 2:
         raise ValueError(
-            f"n_select and n_cross must be >= 1, got {n_select}, {n_cross}"
+            f"n_select must be >= 2, got {n_select}. The selected individuals are "
+            "the parents of the next generation, and a cross needs two."
         )
+    if n_cross < 1:
+        raise ValueError(f"n_cross must be >= 1, got {n_cross}")
     if n_select > session.spec["n_ind"]:
         raise ValueError(
             f"n_select={n_select} exceeds the population size "
@@ -75,37 +90,78 @@ def run_replicate(
     index_clause = _index_clause(index_weights, n_traits)
 
     p = f"{session.r_prefix}_pop"
+    # Every object below is scratch named under `p`, and is removed on the way
+    # out whether the replicate finished or R stopped half-way through it.
+    try:
+        return _run_cycles(
+            p,
+            session,
+            cycles,
+            n_select,
+            n_cross,
+            seed,
+            selection_method,
+            index_clause,
+            n_traits,
+        )
+    finally:
+        free_r_objects(p)
+
+
+def _run_cycles(
+    p: str,
+    session: Session,
+    cycles: int,
+    n_select: int,
+    n_cross: int,
+    seed: int,
+    selection_method: str,
+    index_clause: str,
+    n_traits: int,
+) -> list[CycleRecord]:
     sp = session.sim_param
     r_eval(f"set.seed({seed}); {p} <- newPop({session.founders}, simParam={sp})")
 
     records: list[CycleRecord] = []
     for i in range(1, cycles + 1):
-        accuracy: float | None = None
+        accuracy: tuple[float, ...] | None = None
         if selection_method == "phenotypic":
             r_eval(f"""
         {p}_sel <- selectInd({p}, nInd={n_select}, use="pheno"{index_clause}, simParam={sp})
         {p} <- randCross({p}_sel, nCrosses={n_cross}, simParam={sp})
         """)
         else:
-            # Fit on this generation, select on the fitted EBVs, then re-score the
-            # SAME model on the progeny — individuals that did not exist when it
-            # was fitted. That second setEBV is what makes the reported accuracy
-            # out-of-sample rather than a measure of its own fit.
+            # Fit on this generation — one model per trait — select on the fitted
+            # EBVs, then re-score the SAME models on the progeny, individuals that
+            # did not exist when they were fitted. That second setEBV is what
+            # makes the reported accuracy out-of-sample rather than a measure of
+            # the models' own fit. With one trait this is exactly the old single
+            # RRBLUP(traits=1) call; `append=TRUE` adds each further trait's EBV
+            # as a column.
             r_eval(f"""
-        {p}_sol <- RRBLUP({p}, simParam={sp})
-        {p} <- setEBV({p}, {p}_sol, simParam={sp})
+        {p}_sol <- lapply(seq_len({n_traits}), function(t)
+            RRBLUP({p}, traits=t, simParam={sp}))
+        {p}_ebv <- function(pop) {{
+            for (t in seq_len({n_traits})) {{
+                pop <- setEBV(pop, {p}_sol[[t]], append=(t > 1), simParam={sp})
+            }}
+            pop
+        }}
+        {p} <- {p}_ebv({p})
         {p}_sel <- selectInd({p}, nInd={n_select}, use="ebv"{index_clause}, simParam={sp})
         {p} <- randCross({p}_sel, nCrosses={n_cross}, simParam={sp})
-        {p} <- setEBV({p}, {p}_sol, simParam={sp})
-        {p}_acc <- suppressWarnings(cor(as.numeric(ebv({p})[, 1]),
-                                        as.numeric(gv({p})[, 1])))
+        {p} <- {p}_ebv({p})
+        {p}_acc <- vapply(seq_len({n_traits}), function(t)
+            suppressWarnings(cor(as.numeric(ebv({p})[, t]),
+                                 as.numeric(gv({p})[, t]))), numeric(1))
         """)
-            raw = float(r_eval(f"{p}_acc")[0])
             # A correlation is undefined when either side has no variance — which
             # happens once selection has fixed the population. Undefined is
             # reported as no predictive ability rather than dropped, so that the
             # low-accuracy advisory still sees it.
-            accuracy = 0.0 if math.isnan(raw) else raw
+            accuracy = tuple(
+                0.0 if math.isnan(float(v)) else float(v) for v in r_eval(f"{p}_acc")
+            )
         # meanG/varG return one value PER TRAIT. Reading [0] would silently
         # report trait 1 as the whole answer on a multi-trait programme.
         gains = tuple(float(v) for v in r_eval(f"meanG({p})"))

@@ -6,6 +6,43 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+From a repro-verified bug audit (2026-09-22). Every fix below has a test that
+was run against the previous `master` and seen to fail for the stated reason.
+
+### Fixed
+
+- **R errors reach the caller with R's message.** An R `stop()` inside
+  AlphaSimR escaped the refusal boundary as rpy2's `RRuntimeError` and was
+  masked as `Error executing tool <name>`. `engine.r_eval` now re-raises it as
+  `engine.RError` (an `EngineError`), and `_REFUSALS` also names
+  `RRuntimeError` for R calls outside `r_eval`.
+- **Inputs R cannot run are refused up front, with a reason.** An impossible
+  `trait_correlation` (not positive semi-definite for the trait count, e.g.
+  -0.9 across three traits, which AlphaSimR silently replaced with the nearest
+  valid matrix); `n_qtl_per_chr` < 1, or > `seg_sites` without a SNP chip
+  (0 used to found a session no run could use); seeds outside R's integer
+  range, including `base_seed + replicates - 1`; and `n_select` < 2.
+- **Genomic selection works on multi-trait sessions.** It crashed on every
+  call (RRBLUP fitted trait 1 only). One RRBLUP model is now fitted per trait,
+  the index is applied to their estimated breeding values, and each `traits`
+  entry carries its own `prediction_accuracy`.
+- **Failed calls no longer leak R objects.** A founding that failed in R left
+  its objects under a prefix no session owned; each replicate's scratch
+  populations are now freed when it ends, finished or not.
+- **95% intervals use the exact t quantile** (`qt(0.975, df)`). The old table
+  rounded unlisted df to the next listed one up, and used 1.96 past df 29, so
+  177 of the 196 allowed replicate counts got intervals that were too narrow.
+- **`variance_exhausted` measures collapse from the founders**, not from cycle
+  1, which is already after one round of selection. It could not fire on a
+  one-cycle run and missed collapses that cycle 1 had done most of.
+- **`serverInfo.version`** is the package version instead of `''`.
+
+### Changed
+
+- `CycleRecord.prediction_accuracy` is a per-trait tuple, and
+  `variance_exhausted_warning` takes the founder variance as its first
+  argument. Both are internal; the tool schemas only gained fields.
+
 ## [0.4.2] - 2026-09-16
 
 The fix below merged on 2026-09-08 (#36) and sat unreleased; PyPI 0.4.1 on

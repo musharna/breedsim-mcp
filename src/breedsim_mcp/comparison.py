@@ -30,7 +30,7 @@ fires exactly there.
 
 from dataclasses import dataclass
 
-from .limits import check_all
+from .limits import check_all, check_seed_range
 from .program import run_replicate
 from .replication import MIN_REPLICATES, TooFewReplicatesError, summarise
 from .session import SessionStore
@@ -100,6 +100,8 @@ def compare_programs(
             "less: the quantity being estimated is a difference, and it is "
             "exactly the case where one run per arm looks decisive and is not."
         )
+
+    check_seed_range("base_seed", base_seed, replicates)
 
     session = store.get(session_id)
     n_traits = session.spec.get("n_traits") or 1

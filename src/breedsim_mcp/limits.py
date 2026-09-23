@@ -56,3 +56,31 @@ def check_all(**values: int | None) -> None:
     for name, value in values.items():
         if value is not None:
             check_upper(name, value)
+
+
+# R's integer range. set.seed() coerces to integer, and -2**31 is NA_integer_,
+# so the valid seeds are symmetric: |seed| <= 2**31 - 1. Measured on R 4.3.3:
+# set.seed(2147483648) and set.seed(-2147483648) both stop with "supplied seed
+# is not a valid integer".
+R_INT_MAX = 2**31 - 1
+
+
+def check_seed_range(name: str, first: int, count: int = 1) -> None:
+    """Refuse a seed, or a run of `count` consecutive seeds, outside R's range.
+
+    run_program and compare_programs seed replicate i with `base_seed + i`, so it
+    is the whole run of seeds that has to fit, not only the first one.
+    """
+    last = first + count - 1
+    if -R_INT_MAX <= first and last <= R_INT_MAX:
+        return
+    span = (
+        f"{name}={first:,}"
+        if count == 1
+        else f"{name}={first:,} with {count} replicates (seeds {first:,}..{last:,})"
+    )
+    raise ValueError(
+        f"{span} is outside the range R accepts for a seed, "
+        f"-{R_INT_MAX:,} to {R_INT_MAX:,}. set.seed() coerces its argument to "
+        "an R integer, and anything outside that range is not one."
+    )
