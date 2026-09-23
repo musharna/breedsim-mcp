@@ -62,6 +62,9 @@ class Session:
     # Measured founder linkage disequilibrium; None when there is no chip to
     # measure it on. See genomic.measure_ld for what the numbers mean.
     ld: dict | None = None
+    # Founder additive genetic variance, one value per trait: the starting point
+    # `variance_exhausted` measures collapse against.
+    founder_variance: tuple[float, ...] = ()
 
     @property
     def founders(self) -> str:

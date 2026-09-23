@@ -492,7 +492,15 @@ def build_server() -> MCPServer:
                     if no_selection
                     else [replicates_too_few_warning(g) for g in gain_series]
                 ),
-                *[variance_exhausted_warning(v) for v in variance_series],
+                *[
+                    variance_exhausted_warning(founder, v, trait=trait)
+                    for trait, founder, v in zip(
+                        trait_numbers,
+                        session.founder_variance,
+                        variance_series,
+                        strict=True,
+                    )
+                ],
                 no_linkage_disequilibrium_warning(session)
                 if selection_method == "genomic"
                 else None,

@@ -346,6 +346,13 @@ def _found_in_r(
         n_snp_per_chr=n_snp_per_chr,
     )
     session.founder_hash = _founder_hash(session)
+    # The baseline `variance_exhausted` measures collapse against. Read off the
+    # `_p0` population _founder_hash just built, so it costs no RNG draws and
+    # cannot move any seeded result. varG is a scalar for one trait and a
+    # covariance matrix for several; the diagonal is the per-trait variance.
+    session.founder_variance = tuple(
+        float(v) for v in r_eval(f"diag(as.matrix(varG({prefix}_p0)))")
+    )
     # Measured at founding, not at selection time: a caller who is about to spend
     # replicates on genomic selection should learn here that the markers carry no
     # information, rather than after paying for the run.

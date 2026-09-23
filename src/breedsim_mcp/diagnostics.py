@@ -118,23 +118,37 @@ def no_selection_warning(n_select: int, n_ind: int) -> "Advisory | None":
 
 
 def variance_exhausted_warning(
-    variance_cycles: list[dict], collapse_fraction: float = 0.2
+    founder_variance: float,
+    variance_cycles: list[dict],
+    collapse_fraction: float = 0.2,
+    trait: int | None = None,
 ) -> "Advisory | None":
     """Fires when genetic variance has collapsed toward zero.
 
     Once variance is gone, further cycles cannot deliver gain. A meanG still
     drifting upward at that point is a plateau being misread as progress.
+
+    **The baseline is the FOUNDERS' variance**, not the first reported cycle's.
+    Cycle 1 is reported after one round of selection and crossing, and under
+    strong selection that round alone removes most of the variance — measured,
+    keeping 2 of 100 with 5 QTL per chromosome, 1.000 -> 0.120 in cycle 1. The
+    old cycle-1 baseline therefore could not see that collapse at all, stayed
+    silent on a one-cycle run by construction, and missed a programme whose
+    variance fell to 16% of the founders' because cycle 1 had already taken it to
+    43%. Its message also called cycle 1 "its starting value", which it is not.
     """
-    if len(variance_cycles) < 2:
+    if not variance_cycles:
         return None
-    first = variance_cycles[0].get("mean", 0.0)
+    first = founder_variance
     last = variance_cycles[-1].get("mean", 0.0)
     if first <= 0 or last > first * collapse_fraction:
         return None
     return Advisory(
         code="variance_exhausted",
         message=(
-            f"Genetic variance fell from {first:.3f} to {last:.3f} "
+            f"{_trait_label(trait)}Genetic variance fell from {first:.3f} in the "
+            "founders to "
+            f"{last:.3f} by cycle {len(variance_cycles)} "
             f"({last / first:.0%} of its starting value). Selection has nearly "
             "exhausted the usable variation, so additional cycles will add little "
             "gain — a still-rising mean is a plateau, not progress."
