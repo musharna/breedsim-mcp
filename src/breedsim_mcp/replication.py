@@ -14,8 +14,10 @@ answer. This mirrors `plantcv-mcp`, where traits are unreachable without the
 segmentation overlay — make the honest answer the only reachable one.
 """
 
+import functools
 import statistics
 
+from .engine import r_eval
 from .limits import check_all
 from .program import run_replicate
 from .session import SessionStore
@@ -46,29 +48,26 @@ def _engine_provenance() -> dict[str, str | None]:
 MIN_REPLICATES = 5
 DEFAULT_REPLICATES = 10
 
-# Two-sided 95% t critical values by degrees of freedom (n-1). A normal 1.96
-# would understate the interval at these sample sizes, which is the wrong
-# direction to be wrong in when the point of the interval is honesty.
-_T95 = {
-    4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262,
-    10: 2.228, 11: 2.201, 12: 2.179, 13: 2.160, 14: 2.145, 15: 2.131,
-    16: 2.120, 17: 2.110, 18: 2.101, 19: 2.093, 20: 2.086, 24: 2.064,
-    29: 2.045,
-}  # fmt: skip
-
 
 class TooFewReplicatesError(Exception):
     """Raised when fewer replicates are requested than can support an interval."""
 
 
+@functools.cache
 def _t_critical(df: int) -> float:
-    if df in _T95:
-        return _T95[df]
-    if df < 4:
-        return _T95[4]
-    known = sorted(_T95)
-    nearest = min((k for k in known if k >= df), default=known[-1])
-    return _T95[nearest] if df <= known[-1] else 1.96
+    """The exact two-sided 95% t critical value, R's `qt(0.975, df)`.
+
+    This replaced a 19-entry table that, for any df it did not list, used the
+    NEXT LISTED df up — and past 29 the normal 1.96. A higher df has a SMALLER
+    critical value, so every rounding went the same way: intervals too narrow,
+    which is the one direction an interval here must not be wrong in. That held
+    for 177 of the 196 replicate counts allowed (5..200); at n=31 it used 1.96
+    against a true 2.042. R is already loaded, so the exact quantile costs one
+    call per distinct df.
+    """
+    if df < 1:
+        raise ValueError(f"a t interval needs df >= 1, got {df}")
+    return float(r_eval(f"qt(0.975, df={int(df)})")[0])
 
 
 def summarise(values: list[float]) -> dict:
