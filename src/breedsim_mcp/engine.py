@@ -37,18 +37,20 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")
 def _bind_rpy2():
     """Import rpy2, AFTER the pin above. Inside a function so isort cannot hoist it."""
     import rpy2.robjects as ro
+    from rpy2.rinterface_lib.embedded import RRuntimeError
 
-    return ro
+    return ro, RRuntimeError
 
 
 # Called here, at module scope, and not lazily on first use. See the module
 # docstring: this is what puts rpy2's conversion-rule ContextVar in the root
 # context instead of in a per-request one that dies with the request.
 try:
-    _RO = _bind_rpy2()
+    _RO, _R_RUNTIME_ERROR = _bind_rpy2()
     _RPY2_IMPORT_ERROR: Exception | None = None
 except Exception as exc:  # noqa: BLE001 — any failure here means R is unusable
     _RO = None
+    _R_RUNTIME_ERROR = None
     _RPY2_IMPORT_ERROR = exc
 
 
@@ -80,6 +82,34 @@ class MissingDependencyError(EngineError):
         )
 
 
+class RError(EngineError):
+    """R itself stopped with an error on code this package sent it.
+
+    Raised by `r_eval` in place of rpy2's `RRuntimeError`, carrying R's own
+    message. Every input this server can anticipate is validated before R sees
+    it, so reaching this means a combination nobody wrote a check for. Before
+    this class existed the RRuntimeError escaped the refusal boundary and the
+    caller saw only `Error executing tool <name>`, with R's explanation — often
+    exactly what was wrong ("Not enough eligible sites", "supplied seed is not a
+    valid integer") — left in the server log. The class is converted here, at
+    the one function every simulation call goes through, rather than by
+    listing R's failure modes one at a time.
+    """
+
+    def __init__(self, r_message: str) -> None:
+        self.r_message = r_message.strip()
+        super().__init__(
+            "R stopped with an error this server did not anticipate, so no check "
+            "here names the cause; R's own message follows. It usually means a "
+            "parameter combination AlphaSimR cannot run.\n\n" + self.r_message
+        )
+
+
+def r_runtime_error_types() -> tuple[type[BaseException], ...]:
+    """rpy2's RRuntimeError, for boundaries that must recognise it; () without R."""
+    return () if _R_RUNTIME_ERROR is None else (_R_RUNTIME_ERROR,)
+
+
 @dataclass(frozen=True)
 class EnvironmentReport:
     r_version: str
@@ -108,8 +138,16 @@ def _rpy2():
 
 
 def r_eval(code: str):
-    """Evaluate R code in the shared session."""
-    return _rpy2().r(code)
+    """Evaluate R code in the shared session.
+
+    An R-level error is re-raised as `RError`, an EngineError, so that it reaches
+    the caller with R's message instead of being masked as a crash.
+    """
+    ro = _rpy2()
+    try:
+        return ro.r(code)
+    except r_runtime_error_types() as exc:
+        raise RError(str(exc)) from exc
 
 
 def require_alphasimr() -> str:

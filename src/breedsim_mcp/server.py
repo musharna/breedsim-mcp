@@ -14,6 +14,7 @@ from . import engine  # noqa: I001
 
 # isort: on
 import functools
+import importlib.metadata
 from typing import Any
 
 # mcp 2.x renamed FastMCP to MCPServer and removed mcp.server.fastmcp. Same
@@ -234,12 +235,21 @@ def _warn_dicts(advisories) -> list[WarningDict]:
 # replicate floor, the missing SNP chip, an unknown session, a generator that
 # does not exist — each one tells the calling agent what to do instead.
 # LimitExceededError is a ValueError and is covered by it.
-_REFUSALS = (
+#
+# engine.EngineError also covers engine.RError: an R-level stop() inside
+# AlphaSimR on code this package sent it. Those are not bugs in the sense the SDK
+# masks for — R's message is the only explanation the caller can act on — and
+# listing R's failure modes one per check is what let n_qtl_per_chr=-3, an
+# out-of-range seed and n_select=1 all reach the caller as `Error executing
+# tool`. rpy2's own RRuntimeError is named as well, for any R call that does not
+# go through engine.r_eval.
+_REFUSALS: tuple[type[BaseException], ...] = (
     ValueError,
     TooFewReplicatesError,
     UnknownSessionError,
     NoSnpChipError,
     engine.EngineError,
+    *engine.r_runtime_error_types(),
 )
 
 
@@ -264,8 +274,20 @@ def _surfaces_refusals(fn):
     return wrapper
 
 
+def _package_version() -> str:
+    """The installed distribution's version, reported as serverInfo.version.
+
+    Read from package metadata rather than restated here: a literal is a second
+    copy of pyproject's version that drifts, and MCPServer's default is '' —
+    which is what every client saw until this was passed.
+    """
+    return importlib.metadata.version("breedsim-mcp")
+
+
 def build_server() -> MCPServer:
-    mcp = MCPServer("breedsim-mcp", instructions=INSTRUCTIONS)
+    mcp = MCPServer(
+        "breedsim-mcp", version=_package_version(), instructions=INSTRUCTIONS
+    )
 
     # snake_case since mcp 2.x. The camelCase spellings still work as constructor
     # kwargs — pydantic keeps them as aliases — but the ATTRIBUTES are snake_case
