@@ -6,6 +6,8 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-23
+
 From a repro-verified bug audit (2026-09-22). Every fix below has a test that
 was run against the previous `master` and seen to fail for the stated reason.
 
