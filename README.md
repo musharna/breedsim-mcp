@@ -301,7 +301,7 @@ you, not as proof that genomic selection is working for the reason you assume.
 | `overlap_but_different`        | the per-arm intervals overlap but the paired difference resolves         |
 | `threads_not_pinned`           | `OMP_NUM_THREADS != 1`, so the same seed will not reproduce              |
 | `replicates_too_few`           | the CI is wide relative to the effect — too wide to support a comparison |
-| `variance_exhausted`           | genetic variance has collapsed; a still-rising mean is a plateau         |
+| `variance_exhausted`           | genetic variance is ≤20% of the founders'; a rising mean is a plateau    |
 
 None of these withhold results. Outputs are always distributions, so you can already see when
 an answer is too noisy to use — they explain rather than refuse.
@@ -326,9 +326,13 @@ founders fixed and threads pinned, seed 7 reproduces exactly: `meanG=2.01451853`
 ## Limitations
 
 Multi-trait selection is supported: pass `h2` as a list to build several traits and
-`index_weights` to select on a weighted index. `compare_programs` remains single-trait — one
-paired verdict needs one criterion, and with several traits that criterion is the index, which
-AlphaSimR does not report a gain for.
+`index_weights` to select on a weighted index. `trait_correlation` must describe a real
+correlation matrix — with n equally correlated traits it cannot go below −1/(n−1), and a lower
+value is refused rather than silently replaced by the nearest valid matrix. Genomic selection on
+a multi-trait session fits one RRBLUP model per trait, applies the index to their estimated
+breeding values, and reports `prediction_accuracy` inside each `traits` entry. `compare_programs`
+remains single-trait — one paired verdict needs one criterion, and with several traits that
+criterion is the index, which AlphaSimR does not report a gain for.
 
 No G×E, no optimal contribution selection, no crossing-block optimisation, no genotype-matrix
 export. Genomic selection is RRBLUP only — the `RRBLUP_D`, `_GCA` and `_SCA` variants are not
