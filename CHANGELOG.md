@@ -6,6 +6,8 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-09-26
+
 ### Changed
 
 - README accuracy pass. The `run_program` and `compare_programs` examples are
@@ -19,6 +21,8 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Removed
 
 - `docs/superpowers/` (development plans and design drafts) from the tree.
+- Tool descriptions and the too-few-replicates error label sd 0.247 as one five-seed
+  measurement rather than a general figure. SECURITY.md drops the personal email.
 
 ## [0.5.0] - 2026-09-23
 
