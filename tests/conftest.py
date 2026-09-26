@@ -1,7 +1,7 @@
 """Test-suite setup.
 
-AlphaSimR was installed to ~/R/library on this machine, which is not one of R's
-default library paths. R reads R_LIBS_USER at startup, so it has to be set before
+If AlphaSimR is installed in a user library at ~/R/library, that directory is not
+one of R's default library paths, so it is added to R_LIBS_USER. R reads R_LIBS_USER at startup, so it has to be set before
 rpy2 initialises R — hence here, at collection time, rather than inside a test.
 """
 

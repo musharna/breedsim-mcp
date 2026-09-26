@@ -6,6 +6,20 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- README accuracy pass. The `run_program` and `compare_programs` examples are
+  regenerated through the tool layer by the new `scripts/readme_examples.py`,
+  with their parameters stated; the old examples no longer reproduced. The stale
+  test and mutation counts are gone or corrected (25 mutants, one equivalent
+  survivor). The breeder's-equation eval is described as what it is: a check of
+  AlphaSimR through the engine layer, not of this server's selection path.
+  Numbers measured once during development are labelled with version and date.
+
+### Removed
+
+- `docs/superpowers/` (development plans and design drafts) from the tree.
+
 ## [0.5.0] - 2026-09-23
 
 From a repro-verified bug audit (2026-09-22). Every fix below has a test that

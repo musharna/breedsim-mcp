@@ -72,8 +72,9 @@ imply no difference — that is what `overlap_but_different` is telling you.
 
 THIS SERVER DOES NOT RETURN SINGLE RUNS. run_program executes many replicates and
 returns, per cycle, the mean, standard deviation and 95% confidence interval of
-genetic gain and genetic variance. Measured on this engine, five seeds of one
-identical programme gave gains spanning 1.151 to 1.841 — sd 0.247, the same order
+genetic gain and genetic variance. In one measurement on this engine (AlphaSimR
+2.1.0, 2026-07-29), five seeds of one identical programme gave gains spanning
+1.151 to 1.841 — sd 0.247, the same order
 as the differences people try to compare. One run is a draw from a distribution,
 not an answer, so there is no option to request one.
 
@@ -421,8 +422,8 @@ def build_server() -> MCPServer:
     ) -> RunResult:
         """Run the programme `replicates` times; return per-cycle mean, sd and 95% CI.
 
-        There is no way to request a single run. Measured spread across seeds was
-        sd 0.247 on genetic gain, so one replicate is noise rather than a result.
+        There is no way to request a single run. In one five-seed measurement the
+        spread was sd 0.247 on genetic gain, so one replicate is noise rather than a result.
 
         selection_method="genomic" fits RRBLUP to the marker genotypes each cycle
         and selects on the estimated breeding value instead of the phenotype. It
@@ -537,8 +538,8 @@ def build_server() -> MCPServer:
         Set a_selection_method/b_selection_method to contrast genomic against
         phenotypic selection — THE way to ask "is genotyping worth it on these
         founders". That contrast needs the pairing more than most, because the
-        gap between the two methods is often smaller than the sd 0.247 of
-        seed-to-seed noise, which two independent runs cannot see past.
+        gap between the two methods is often smaller than seed-to-seed noise (sd 0.247
+        in one five-seed measurement), which two independent runs cannot see past.
 
         Read `difference` and `favours`, NOT the two per-programme means. The
         arms are paired replicate-by-replicate on the same seed, so the shared

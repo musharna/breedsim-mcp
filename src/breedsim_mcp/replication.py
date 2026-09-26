@@ -111,8 +111,8 @@ def run_program(
     if replicates < MIN_REPLICATES:
         raise TooFewReplicatesError(
             f"replicates={replicates} is below the minimum of {MIN_REPLICATES}. "
-            "This server does not return single-run results: measured run-to-run "
-            "spread on genetic gain was sd 0.247, the same order as the effects "
+            "This server does not return single-run results: in one five-seed measurement, "
+            "run-to-run spread on genetic gain was sd 0.247, the same order as the effects "
             "being compared, so one run is a draw from a distribution rather than "
             "an answer. Ask for at least "
             f"{MIN_REPLICATES} replicates."

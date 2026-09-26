@@ -96,8 +96,8 @@ exclude = [".claude", "docs", "dist"]
 python-preference = "only-managed"
 
 [tool.ruff]
-# ruff formats Python code blocks embedded in Markdown; docs/ holds the design
-# and plan, whose quoted snippets are a record and must not be rewritten.
+# ruff formats Python code blocks embedded in Markdown; docs/ holds EVAL.md and
+# MUTATION-CHECKS.md, whose quoted snippets are a record and must not be rewritten.
 extend-exclude = ["docs"]
 
 [dependency-groups]
