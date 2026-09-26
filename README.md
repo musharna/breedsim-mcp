@@ -6,9 +6,12 @@ Drives [AlphaSimR](https://github.com/gaynorr/AlphaSimR) so an agent can ask wha
 programme would actually gain, with one structural rule: **a single simulation run is not a
 result, and this API will not return one.**
 
-Measured on AlphaSimR 2.1.0 — five seeds of an identical three-cycle programme gave mean
-genetic gain `[1.151, 1.841, 1.424, 1.429, 1.473]`: **sd 0.247** on the very number being
-reported. Quoting one run to three decimals reports noise with the authority of a measurement.
+Measured once, on AlphaSimR 2.1.0 while building v0.1.0 (2026-07-29), and not re-run
+since — five seeds of an identical three-cycle programme gave mean genetic gain
+`[1.151, 1.841, 1.424, 1.429, 1.473]`: **sd 0.247** on the very number being reported.
+The [`run_program` example below](#what-run_program-returns), which a script regenerates,
+shows spread of the same order (sd 0.386 at cycle 2). Quoting one run to three decimals
+reports noise with the authority of a measurement.
 So `run_program` enforces a replicate floor and returns per-cycle mean, sd and confidence
 interval. There is no flag that collapses it to a point estimate.
 
@@ -27,11 +30,17 @@ interval. There is no flag that collapses it to a point estimate.
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21713210.svg)](https://doi.org/10.5281/zenodo.21713210)
 
 On PyPI — the badge above is the released version, so it cannot go stale the way
-a number typed here would. Genomic selection included. 5 tools, 57 tests against
-real AlphaSimR, and 20 mutation checks all confirmed red
-([docs/MUTATION-CHECKS.md](docs/MUTATION-CHECKS.md)). The simulation is also checked against the
-breeder's equation `R = h²S` rather than only against itself
-([docs/EVAL.md](docs/EVAL.md)). CI installs R and compiles
+a number typed here would. Genomic selection included. Five tools. The test suite runs
+against real AlphaSimR, and [docs/MUTATION-CHECKS.md](docs/MUTATION-CHECKS.md) records 25
+deliberate mutants: 24 turned a test red, and one survives because it is equivalent (it
+produces byte-identical output), which that file explains.
+
+One test checks the engine against theory rather than against itself: it runs a short
+AlphaSimR script (founders, an additive trait, one cycle of phenotypic selection) through
+the R engine layer and checks the response against the breeder's equation `R = h²S`
+([docs/EVAL.md](docs/EVAL.md)). It does not exercise this server's own founding or
+selection-programme code; the rest of the suite tests that code, but not against an
+outside reference. CI installs R and compiles
 AlphaSimR, so the suite runs against the real engine on Python 3.11, 3.12 and 3.13 —
 not against a mock.
 
@@ -131,7 +140,10 @@ directly rather than through this server.
 
 ### What `run_program` returns
 
-Verbatim, for `cycles=2, replicates=10`, abridged to one cycle:
+Example output (v0.5.0, AlphaSimR 2.1.0) from `found_population(generator="quickHaplo",
+seed=1)` with every other argument at its default, then `run_program(session_id,
+cycles=2, replicates=10, n_select=10, n_cross=60, base_seed=1000)`. Abridged to cycle 2;
+the session id is elided. Regenerate it with `uv run python scripts/readme_examples.py`.
 
 ```json
 {
@@ -141,17 +153,17 @@ Verbatim, for `cycles=2, replicates=10`, abridged to one cycle:
     {
       "cycle": 2,
       "genetic_gain": {
-        "mean": 1.5941703785773211,
-        "sd": 0.1414620049281876,
-        "ci_low": 1.4929815869737013,
-        "ci_high": 1.695359170180941,
+        "mean": 2.0107208009172495,
+        "sd": 0.38613252679501087,
+        "ci_low": 1.7344982312545358,
+        "ci_high": 2.286943370579963,
         "n": 10
       },
       "genetic_variance": {
-        "mean": 0.5149269761002959,
-        "sd": 0.15228915685789685,
-        "ci_low": 0.4059934446929936,
-        "ci_high": 0.6238605075075982,
+        "mean": 0.6598319510437,
+        "sd": 0.17387396740876424,
+        "ci_low": 0.5354500076893222,
+        "ci_high": 0.7842138943980778,
         "n": 10
       }
     }
@@ -162,7 +174,16 @@ Verbatim, for `cycles=2, replicates=10`, abridged to one cycle:
     "seed": 1,
     "n_select": 10,
     "n_cross": 60,
-    "base_seed": 1000
+    "base_seed": 1000,
+    "selection_method": "phenotypic",
+    "n_traits": 1,
+    "index_weights": null,
+    "engine": {
+      "r_version": "R version 4.3.3 (2024-02-29)",
+      "alphasimr_version": "2.1.0",
+      "rpy2_version": "3.5.17"
+    },
+    "gain_scale": "founder additive genetic SD (trait variance set to 1 at founding)"
   },
   "warnings": []
 }
@@ -183,47 +204,56 @@ Read `difference` and `favours`. `favours` is `null` when the interval contains 
 means the two programmes are not distinguishable at that replicate count; the larger mean is
 then not the better programme.
 
-Here is why the pairing earns its keep. Verbatim, selecting 12 of 100 against 18 of 100,
-final cycle of two, ten replicates:
+Here is why the pairing earns its keep. Example output (v0.5.0, AlphaSimR 2.1.0) from
+`found_population(generator="quickHaplo", seed=1)` with every other argument at its default
+(100 individuals), then `compare_programs(session_id, a_n_select=12, b_n_select=18,
+a_n_cross=100, b_n_cross=100, cycles=2, replicates=10)`: selecting 12 of 100 against 18 of
+100. Abridged to the final cycle, with the `sd` fields, `session_id` and the warning text
+elided; `scripts/readme_examples.py` prints it in full.
 
 ```json
 {
+  "replicates": 10,
+  "paired": true,
   "programs": {
-    "a": { "label": "A", "n_select": 12, "n_cross": 100 },
-    "b": { "label": "B", "n_select": 18, "n_cross": 100 }
+    "a": { "label": "A", "n_select": 12, "n_cross": 100, "selection_method": "phenotypic" },
+    "b": { "label": "B", "n_select": 18, "n_cross": 100, "selection_method": "phenotypic" }
   },
   "cycles": [
     {
       "cycle": 2,
       "a_genetic_gain": {
-        "mean": 2.046227841067686,
-        "ci_low": 1.9001469542399823,
-        "ci_high": 2.1923087278953903,
+        "mean": 2.0302939883220854,
+        "ci_low": 1.8392366355489589,
+        "ci_high": 2.221351341095212,
         "n": 10
       },
       "b_genetic_gain": {
-        "mean": 1.730473406465538,
-        "ci_low": 1.5520780571733739,
-        "ci_high": 1.9088687557577022,
+        "mean": 1.716778892820318,
+        "ci_low": 1.5722361688822837,
+        "ci_high": 1.8613216167583524,
         "n": 10
       },
       "difference": {
-        "mean": 0.31575443460214814,
-        "ci_low": 0.10028439648886733,
-        "ci_high": 0.5312244727154289,
+        "mean": 0.3135150955017676,
+        "ci_low": 0.14750513810480984,
+        "ci_high": 0.4795250528987254,
         "n": 10
       }
     }
   ],
+  "difference_is": "a_minus_b_final_cycle_genetic_gain",
   "favours": "a",
   "intervals_overlap": true,
+  "reproducible": true,
+  "recipe": { "generator": "quickHaplo", "seed": 1, "base_seed": 1000, "cycles": 2 },
   "warnings": [{ "code": "overlap_but_different", "message": "..." }]
 }
 ```
 
-**The two per-programme intervals overlap** — A spans 1.900–2.192, B spans 1.552–1.909 — so
+**The two per-programme intervals overlap** — A spans 1.839–2.221, B spans 1.572–1.861 — so
 reading them side by side says "no difference". The paired difference says otherwise:
-`[+0.100, +0.531]`, entirely above zero. Pairing cancels the seed-to-seed variation that
+`[+0.148, +0.480]`, entirely above zero. Pairing cancels the seed-to-seed variation that
 made both individual intervals wide, so it resolves a contrast that eyeballing the overlap
 cannot. That is what `overlap_but_different` is for.
 
@@ -245,7 +275,9 @@ run_program(session_id, selection_method="genomic")
 Note the generator, because this is where genomic selection goes quietly wrong.
 Markers predict a trait only through **linkage disequilibrium** with the causal
 loci — that is the whole mechanism. And `quickHaplo`, the default generator and
-the only reproducible one, **has none**:
+the only reproducible one, **has none**. Measured once while building v0.2.0
+(2026-07-29, AlphaSimR 2.1.0; 10 chromosomes × 100 segregating sites, 50 SNPs per
+chromosome, accuracy at 500 founders) and not re-run since:
 
 | generator    | mean \|r\| adjacent SNP | mean \|r\| distant pairs | ratio    | out-of-sample accuracy |
 | ------------ | ----------------------- | ------------------------ | -------- | ---------------------- |
@@ -267,7 +299,8 @@ letting you find it as a wrong answer.
 #### Why the guard measures LD instead of accuracy
 
 The obvious alternative — fit the model, warn if accuracy is poor — cannot do the
-job. Measured at 20 replicates, 200 individuals, three cycles:
+job. Measured once while building v0.2.0 (2026-07-29, AlphaSimR 2.1.0) at 20
+replicates, 200 individuals, three cycles, and not re-run since:
 
 | selection | `quickHaplo` (LD ratio 1.00) | `runMacs` (LD ratio 3.7)  |
 | --------- | ---------------------------- | ------------------------- |
@@ -286,8 +319,8 @@ redundant with each other precisely because they are in LD.
 An accuracy threshold would therefore wave through the exact population it claimed
 to catch. Only the LD measurement discriminates, so that is what gates the warning.
 Accuracy is still reported on every genomic cycle, measured **out-of-sample** on
-progeny the model never saw — reporting its in-sample fit instead would have read
-0.448 where the truth was 0.097. Read it as a property of the model in front of
+progeny the model never saw. In the same v0.2.0 measurement, the in-sample fit read
+0.448 where the out-of-sample accuracy was 0.097. Read it as a property of the model in front of
 you, not as proof that genomic selection is working for the reason you assume.
 
 ### Warnings
@@ -308,7 +341,8 @@ an answer is too noisy to use — they explain rather than refuse.
 
 ## Reproducibility
 
-Two independent things break it, and both were measured:
+Two independent things break it. Both were measured once while building v0.1.0
+(2026-07-29, AlphaSimR 2.1.0); the numbers below are from that run:
 
 | source                | symptom                                         | fix                                          |
 | --------------------- | ----------------------------------------------- | -------------------------------------------- |
