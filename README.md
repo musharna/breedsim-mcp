@@ -47,7 +47,9 @@ not against a mock.
 [benchmarks/agent_qa/](benchmarks/agent_qa/README.md) asks Claude breeding-simulation
 questions that closed-form theory gets wrong (many cycles in small populations, scheme
 comparisons, genomic accuracy), with no tools, with its own R and AlphaSimR, and with
-this server; the key is AlphaSimR run directly, and results are pending the full run. `tests/test_perf_ratchet.py` gates each tool on exact counts of
+this server; the key is AlphaSimR run directly. With the server Claude got 102 of 102
+headline answers right, with its own AlphaSimR 99 of 102 (not a significant difference;
+its own scripts cost less), and alone 51 of 102. `tests/test_perf_ratchet.py` gates each tool on exact counts of
 package-function calls and R evaluations, not on time.
 
 Requires `mcp` 2.x.

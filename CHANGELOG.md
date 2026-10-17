@@ -22,13 +22,23 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   cycle, Bulmer without drift, drift-only variance, Daetwyler's formula,
   zero accuracy, a coin flip) lands outside it.
   `tests/test_agent_qa_key_matches_server.py` checks the key script and the
-  server agree seed for seed. Harness and pilot only; the full sweep has
-  not run.
+  server agree seed for seed. `analyse.py` adds the controls: one validity
+  rule for every arm, a transcript leak scan, no-LLM baselines (a constant
+  per category, every named closed form) through the real scorer, an
+  oracle check, and per-question exact McNemar tests with bootstrap
+  intervals. Sweep (40 questions × 3 runs; headline 34, without the
+  probability questions a constant can pass): breedsim-mcp 102 of 102
+  right, Claude with Bash + R 99 of 102, Claude alone 51 of 102. The two
+  tool arms are not separated on accuracy (p = 1.0); Bash + R is cheaper
+  ($0.028 vs $0.051 median per answer).
+- `scripts/install-r-deps.R`: CI and the guardrails jobs install AlphaSimR
+  2.1.0 exactly (the benchmark key's version) plus jsonlite.
 - `tests/perf_ratchet.py` + `tests/perf_baseline.json`: a work-count gate.
   Each tool runs a tiny seeded workload through `call_tool` in a fresh
   process; package-function calls, R evaluations and R function invocations
   must equal the baseline exactly (`--update` records a drop, a rise also
-  needs `--allow-increase`). Runs in the existing `pytest` CI matrix.
+  needs `--allow-increase`, and a changed output signature is always
+  refused). Runs in the existing `pytest` CI matrix.
 
 ## [0.5.1] - 2026-09-26
 
