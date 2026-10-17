@@ -1,35 +1,42 @@
-"""Draw the agent benchmark's questions and fix their answers by theory.
+"""Draw the agent benchmark's questions and fix their answers by simulation.
 
-Every answer is a quantitative-genetics expectation computed in ``theory.py``
-(breeder's equation, finite-sample selection intensity, the Bulmer effect,
-drift through Ne). This script never imports breedsim_mcp, so a bug in the
-server cannot also be in the key.
+The questions sit where closed forms fail (many cycles in small populations,
+paired scheme comparisons, genomic prediction accuracy), so the key is an
+AlphaSimR simulation, not a formula. ``simulate_key.R`` drives AlphaSimR
+directly and this script never imports breedsim_mcp, so a bug in the server
+cannot also be in the key. The key and the server do share the engine:
+the benchmark measures whether an agent sets up and runs the stated
+simulation correctly. (``tests/test_agent_qa_key_matches_server.py`` checks
+the two agree seed for seed.)
 
-Each answer carries a band, because an honest simulation of the design lands
-near the expectation, not on it. The band is
+Each question pins its founders with a seed and states the R calls, so the
+key is the expectation over replicate seeds for that founder set, estimated
+from ``R_KEY`` replicates. The question also states how many replicates the
+answer should rest on (``R_ANSWER``), and the band is the noise of such an
+answer plus the key's own:
 
-    half_width = 3 * SE_one_session + slack * |theory|
+    half_width = 3 * sd * sqrt(1 / R_ANSWER + 1 / R_KEY)
 
-- ``SE_one_session`` is the standard error of a careful estimate made on ONE
-  founder set: ``sqrt(sigma_f^2 + sigma_s^2 / R)``, where ``sigma_f`` is the
-  founder-set-to-founder-set spread (which more replicates on one session
-  cannot remove), ``sigma_s`` the seed-to-seed spread within a founder set,
-  and ``R`` the replicate count assumed (20 for a mean, 100 for an SD). Both
-  are measured by ``calibrate.R``: AlphaSimR driven directly, not the server.
-- ``slack`` is a per-category allowance for where the theory is an
-  approximation (finite loci, drift during selection). The build FAILS if a
-  calibration mean lands outside ``slack * |theory| + 3 * SE_calibration`` of
-  the theory, so the key cannot accept a value that a correct simulation does
-  not reach, nor sit where one cannot reach it.
+with ``sd`` the per-replicate standard deviation of the quantity (for a
+proportion, ``sqrt(p (1 - p))``), rounded UP to two significant figures and
+stated in the question. Nothing else is in the band, so it holds no theory
+slack to hide a shortcut in.
 
-The MC fraction of each band (``3 * SE_one_session / half_width``) is stored
-with the question.
+Designs are drawn from fixed grids by a seeded RNG. A candidate becomes a
+question only if every shortcut named for its category (``theory.py``:
+infinite-population intensity, R = h2 S every cycle, Bulmer without drift,
+drift-only variance, Daetwyler's formula, ...) lands OUTSIDE the band; the
+control category keeps the opposite rule, that the textbook answer lands
+INSIDE it. How many candidates each rule rejected is stored in
+questions.json and printed.
 
-    uv run python benchmarks/agent_qa/build_questions.py   # writes questions.json
+    uv run python benchmarks/agent_qa/build_questions.py                  # writes questions.json
+    uv run python benchmarks/agent_qa/build_questions.py --discrimination # shortcut table
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
@@ -50,290 +57,349 @@ import theory as T
 SEED = 20261016
 HERE = Path(__file__).resolve().parent
 N_CHR, SEG_SITES, N_QTL = 10, 100, 10
-R_MEAN, R_SD = 20, 100  # replicates assumed for a one-session estimate
+R_KEY = {"genomic_accuracy": 300}  # replicates behind the key; 400 elsewhere
+R_KEY_DEFAULT = 400
+R_ANSWER = {"prob_beats": 100}  # replicates the question asks for; 50 elsewhere
+R_ANSWER_DEFAULT = 50
 Z = 3.0
+WORKERS = 4
 
-# Theory slack per category, as a fraction of |theory|. Set before the
-# calibration ran, from what each approximation leaves out; the build checks
-# the calibration against it rather than tuning it to the calibration.
-SLACK = {
-    # Exact for normal phenotypes; 1% for the founder sample being rescaled to
-    # variance exactly 1 and for 100 biallelic QTL not being exactly normal.
-    "intensity": 0.01,
-    # Breeder's equation is exact in expectation for one cycle (R = h2 S).
-    "response_1cycle": 0.03,
-    # Bulmer, one cycle; allele-frequency change at 100 QTL is not in it.
-    "bulmer_variance": 0.03,
-    # Two or three cycles: drift and finite-loci losses compound.
-    "multi_cycle_gain": 0.04,
-    "paired_difference": 0.03,
-    # Founder-set rescaling inflates small-N variances (a Jensen term).
-    "drift_sd": 0.05,
+# category -> (questions wanted, candidates drawn)
+PLAN = {
+    "control_response": (6, 18),
+    "long_term_gain": (8, 16),
+    "remaining_variance": (8, 16),
+    "scheme_difference": (7, 14),
+    "prob_beats": (6, 40),
+    "genomic_accuracy": (5, 12),
 }
 
-SETUP = (
-    "Consider this AlphaSimR simulation. Founders: {N} diploid individuals from "
-    "quickHaplo(nInd={N}, nChr={c}, segSites={s}), so loci start in linkage "
-    "equilibrium. One purely additive trait with {q} QTL per chromosome "
-    "(addTraitA: founder genetic mean 0, founder additive genetic variance 1). "
-    "Residual variance is set once, at founding, so that narrow-sense "
-    "heritability in the founders is {h2} (setVarE(h2={h2})), and stays fixed after."
-)
-GENERATION = (
-    " Each generation: phenotype everyone, keep the {n} with the highest phenotypes "
-    "(selectInd, use='pheno'), and make {m} progeny from random pairs of the kept "
-    "individuals (randCross, one progeny per cross)."
-)
-TOLERANCE = " Answers within ±{pct}% of the expected value count as right."
+INTRO = "This question is about a stochastic simulation in the R package AlphaSimR."
+TOLERANCE = " Answers within ±{tol} of the expected value count as right."
 
 
-def _setup(d: dict[str, Any]) -> str:
-    return SETUP.format(N=d["n_ind"], c=N_CHR, s=SEG_SITES, q=N_QTL, h2=d["h2"])
+def r_key(cat: str) -> int:
+    return R_KEY.get(cat, R_KEY_DEFAULT)
+
+
+def r_answer(cat: str) -> int:
+    return R_ANSWER.get(cat, R_ANSWER_DEFAULT)
 
 
 def draw(rng: random.Random) -> list[dict[str, Any]]:
-    """Every question's design, drawn from fixed grids by a seeded RNG, so no
-    design is hand-picked. Constraints keep each one discriminating (e.g. the
-    Bulmer questions need strong selection on a heritable trait, or the
-    variance does not move outside the noise)."""
-    qs: list[dict[str, Any]] = []
+    """Candidate designs, PLAN[cat][1] per category, in seeded order."""
+    out: list[dict[str, Any]] = []
 
-    def add(category: str, **d: Any) -> None:
-        d.setdefault("n_chr", N_CHR)
-        d.setdefault("seg_sites", SEG_SITES)
-        d.setdefault("n_qtl_per_chr", N_QTL)
-        qs.append({"category": category, "design": d})
+    def n_of(p: float, N: int) -> int:
+        return max(2, round(p * N))
 
-    # Selection intensity: four finite samples, two infinite-population ones.
-    seen = set()
-    while len([q for q in qs if q["category"] == "intensity"]) < 4:
-        N = rng.choice([500, 1000, 2000])
-        p = rng.choice([0.02, 0.05, 0.1, 0.2, 0.3])
-        if (N, p) in seen:
-            continue
-        seen.add((N, p))
-        add(
-            "intensity", kind="finite", n_ind=N, n_select=round(p * N), h2=1.0, cycles=1
-        )
-    for p in rng.sample([0.01, 0.05, 0.15, 0.25, 0.4], 2):
-        add("intensity", kind="infinite", p=p, n_ind=5000, n_select=round(p * 5000),
-            h2=1.0, cycles=1)  # fmt: skip
-
-    def scheme(min_p: float = 0.02, max_p: float = 0.3, h2s: tuple = ()) -> tuple:
-        N = rng.choice([200, 500, 1000])
-        p = rng.choice([x for x in (0.02, 0.05, 0.1, 0.2, 0.3) if min_p <= x <= max_p])
-        h2 = rng.choice(h2s or (0.1, 0.2, 0.3, 0.4, 0.5, 0.6))
-        return N, max(2, round(p * N)), h2
-
-    for _ in range(8):
-        N, n, h2 = scheme()
-        add("response_1cycle", n_ind=N, n_select=n, h2=h2, cycles=1)
-    for _ in range(6):
-        N, n, h2 = scheme(max_p=0.1, h2s=(0.5, 0.6, 0.7, 0.8, 0.9))
-        add("bulmer_variance", n_ind=N, n_select=n, h2=h2, cycles=1)
-    for _ in range(8):
-        N, n, h2 = scheme(min_p=0.05)
-        add("multi_cycle_gain", n_ind=N, n_select=n, h2=h2, cycles=rng.choice([2, 3]))
-    for _ in range(6):
-        N, n_a, h2 = scheme(max_p=0.05, h2s=(0.2, 0.3, 0.4, 0.5))
-        n_b = round(rng.choice([0.2, 0.3, 0.5]) * N)
-        add("paired_difference", n_ind=N, n_select=n_a, n_select_b=n_b, h2=h2,
-            cycles=rng.choice([1, 2]))  # fmt: skip
-    seen = set()
-    while len([q for q in qs if q["category"] == "drift_sd"]) < 6:
-        N, t = rng.choice([50, 100, 200]), rng.choice([5, 10, 20, 30])
-        if (N, t) in seen:
-            continue
-        seen.add((N, t))
-        add("drift_sd", n_ind=N, n_select=N, h2=0.4, cycles=t)
-    for k, q in enumerate(qs, 1):
-        q["id"] = f"q{k:02d}"
-        q["design"].setdefault("n_cross", q["design"]["n_ind"])
-    return qs
+    for cat, (_, pool) in PLAN.items():
+        for _ in range(pool):
+            d: dict[str, Any] = {
+                "founder_seed": rng.randrange(1, 1_000_000),
+                "n_chr": N_CHR,
+                "seg_sites": SEG_SITES,
+                "n_qtl_per_chr": N_QTL,
+                "n_snp_per_chr": 0,
+            }
+            if cat == "control_response":
+                N = rng.choice([500, 1000])
+                d |= {
+                    "n_ind": N,
+                    "h2": rng.choice([0.2, 0.3, 0.4, 0.5, 0.6]),
+                    "cycles": 1,
+                }
+                d["n_select"] = n_of(rng.choice([0.05, 0.1, 0.2, 0.3]), N)
+            elif cat in ("long_term_gain", "remaining_variance"):
+                N = rng.choice([20, 30, 50, 100])
+                d |= {"n_ind": N, "h2": rng.choice([0.2, 0.4, 0.6, 0.8])}
+                d["n_select"] = n_of(rng.choice([0.1, 0.2, 0.3]), N)
+                d["cycles"] = rng.choice([5, 8, 10])
+            elif cat in ("scheme_difference", "prob_beats"):
+                N = rng.choice([30, 50, 100])
+                d |= {"n_ind": N, "h2": rng.choice([0.2, 0.4, 0.6])}
+                d["n_select"] = n_of(rng.choice([0.05, 0.1]), N)
+                d["n_select_b"] = n_of(rng.choice([0.3, 0.5]), N)
+                d["cycles"] = rng.choice([5, 10, 15])
+            elif cat == "genomic_accuracy":
+                N = rng.choice([100, 200, 300])
+                d |= {"n_ind": N, "h2": rng.choice([0.2, 0.5, 0.8])}
+                d["n_select"] = n_of(rng.choice([0.1, 0.2]), N)
+                d["n_snp_per_chr"] = rng.choice([10, 20, 40])
+                # quickHaplo founders carry no marker-QTL LD, so first-cycle
+                # accuracy is ~0; the LD that selection and drift build over
+                # several cycles is what the question is about.
+                d["cycles"] = rng.choice([4, 6])
+            d["n_cross"] = d["n_ind"]
+            out.append({"category": cat, "design": d})
+    for k, c in enumerate(out):
+        c["candidate"] = k
+    return out
 
 
-def theory_value(q: dict[str, Any]) -> tuple[float, str]:
-    d, c = q["design"], q["category"]
-    if c == "intensity":
-        if d["kind"] == "infinite":
-            return T.intensity_infinite(d["p"]), "i = phi(z_p) / p"
-        return T.intensity_finite(
-            d["n_select"], d["n_ind"]
-        ), "E[mean of top n of N std normals]"
-    if c == "drift_sd":
-        ne = T.effective_size(d["n_ind"], d["n_cross"])
-        f = 1 - (1 - 1 / (2 * ne)) ** d["cycles"]
-        return math.sqrt(
-            2 * f
-        ), f"sqrt(2 F_t), F_t = 1 - (1 - 1/(2 Ne))^t, Ne = {ne:.2f}"
-    prog = T.programme(d["n_ind"], d["n_select"], d["h2"], d["cycles"], d["n_cross"])
-    if c in ("response_1cycle", "multi_cycle_gain"):
-        return prog[-1]["mean"], "breeder's equation per cycle, Bulmer-reduced variance"
-    if c == "bulmer_variance":
-        return prog[0]["var"], "Bulmer: between-pair + Mendelian variance, finite n"
-    if c == "paired_difference":
-        b = T.programme(d["n_ind"], d["n_select_b"], d["h2"], d["cycles"], d["n_cross"])
-        return prog[-1]["mean"] - b[-1]["mean"], "difference of two programme() means"
-    raise ValueError(c)
-
-
-def calibration_design(q: dict[str, Any], k: int) -> dict[str, Any]:
-    d = q["design"]
-    sd_kind = q["category"] == "drift_sd"
-    arms = [{"label": "a", "n_select": d["n_select"], "n_cross": d["n_cross"]}]
-    if q["category"] == "paired_difference":
+def key_design(c: dict[str, Any]) -> dict[str, Any]:
+    d, cat = c["design"], c["category"]
+    method = "genomic" if cat == "genomic_accuracy" else "pheno"
+    arms = [
+        {
+            "label": "a",
+            "method": method,
+            "n_select": d["n_select"],
+            "n_cross": d["n_cross"],
+        }
+    ]
+    if "n_select_b" in d:
         arms.append(
-            {"label": "b", "n_select": d["n_select_b"], "n_cross": d["n_cross"]}
+            {
+                "label": "b",
+                "method": "pheno",
+                "n_select": d["n_select_b"],
+                "n_cross": d["n_cross"],
+            }
         )
     return {
-        "id": q["id"],
-        "n_ind": d["n_ind"],
-        "n_chr": d["n_chr"],
-        "seg_sites": d["seg_sites"],
-        "n_qtl_per_chr": d["n_qtl_per_chr"],
+        "id": str(c["candidate"]),
+        **{
+            k: d[k]
+            for k in ("founder_seed", "n_ind", "n_chr", "seg_sites", "n_qtl_per_chr")
+        },
+        "n_snp_per_chr": d["n_snp_per_chr"],
         "h2": d["h2"],
         "cycles": d["cycles"],
-        "founder_sets": 6 if sd_kind else 12,
-        "seeds": 40 if sd_kind else 8,
-        "founder_seed0": 100_000 + 1000 * k,
-        "seed0": 2_000_000 + 100_000 * k,
+        "replicates": r_key(cat),
+        "seed0": 5_000_000 + 1000 * c["candidate"],
         "arms": arms,
     }
 
 
-def run_calibration(designs: list[dict[str, Any]]) -> dict[str, Any]:
+def simulate(designs: list[dict[str, Any]]) -> dict[str, Any]:
+    """Run simulate_key.R over the designs in WORKERS parallel R processes."""
     env = dict(os.environ, OMP_NUM_THREADS="1")
     env.setdefault("R_LIBS_USER", str(Path.home() / "R" / "library"))
+    # Each design's output is cached under a hash of the design itself, so a
+    # rebuild after changing one category only simulates what changed.
+    default = Path.home() / ".cache" / "breedsim-agent-qa-key"
+    cache = Path(os.environ.get("AGENT_QA_KEY_CACHE", default))
+    cache.mkdir(parents=True, exist_ok=True)
+    script = (HERE / "simulate_key.R").read_bytes()
+
+    def slot(d: dict[str, Any]) -> Path:
+        h = hashlib.sha256(script + json.dumps(d, sort_keys=True).encode())
+        return cache / f"{h.hexdigest()[:24]}.json"
+
+    out: dict[str, Any] = {}
+    todo = []
+    for d in designs:
+        if slot(d).exists():
+            out[d["id"]] = json.loads(slot(d).read_text())
+        else:
+            todo.append(d)
+    print(f"simulating {len(todo)} designs ({len(out)} cached)", flush=True)
+    chunks = [todo[i::WORKERS] for i in range(WORKERS) if todo[i::WORKERS]]
     with tempfile.TemporaryDirectory() as tmp:
-        src, dst = Path(tmp) / "designs.json", Path(tmp) / "out.json"
-        src.write_text(json.dumps(designs))
-        subprocess.run(
-            ["Rscript", str(HERE / "calibrate.R"), str(src), str(dst)],
-            check=True, env=env, timeout=3600,
-        )  # fmt: skip
-        out = json.loads(dst.read_text())
-    return {o["id"]: o["arms"] for o in out}
+        procs = []
+        for i, chunk in enumerate(chunks):
+            src, dst = Path(tmp) / f"d{i}.json", Path(tmp) / f"o{i}.json"
+            src.write_text(json.dumps(chunk))
+            cmd = ["Rscript", str(HERE / "simulate_key.R"), str(src), str(dst)]
+            procs.append((subprocess.Popen(cmd, env=env), dst))
+        for proc, dst in procs:
+            if proc.wait(timeout=7200) != 0:
+                raise RuntimeError(f"simulate_key.R exited {proc.returncode}")
+            by_id = {d["id"]: d for d in todo}
+            for o in json.loads(dst.read_text()):
+                slot(by_id[o["id"]]).write_text(json.dumps(o["arms"]))
+                out[o["id"]] = o["arms"]
+    return out
 
 
-def _grid(rows: list[list[float]], col: int) -> np.ndarray:
-    """rows of [founder_set, seed, cycle_1, ...] -> K x S array of one cycle."""
-    a = np.array(rows, dtype=float)
-    ks = sorted(set(a[:, 0]))
-    return np.array([a[a[:, 0] == k, 2 + col] for k in ks])
+def _col(rows: list[list[float]], t: int) -> np.ndarray:
+    # jsonlite writes a one-cycle vector as a bare number (auto_unbox).
+    return np.array(
+        [r if isinstance(r, float | int) else r[t] for r in rows], dtype=float
+    )
 
 
-def components(x: np.ndarray) -> tuple[float, float, float]:
-    """(grand mean, sigma_f, sigma_s) from a K x S one-way layout (ANOVA)."""
-    S = x.shape[1]
-    within = float(x.var(axis=1, ddof=1).mean())
-    between = float(x.mean(axis=1).var(ddof=1))
-    sigma_f2 = max(between - within / S, 0.0)
-    return float(x.mean()), math.sqrt(sigma_f2), math.sqrt(within)
-
-
-def band(q: dict[str, Any], arms: dict[str, Any], value: float) -> dict[str, Any]:
-    c, d = q["category"], q["design"]
-    t = d["cycles"] - 1
-    slack = SLACK[c] * abs(value)
-    if c == "drift_sd":
-        g = _grid(arms["a"]["gain"], t)
-        K, S = g.shape
-        sds = g.std(axis=1, ddof=1)
-        # Per-set SD sampling variance ~ sd^2 / (2(S-1)); the rest of the
-        # spread of per-set SDs is real founder-set variation.
-        samp = float(np.mean(sds**2) / (2 * (S - 1)))
-        sigma_f = math.sqrt(max(float(sds.var(ddof=1)) - samp, 0.0))
-        sigma = float(np.sqrt(np.mean(sds**2)))
-        se_one = math.sqrt(sigma_f**2 + sigma**2 / (2 * (R_SD - 1)))
-        calib_mean = float(sds.mean())
-        se_calib = math.sqrt(sigma_f**2 / K + samp / K)
-        stats = {"sigma_f": sigma_f, "sigma_s": sigma, "replicates_assumed": R_SD}
+def statistic(cat: str, arms: dict[str, Any], cycles: int) -> tuple[float, float]:
+    """(key value, per-replicate SD) of the quantity the question asks for."""
+    t = cycles - 1
+    if cat in ("control_response", "long_term_gain"):
+        x = _col(arms["a"]["gain"], t)
+    elif cat == "remaining_variance":
+        x = _col(arms["a"]["var"], t)
+    elif cat == "genomic_accuracy":
+        x = _col(arms["a"]["acc"], t)
+    elif cat == "scheme_difference":
+        x = _col(arms["a"]["gain"], t) - _col(arms["b"]["gain"], t)
+    elif cat == "prob_beats":
+        p = float(np.mean(_col(arms["a"]["gain"], t) > _col(arms["b"]["gain"], t)))
+        return p, math.sqrt(p * (1 - p))
     else:
-        key = "var" if c == "bulmer_variance" else "gain"
-        a = _grid(arms["a"][key], t)
-        if c == "paired_difference":
-            b = _grid(arms["b"][key], t)
-            diff = a - b
-            calib_mean, sigma_f, _ = components(diff)
-            # Unpaired seed noise, so an estimate made from two separate runs is
-            # also inside the band; pairing only narrows it.
-            sa, sb = components(a)[2], components(b)[2]
-            sigma_s = math.sqrt(sa**2 + sb**2)
-        else:
-            calib_mean, sigma_f, sigma_s = components(a)
-        K, S = a.shape
-        se_one = math.sqrt(sigma_f**2 + sigma_s**2 / R_MEAN)
-        se_calib = math.sqrt(sigma_f**2 / K + sigma_s**2 / (K * S))
-        stats = {"sigma_f": sigma_f, "sigma_s": sigma_s, "replicates_assumed": R_MEAN}
-    half = Z * se_one + slack
-    return {
-        "half_width": half,
-        "mc_fraction": Z * se_one / half,
-        "calibration_mean": calib_mean,
-        "calibration_se": se_calib,
-        "calibration_ok": abs(calib_mean - value) <= slack + Z * se_calib,
-        **{k: round(v, 5) if isinstance(v, float) else v for k, v in stats.items()},
-    }
+        raise ValueError(cat)
+    return float(x.mean()), float(x.std(ddof=1))
 
 
-def question_text(q: dict[str, Any], pct: int) -> str:
-    d, c = q["design"], q["category"]
-    if c == "intensity":
-        if d["kind"] == "infinite":
-            body = (
-                f"Truncation selection keeps the top {d['p']:.0%} of a very large "
-                "population on a normally distributed phenotype. What is the "
-                "selection intensity, the selection differential in phenotypic "
-                "standard deviations?"
-            )
-        else:
-            body = (
-                f"A normally distributed phenotype is measured on a random sample "
-                f"of {d['n_ind']} individuals and the best {d['n_select']} are kept. "
-                "What is the expected selection intensity for this finite sample: "
-                "the expected mean of the kept individuals minus the population "
-                "mean, in phenotypic standard deviations?"
-            )
-        return body + TOLERANCE.format(pct=pct)
-    if c == "drift_sd":
-        return (
-            _setup(d)
-            + f" Every generation all {d['n_ind']} individuals are kept as parents (no "
-            f"selection) and make {d['n_cross']} progeny from random pairs (randCross, one "
-            "progeny per cross). Many replicate populations are run independently "
-            "from the same founders. What is the expected standard deviation, "
-            "across replicates, of the population's mean genetic value after "
-            f"{d['cycles']} generations, in founder additive genetic SD units?"
-            + TOLERANCE.format(pct=pct)
-        )
-    gen = GENERATION.format(n=d["n_select"], m=d["n_cross"])
+def round_up_2sig(x: float) -> float:
+    if x <= 0:
+        return 0.0
+    e = math.floor(math.log10(x)) - 1
+    return round(math.ceil(x / 10**e - 1e-9) * 10**e, 10)
+
+
+def shortcuts(cat: str, d: dict[str, Any]) -> dict[str, tuple[float, str]]:
+    """name -> (value, role): role "outside" (must miss the band), "inside"
+    (the control's textbook answer, must hit it) or "info" (reported only)."""
+    h = math.sqrt(d["h2"])
     t = d["cycles"]
-    after = "one generation" if t == 1 else f"{t} generations"
-    if c in ("response_1cycle", "multi_cycle_gain"):
-        ask = (
-            f" What is the expected mean genetic value of the population after {after}, "
-            "in founder additive genetic SD units (the founder mean is 0)?"
+    N, n = d["n_ind"], d["n_select"]
+    p = n / N
+    out: dict[str, tuple[float, str]] = {}
+    if cat == "control_response":
+        out["breeder's equation, R = i(n,N) h"] = (
+            T.intensity_finite(n, N) * h,
+            "inside",
         )
-        return _setup(d) + gen + ask + TOLERANCE.format(pct=pct)
-    if c == "bulmer_variance":
-        ask = (
-            " What is the expected additive genetic variance of the progeny after one "
-            "generation (the population variance of their genetic values), as a "
-            "fraction of the founder variance?"
+        out["R = i h2 (sigma_P dropped)"] = (T.intensity_finite(n, N) * d["h2"], "info")
+    if cat == "long_term_gain":
+        out["R = h2 S every cycle, infinite-population i"] = (
+            t * T.intensity_infinite(p) * h,
+            "outside",
         )
-        return _setup(d) + gen + ask + TOLERANCE.format(pct=pct)
-    if c == "paired_difference":
+        out["R = h2 S every cycle, finite i(n,N)"] = (
+            t * T.intensity_finite(n, N) * h,
+            "outside",
+        )
+        out["Bulmer effect, no drift"] = (
+            T.bulmer_infinite(p, d["h2"], t)[-1]["mean"],
+            "outside",
+        )
+        out["Bulmer + drift, infinitesimal"] = (
+            T.programme(N, n, d["h2"], t)[-1]["mean"],
+            "info",
+        )
+    if cat == "remaining_variance":
+        out["unchanged (1)"] = (1.0, "outside")
+        out["drift only, (1 - 1/(2n))^t over the n parents"] = (
+            (1 - 1 / (2 * n)) ** t,
+            "outside",
+        )
+        out["Bulmer effect, no drift"] = (
+            T.bulmer_infinite(p, d["h2"], t)[-1]["var"],
+            "outside",
+        )
+        out["Bulmer + drift, infinitesimal"] = (
+            T.programme(N, n, d["h2"], t)[-1]["var"],
+            "info",
+        )
+    if cat in ("scheme_difference", "prob_beats"):
+        nb = d["n_select_b"]
+        pb = nb / N
+        naive_inf = t * (T.intensity_infinite(p) - T.intensity_infinite(pb)) * h
+        naive_fin = t * (T.intensity_finite(n, N) - T.intensity_finite(nb, N)) * h
+        bul = (
+            T.bulmer_infinite(p, d["h2"], t)[-1]["mean"]
+            - T.bulmer_infinite(pb, d["h2"], t)[-1]["mean"]
+        )
+        full = (
+            T.programme(N, n, d["h2"], t)[-1]["mean"]
+            - T.programme(N, nb, d["h2"], t)[-1]["mean"]
+        )
+        if cat == "scheme_difference":
+            out["R = h2 S every cycle, infinite-population i"] = (naive_inf, "outside")
+            out["R = h2 S every cycle, finite i(n,N)"] = (naive_fin, "outside")
+            out["Bulmer effect, no drift"] = (bul, "outside")
+            out["Bulmer + drift, infinitesimal"] = (full, "info")
+        else:
+            out["certain: 1 or 0 by the sign of the breeder's-equation difference"] = (
+                1.0 if naive_fin > 0 else 0.0,
+                "outside",
+            )
+            out["coin flip (0.5)"] = (0.5, "outside")
+    if cat == "genomic_accuracy":
+        m = d["n_snp_per_chr"] * d["n_chr"]
+        out["accuracy of phenotypic selection, h"] = (h, "outside")
+        out["Daetwyler, Me = number of markers"] = (
+            T.daetwyler_accuracy(N, d["h2"], m),
+            "outside",
+        )
+        out["zero (no LD in quickHaplo founders)"] = (0.0, "outside")
+    return out
+
+
+def found_code(d: dict[str, Any]) -> str:
+    chip = (
+        f"SP$addSnpChip(nSnpPerChr={d['n_snp_per_chr']}); "
+        if d["n_snp_per_chr"]
+        else ""
+    )
+    return (
+        f"set.seed({d['founder_seed']}); founders <- quickHaplo(nInd={d['n_ind']}, "
+        f"nChr={d['n_chr']}, segSites={d['seg_sites']}); SP <- SimParam$new(founders); "
+        f"SP$addTraitA(nQtlPerChr={d['n_qtl_per_chr']}); {chip}SP$setVarE(h2={d['h2']})"
+    )
+
+
+def question_text(cat: str, d: dict[str, Any], tol: str) -> str:
+    R = r_answer(cat)
+    t = d["cycles"]
+    head = (
+        f"{INTRO} Founders and trait, exactly these calls in this order: `{found_code(d)}`. "
+        "The trait is purely additive, with founder genetic mean 0 and founder genetic "
+        "variance 1. Each replicate starts from these same founders with its own seed s: "
+        "`set.seed(s); pop <- newPop(founders, simParam=SP)`."
+    )
+    gen = (
+        f' Then, each generation: `sel <- selectInd(pop, nInd={d["n_select"]}, use="pheno", '
+        f"simParam=SP); pop <- randCross(sel, nCrosses={d['n_cross']}, simParam=SP)`."
+    )
+    gens = "one generation" if t == 1 else f"{t} generations"
+    tail = TOLERANCE.format(tol=tol)
+    if cat in ("control_response", "long_term_gain"):
         return (
-            _setup(d) + " Two programmes start from these same founders and run for "
-            f"{after}. Each generation, programme A keeps the {d['n_select']} and "
-            f"programme B the {d['n_select_b']} individuals with the highest "
-            f"phenotypes (selectInd, use='pheno'); both make {d['n_cross']} progeny "
-            "from random pairs of the kept individuals (randCross, one progeny per "
-            "cross). What is the expected difference in mean genetic value after "
-            f"{after}, A minus B, in founder additive genetic SD units?"
-            + TOLERANCE.format(pct=pct)
+            head
+            + gen
+            + f" Run {gens}. What is the expected meanG(pop) after generation "
+            f"{t}? Base your answer on {R} replicates." + tail
         )
-    raise ValueError(c)
+    if cat == "remaining_variance":
+        return (
+            head
+            + gen
+            + f" Run {gens}. What is the expected genetic variance, varG(pop), "
+            f"after generation {t}? Base your answer on {R} replicates." + tail
+        )
+    if cat in ("scheme_difference", "prob_beats"):
+        body = (
+            head + f" Two schemes run for {gens}. Each generation, scheme A keeps "
+            f"nInd={d['n_select']} and scheme B nInd={d['n_select_b']} (selectInd, "
+            f'use="pheno"), and both make nCrosses={d["n_cross"]} with randCross. '
+            "Replicates are paired: for each seed s, set.seed(s) before scheme A's newPop "
+            "and again before scheme B's."
+        )
+        if cat == "scheme_difference":
+            return (
+                body + f" What is the expected difference meanG(A) - meanG(B) after "
+                f"generation {t}? Base your answer on {R} paired replicates." + tail
+            )
+        return (
+            body
+            + f" In what fraction of paired replicates does scheme A end generation "
+            f"{t} with a higher meanG than scheme B? Base your answer on {R} paired "
+            "replicates and give it as a proportion between 0 and 1." + tail
+        )
+    if cat == "genomic_accuracy":
+        return (
+            head + f" Then {gens} of genomic selection, each one: `sol <- RRBLUP(pop, "
+            "simParam=SP); pop <- setEBV(pop, sol, simParam=SP); sel <- selectInd(pop, "
+            f'nInd={d["n_select"]}, use="ebv", simParam=SP); pop <- randCross(sel, '
+            f"nCrosses={d['n_cross']}, simParam=SP); pop <- setEBV(pop, sol, "
+            "simParam=SP)`, so each generation's model is fitted afresh and then scored on "
+            "the progeny it never saw. The prediction accuracy of a generation is "
+            "cor(ebv(pop), gv(pop)) at the end of it, taken as 0 if undefined. What is the "
+            f"expected prediction accuracy in generation {t}? Base your answer on {R} "
+            "replicates." + tail
+        )
+    raise ValueError(cat)
 
 
 def alphasimr_version() -> str:
@@ -345,104 +411,112 @@ def alphasimr_version() -> str:
     ).stdout.strip()  # fmt: skip
 
 
+def evaluate(c: dict[str, Any], arms: dict[str, Any]) -> dict[str, Any]:
+    """The candidate's key, band and shortcut verdicts."""
+    cat, d = c["category"], c["design"]
+    value, sd = statistic(cat, arms, d["cycles"])
+    rk, ra = r_key(cat), r_answer(cat)
+    half = round_up_2sig(Z * sd * math.sqrt(1 / ra + 1 / rk))
+    sc = {
+        name: {
+            "value": round(x, 5),
+            "role": role,
+            "outside_band": abs(x - value) > half,
+        }
+        for name, (x, role) in shortcuts(cat, d).items()
+    }
+    ok = all(
+        s["outside_band"] if s["role"] == "outside" else not s["outside_band"]
+        for s in sc.values()
+        if s["role"] != "info"
+    )
+    if cat == "prob_beats":
+        ok = ok and 0.05 < value < 0.95  # an extreme proportion has a degenerate band
+    return {
+        "value": value,
+        "sd": sd,
+        "half": half,
+        "shortcuts": sc,
+        "ok": ok,
+        "replicates_key": rk,
+        "replicates_answer": ra,
+        "key_se": sd / math.sqrt(rk),
+        # Share of the band's variance that is the answer's own MC noise; the
+        # rest is the key's.
+        "answer_noise_share": (1 / ra) / (1 / ra + 1 / rk),
+    }
+
+
 def main() -> None:
-    signal.alarm(3600)  # walltime guard: the calibration is minutes, not hours
-    qs = draw(random.Random(SEED))
-    arms = run_calibration([calibration_design(q, k) for k, q in enumerate(qs)])
-    bad = []
-    for q in qs:
-        value, formula = theory_value(q)
-        b = band(q, arms[q["id"]], value)
-        pct = max(1, math.ceil(100 * b["half_width"] / abs(value)))
-        # The stated tolerance is rounded up to a whole percent and the scorer
-        # uses exactly what was stated, so question and key cannot disagree.
-        half = pct / 100 * abs(value)
-        q["question"] = question_text(q, pct)
-        q["answer_format"] = "a single number (decimal, not a fraction or range)"
-        q["truth"] = {
-            "value": round(value, 5),
-            "half_width": round(half, 5),
-            "tolerance_pct": pct,
-        }
-        q["key"] = {
-            "theory": formula,
-            "slack": SLACK[q["category"]],
-            **{k: round(v, 5) if isinstance(v, float) else v for k, v in b.items()},
-        }
-        if not b["calibration_ok"]:
-            bad.append(
-                (
-                    q["id"],
-                    q["category"],
-                    value,
-                    b["calibration_mean"],
-                    b["calibration_se"],
-                )
-            )
-    for row in bad:
-        print("calibration outside slack + 3 SE:", row, file=sys.stderr)
-    if bad:
-        sys.exit(
-            f"{len(bad)} questions whose theory a correct simulation does not reach"
+    signal.alarm(4 * 3600)  # walltime guard
+    cands = draw(random.Random(SEED))
+    sims = simulate([key_design(c) for c in cands])
+    chosen: list[dict[str, Any]] = []
+    rejected: dict[str, int] = {}
+    for c in cands:
+        cat = c["category"]
+        if sum(q["category"] == cat for q in chosen) >= PLAN[cat][0]:
+            continue
+        ev = evaluate(c, sims[str(c["candidate"])])
+        if not ev["ok"]:
+            rejected[cat] = rejected.get(cat, 0) + 1
+            continue
+        tol = f"{ev['half']:g}"
+        chosen.append(
+            {
+                "category": cat,
+                "design": c["design"],
+                "candidate": c["candidate"],
+                "question": question_text(cat, c["design"], tol),
+                "answer_format": "a single number (decimal, not a fraction or range)",
+                "truth": {"value": round(ev["value"], 5), "half_width": ev["half"], "tolerance": tol},
+                "key": {k: (round(v, 5) if isinstance(v, float) else v)
+                        for k, v in ev.items() if k not in ("value", "half", "ok")},
+            }
+        )  # fmt: skip
+    short = {
+        cat: PLAN[cat][0] - sum(q["category"] == cat for q in chosen) for cat in PLAN
+    }
+    for cat, (want, pool) in PLAN.items():
+        got = want - short[cat]
+        print(
+            f"{cat}: {got} of {want} kept, {rejected.get(cat, 0)} of {pool} candidates rejected"
         )
+    chosen.sort(key=lambda q: (list(PLAN).index(q["category"]), q["candidate"]))
+    for k, q in enumerate(chosen, 1):
+        q["id"] = f"q{k:02d}"
     out = {
         "built": datetime.now(UTC).date().isoformat(),
         "seed": SEED,
         "alphasimr": alphasimr_version(),
-        "band": f"{Z} * SE(one session; {R_MEAN} replicates for a mean, {R_SD} for an SD)"
-        " + slack * |theory|, rounded up to a whole percent",
-        "questions": qs,
+        "band": f"{Z} * sd * sqrt(1/R_answer + 1/R_key), rounded up to 2 significant figures",
+        "candidates": {
+            cat: {"wanted": w, "drawn": p, "rejected": rejected.get(cat, 0)}
+            for cat, (w, p) in PLAN.items()
+        },
+        "questions": chosen,
     }
     (HERE / "questions.json").write_text(json.dumps(out, indent=1) + "\n")
-    print(f"wrote {len(qs)} questions")
-
-
-def wrong_formulas(q: dict[str, Any]) -> dict[str, float]:
-    """Answers that common mistakes give for a question, to measure which
-    mistakes its band can tell from the right answer."""
-    c, d = q["category"], q["design"]
-    out: dict[str, float] = {}
-    if c == "intensity" and d["kind"] == "finite":
-        out["infinite-population i(p) for a finite sample"] = T.intensity_infinite(
-            d["n_select"] / d["n_ind"]
+    print(f"wrote {len(chosen)} questions")
+    if any(short.values()):
+        sys.exit(
+            f"too few candidates passed in: { {k: v for k, v in short.items() if v} }"
         )
-    if c == "response_1cycle":
-        i = T.intensity_finite(d["n_select"], d["n_ind"])
-        out["R = i h2 (sigma_P dropped)"] = i * d["h2"]
-        out["R = i h with infinite-population i"] = T.intensity_infinite(
-            d["n_select"] / d["n_ind"]
-        ) * math.sqrt(d["h2"])
-    if c == "bulmer_variance":
-        k = T.variance_reduction_infinite(d["n_select"] / d["n_ind"])
-        out["1 - k h2 (no halving)"] = 1 - k * d["h2"]
-        out["1 - k h2 / 2 (infinite population)"] = 1 - k * d["h2"] / 2
-        out["1 (no change)"] = 1.0
-    if c == "multi_cycle_gain":
-        one = T.programme(d["n_ind"], d["n_select"], d["h2"], 1, d["n_cross"])[0][
-            "mean"
-        ]
-        out["t x one-cycle response (no Bulmer effect)"] = d["cycles"] * one
-    if c == "drift_sd":
-        n, t = d["n_ind"], d["cycles"]
-        out["sqrt(F) (factor 2 dropped)"] = math.sqrt(1 - (1 - 1 / (2 * n)) ** t)
-        out["Ne = N/2"] = math.sqrt(2 * (1 - (1 - 1 / n) ** t))
-    return out
 
 
 def discrimination() -> None:
-    """For each common mistake: in how many questions does it fall outside
-    the band (so the band can tell it from the right answer)?"""
+    """Per category and shortcut: in how many questions it misses the band."""
     qs = json.loads((HERE / "questions.json").read_text())["questions"]
-    tally: dict[tuple[str, str], list[bool]] = {}
+    tally: dict[tuple[str, str, str], list[bool]] = {}
     for q in qs:
-        t = q["truth"]
-        for name, x in wrong_formulas(q).items():
-            tally.setdefault((q["category"], name), []).append(
-                abs(x - t["value"]) > t["half_width"]
+        for name, s in q["key"]["shortcuts"].items():
+            tally.setdefault((q["category"], name, s["role"]), []).append(
+                s["outside_band"]
             )
-    print("| Kind | Mistake | Outside the band in |\n|---|---|---|")
-    for (c, name), v in tally.items():
-        print(f"| {c} | {name} | {sum(v)} of {len(v)} |")
+    print("| Kind | Shortcut | Must | Outside the band in |\n|---|---|---|---|")
+    for (c, name, role), v in tally.items():
+        must = {"outside": "miss", "inside": "hit", "info": "(reported)"}[role]
+        print(f"| {c} | {name} | {must} | {sum(v)} of {len(v)} |")
 
 
 if __name__ == "__main__":

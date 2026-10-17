@@ -83,6 +83,10 @@ def run_env() -> dict[str, str]:
     # MCP tool timeout would cut it off and read as the server failing.
     env.setdefault("MCP_TOOL_TIMEOUT", "900000")
     env.setdefault("MCP_TIMEOUT", "120000")  # first uvx start resolves rpy2
+    # The same 15-minute ceiling for the alt arm's own simulations: Bash's
+    # 2-minute default would cut a 50-replicate AlphaSimR script short.
+    env.setdefault("BASH_DEFAULT_TIMEOUT_MS", "900000")
+    env.setdefault("BASH_MAX_TIMEOUT_MS", "900000")
     return env
 
 

@@ -8,14 +8,22 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
-- `benchmarks/agent_qa/`: an agent A/B benchmark. 40 quantitative-genetics
-  questions (selection intensity, one-cycle response, Bulmer variance, gain
-  over 2-3 cycles, paired programme differences, drift SD) asked to Claude
-  with no tools, with Bash + R/AlphaSimR + web, and with this server. The key
-  is theory (`theory.py`, never imports the package); each band is 3 SE of a
-  one-session simulation estimate, measured by an independent AlphaSimR
-  calibration, plus a stated per-category slack. Harness and pilot only; the
-  full sweep has not run.
+- `benchmarks/agent_qa/`: an agent A/B benchmark. Quantitative-genetics
+  questions asked to Claude with no tools, with Bash + R/AlphaSimR + web, and
+  with this server. Most sit where closed forms fail (gain and remaining
+  variance after 5-10 cycles in small populations, paired scheme differences,
+  the chance one scheme beats another, genomic prediction accuracy over
+  several cycles); one control category is the textbook one-cycle response.
+  The key is AlphaSimR driven directly by `simulate_key.R` (300-400
+  replicates on a founder set fixed by seed; never imports the package, but
+  shares its engine). Each band is 3 SD of an answer from the replicate
+  count the question states, plus the key's own noise, and a design is kept
+  only if every named shortcut (infinite-population intensity, R = h2 S per
+  cycle, Bulmer without drift, drift-only variance, Daetwyler's formula,
+  zero accuracy, a coin flip) lands outside it.
+  `tests/test_agent_qa_key_matches_server.py` checks the key script and the
+  server agree seed for seed. Harness and pilot only; the full sweep has
+  not run.
 - `tests/perf_ratchet.py` + `tests/perf_baseline.json`: a work-count gate.
   Each tool runs a tiny seeded workload through `call_tool` in a fresh
   process; package-function calls, R evaluations and R function invocations

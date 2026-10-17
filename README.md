@@ -44,10 +44,10 @@ outside reference. CI installs R and compiles
 AlphaSimR, so the suite runs against the real engine on Python 3.11, 3.12 and 3.13 —
 not against a mock.
 
-[benchmarks/agent_qa/](benchmarks/agent_qa/README.md) asks Claude 40 questions whose
-answers are fixed by quantitative-genetics theory (intensity, response, Bulmer variance,
-drift), with no tools, with its own R and AlphaSimR, and with this server; results are
-pending the full run. `tests/test_perf_ratchet.py` gates each tool on exact counts of
+[benchmarks/agent_qa/](benchmarks/agent_qa/README.md) asks Claude breeding-simulation
+questions that closed-form theory gets wrong (many cycles in small populations, scheme
+comparisons, genomic accuracy), with no tools, with its own R and AlphaSimR, and with
+this server; the key is AlphaSimR run directly, and results are pending the full run. `tests/test_perf_ratchet.py` gates each tool on exact counts of
 package-function calls and R evaluations, not on time.
 
 Requires `mcp` 2.x.

@@ -37,12 +37,12 @@ r$arm_label <- factor(arm_labels[r$arm], levels = rev(arm_labels))
 r$verdict <- factor(r$verdict, levels = names(pal_verdict))
 
 cat_labels <- c(
-  intensity = "Selection intensity",
-  response_1cycle = "Response to one cycle",
-  bulmer_variance = "Genetic variance after one cycle",
-  multi_cycle_gain = "Gain over 2 or 3 cycles",
-  paired_difference = "Difference between two programmes",
-  drift_sd = "Drift: SD of replicate means"
+  control_response = "Control: one-cycle response (textbook answer is right)",
+  long_term_gain = "Gain after 5-10 cycles, small population",
+  remaining_variance = "Genetic variance left after 5-10 cycles",
+  scheme_difference = "Difference between two schemes, 5-15 cycles",
+  prob_beats = "Probability scheme A beats scheme B",
+  genomic_accuracy = "Genomic prediction accuracy after 4-6 cycles"
 )
 stopifnot(all(r$category %in% names(cat_labels)))
 cat_labels <- cat_labels[names(cat_labels) %in% unique(r$category)]
@@ -94,7 +94,7 @@ write.table(rbind(per_arm, per_cat), file.path(outdir, "summary.tsv"),
 )
 
 setup_note <- sprintf("Claude Opus 5.5 in Claude Code, %d questions × %d runs.", n_q, n_rep)
-key_note <- "Answers checked against quantitative-genetics theory ± a band sized to simulation noise."
+key_note <- "Key: AlphaSimR, 300-400 replicates on the stated founders; band = noise of a 50-100 replicate answer."
 legend_counts <- function(v) {
   sprintf("%s (%s)", v, vapply(v, function(k) {
     paste(vapply(names(arm_labels), function(a) {

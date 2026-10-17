@@ -1,17 +1,20 @@
-"""Quantitative-genetics expectations for the agent benchmark's answer key.
+"""Closed-form shortcuts for the agent benchmark's questions.
 
-Everything here is closed-form or numerical integration over the normal
-distribution, plus one seeded numpy Monte Carlo over standard normal order
-statistics (a known generator). It never imports breedsim_mcp and never runs
-AlphaSimR: the key is fixed by theory, and the simulator is only used later,
-by ``calibrate.R``, to measure how wide the band around it must be.
+These are NOT the answer key. The key is simulation (``simulate_key.R``),
+because the questions sit where closed forms fail: many cycles in small
+populations, where drift, the Bulmer effect and the loss of variance at a
+finite number of QTL interact. This module computes what an agent would get
+by reaching for a formula instead of simulating, so the key build can check
+that each such shortcut lands OUTSIDE the band (and, for the control
+category, that the textbook answer lands inside it). It never imports
+breedsim_mcp and never runs AlphaSimR.
 
 Units throughout: founder additive genetic variance 1 and founder genetic mean
 0, which is what ``addTraitA`` builds; residual variance is fixed at founding,
 ``VE = (1 - h2) / h2``, which is what ``setVarE(h2=)`` does.
 
-The model for a selection cycle is the infinitesimal model with the Bulmer
-effect and finite-population corrections:
+``programme`` is the strongest closed form here: the infinitesimal model with
+the Bulmer effect and finite-population corrections:
 
 - the best ``n`` of ``N`` are kept on phenotype. Their expected mean, in
   phenotypic SD, is the finite-sample intensity ``i(n, N)``: the expected mean
@@ -23,6 +26,8 @@ effect and finite-population corrections:
 - progeny variance is half the parents' between-pair variance plus half the
   Mendelian (within-family) variance of the base, ``(1 - F) / 2``, with ``F``
   the parents' inbreeding, advanced by ``1 / (2 Ne)`` a generation.
+
+``bulmer_infinite`` is the textbook version without drift or finite samples.
 """
 
 from __future__ import annotations
@@ -171,3 +176,25 @@ def drift_variance_textbook(N: int, t: int) -> float:
     """V_A(t) = V_A(0) (1 - 1/(2 Ne))^t with Ne = N: the answer most
     textbooks give for pure drift."""
     return (1 - 1 / (2 * N)) ** t
+
+
+def bulmer_infinite(p: float, h2: float, cycles: int) -> list[dict[str, float]]:
+    """Mean and variance per cycle under the infinitesimal model with the
+    Bulmer effect but NO drift and an infinite population: intensity
+    i(p), variance reduction k = i(i - z), genic variance fixed at 1.
+    V(t+1) = V(t) (1 - k h2_t) / 2 + 1/2."""
+    ve = (1 - h2) / h2
+    i, k = intensity_infinite(p), variance_reduction_infinite(p)
+    mean, var, out = 0.0, 1.0, []
+    for t in range(1, cycles + 1):
+        h2t = var / (var + ve)
+        mean += i * h2t * math.sqrt(var + ve)
+        var = var * (1 - k * h2t) / 2 + 0.5
+        out.append({"cycle": t, "mean": mean, "var": var})
+    return out
+
+
+def daetwyler_accuracy(n_train: int, h2: float, n_effective_loci: float) -> float:
+    """Deterministic genomic prediction accuracy, r = sqrt(N h2 / (N h2 + Me)):
+    the formula most often reached for when no simulation is run."""
+    return math.sqrt(n_train * h2 / (n_train * h2 + n_effective_loci))

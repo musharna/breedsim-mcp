@@ -125,11 +125,17 @@ def test_each_question_states_the_band_the_scorer_applies() -> None:
     assert 30 <= len(key["questions"]) <= 50
     for q in key["questions"]:
         t = q["truth"]
-        assert f"±{t['tolerance_pct']}%" in q["question"], q["id"]
-        assert t["half_width"] == pytest.approx(
-            t["tolerance_pct"] / 100 * abs(t["value"]), rel=1e-3
+        assert f"±{t['tolerance']} of the expected value" in q["question"], q["id"]
+        assert float(t["tolerance"]) == pytest.approx(t["half_width"]), q["id"]
+        # The band is no wider than the stated answer + key noise, rounded up
+        # to 2 significant figures (so at most ~10% wider).
+        k = q["key"]
+        noise = (
+            3
+            * k["sd"]
+            * math.sqrt(1 / k["replicates_answer"] + 1 / k["replicates_key"])
         )
-        assert q["key"]["calibration_ok"] is True, q["id"]
+        assert noise <= t["half_width"] <= 1.1 * noise + 1e-9, q["id"]
         inside = {"category": q["category"], "truth": t}
         edge = t["value"] + 0.999 * t["half_width"]
         assert score(inside, f"ANSWER: {edge}")["verdict"] == "right", q["id"]
@@ -137,3 +143,27 @@ def test_each_question_states_the_band_the_scorer_applies() -> None:
             score(inside, f"ANSWER: {t['value'] + 1.01 * t['half_width']}")["verdict"]
             == "wrong"
         )
+
+
+def test_every_named_shortcut_misses_its_band_and_the_control_answer_hits_it() -> None:
+    """Recomputed from theory.py here, not read from the flags questions.json
+    stores, so a key whose flags claimed more than the bands deliver fails.
+    The control category is the positive control: there the textbook answer
+    must land INSIDE the band, so a band too narrow for anything to hit
+    would fail too."""
+    import build_questions
+
+    key = json.loads((BENCH / "questions.json").read_text())
+    roles_seen = set()
+    for q in key["questions"]:
+        t = q["truth"]
+        for name, (x, role) in build_questions.shortcuts(
+            q["category"], q["design"]
+        ).items():
+            inside = abs(x - t["value"]) <= t["half_width"]
+            roles_seen.add(role)
+            if role == "outside":
+                assert not inside, (q["id"], name, x, t)
+            elif role == "inside":
+                assert inside, (q["id"], name, x, t)
+    assert {"outside", "inside"} <= roles_seen
