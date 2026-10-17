@@ -1,0 +1,1342 @@
+{
+ "built": "2026-10-16",
+ "seed": 20261016,
+ "alphasimr": "2.1.0",
+ "band": "3.0 * SE(one session; 20 replicates for a mean, 100 for an SD) + slack * |theory|, rounded up to a whole percent",
+ "questions": [
+  {
+   "category": "intensity",
+   "design": {
+    "kind": "finite",
+    "n_ind": 500,
+    "n_select": 150,
+    "h2": 1.0,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 500
+   },
+   "id": "q01",
+   "question": "A normally distributed phenotype is measured on a random sample of 500 individuals and the best 150 are kept. What is the expected selection intensity for this finite sample: the expected mean of the kept individuals minus the population mean, in phenotypic standard deviations? Answers within \u00b15% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 1.15697,
+    "half_width": 0.05785,
+    "tolerance_pct": 5
+   },
+   "key": {
+    "theory": "E[mean of top n of N std normals]",
+    "slack": 0.01,
+    "half_width": 0.05626,
+    "mc_fraction": 0.79437,
+    "calibration_mean": 1.1657,
+    "calibration_se": 0.00521,
+    "calibration_ok": true,
+    "sigma_f": 0.01236,
+    "sigma_s": 0.03718,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "intensity",
+   "design": {
+    "kind": "finite",
+    "n_ind": 2000,
+    "n_select": 400,
+    "h2": 1.0,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 2000
+   },
+   "id": "q02",
+   "question": "A normally distributed phenotype is measured on a random sample of 2000 individuals and the best 400 are kept. What is the expected selection intensity for this finite sample: the expected mean of the kept individuals minus the population mean, in phenotypic standard deviations? Answers within \u00b14% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 1.3991,
+    "half_width": 0.05596,
+    "tolerance_pct": 4
+   },
+   "key": {
+    "theory": "E[mean of top n of N std normals]",
+    "slack": 0.01,
+    "half_width": 0.04905,
+    "mc_fraction": 0.71478,
+    "calibration_mean": 1.39398,
+    "calibration_se": 0.00362,
+    "calibration_ok": true,
+    "sigma_f": 0.01108,
+    "sigma_s": 0.01659,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "intensity",
+   "design": {
+    "kind": "finite",
+    "n_ind": 2000,
+    "n_select": 200,
+    "h2": 1.0,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 2000
+   },
+   "id": "q03",
+   "question": "A normally distributed phenotype is measured on a random sample of 2000 individuals and the best 200 are kept. What is the expected selection intensity for this finite sample: the expected mean of the kept individuals minus the population mean, in phenotypic standard deviations? Answers within \u00b15% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 1.7537,
+    "half_width": 0.08769,
+    "tolerance_pct": 5
+   },
+   "key": {
+    "theory": "E[mean of top n of N std normals]",
+    "slack": 0.01,
+    "half_width": 0.07569,
+    "mc_fraction": 0.76831,
+    "calibration_mean": 1.75214,
+    "calibration_se": 0.00575,
+    "calibration_ok": true,
+    "sigma_f": 0.01902,
+    "sigma_s": 0.0167,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "intensity",
+   "design": {
+    "kind": "finite",
+    "n_ind": 1000,
+    "n_select": 50,
+    "h2": 1.0,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 1000
+   },
+   "id": "q04",
+   "question": "A normally distributed phenotype is measured on a random sample of 1000 individuals and the best 50 are kept. What is the expected selection intensity for this finite sample: the expected mean of the kept individuals minus the population mean, in phenotypic standard deviations? Answers within \u00b17% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 2.05812,
+    "half_width": 0.14407,
+    "tolerance_pct": 7
+   },
+   "key": {
+    "theory": "E[mean of top n of N std normals]",
+    "slack": 0.01,
+    "half_width": 0.1415,
+    "mc_fraction": 0.85455,
+    "calibration_mean": 2.03981,
+    "calibration_se": 0.01175,
+    "calibration_ok": true,
+    "sigma_f": 0.04004,
+    "sigma_s": 0.02079,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "intensity",
+   "design": {
+    "kind": "infinite",
+    "p": 0.01,
+    "n_ind": 5000,
+    "n_select": 50,
+    "h2": 1.0,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 5000
+   },
+   "id": "q05",
+   "question": "Truncation selection keeps the top 1% of a very large population on a normally distributed phenotype. What is the selection intensity, the selection differential in phenotypic standard deviations? Answers within \u00b18% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 2.66521,
+    "half_width": 0.21322,
+    "tolerance_pct": 8
+   },
+   "key": {
+    "theory": "i = phi(z_p) / p",
+    "slack": 0.01,
+    "half_width": 0.19124,
+    "mc_fraction": 0.86063,
+    "calibration_mean": 2.65952,
+    "calibration_se": 0.01586,
+    "calibration_ok": true,
+    "sigma_f": 0.05482,
+    "sigma_s": 0.00971,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "intensity",
+   "design": {
+    "kind": "infinite",
+    "p": 0.05,
+    "n_ind": 5000,
+    "n_select": 250,
+    "h2": 1.0,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 5000
+   },
+   "id": "q06",
+   "question": "Truncation selection keeps the top 5% of a very large population on a normally distributed phenotype. What is the selection intensity, the selection differential in phenotypic standard deviations? Answers within \u00b15% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 2.06271,
+    "half_width": 0.10314,
+    "tolerance_pct": 5
+   },
+   "key": {
+    "theory": "i = phi(z_p) / p",
+    "slack": 0.01,
+    "half_width": 0.08496,
+    "mc_fraction": 0.75723,
+    "calibration_mean": 2.04902,
+    "calibration_se": 0.00624,
+    "calibration_ok": true,
+    "sigma_f": 0.02133,
+    "sigma_s": 0.0098,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "response_1cycle",
+   "design": {
+    "n_ind": 1000,
+    "n_select": 100,
+    "h2": 0.1,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 1000
+   },
+   "id": "q07",
+   "question": "Consider this AlphaSimR simulation. Founders: 1000 diploid individuals from quickHaplo(nInd=1000, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.1 (setVarE(h2=0.1)), and stays fixed after. Each generation: phenotype everyone, keep the 100 with the highest phenotypes (selectInd, use='pheno'), and make 1000 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected mean genetic value of the population after one generation, in founder additive genetic SD units (the founder mean is 0)? Answers within \u00b114% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.55417,
+    "half_width": 0.07758,
+    "tolerance_pct": 14
+   },
+   "key": {
+    "theory": "breeder's equation per cycle, Bulmer-reduced variance",
+    "slack": 0.03,
+    "half_width": 0.07724,
+    "mc_fraction": 0.78476,
+    "calibration_mean": 0.56268,
+    "calibration_se": 0.00922,
+    "calibration_ok": true,
+    "sigma_f": 0.0,
+    "sigma_s": 0.09036,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "response_1cycle",
+   "design": {
+    "n_ind": 200,
+    "n_select": 4,
+    "h2": 0.6,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 200
+   },
+   "id": "q08",
+   "question": "Consider this AlphaSimR simulation. Founders: 200 diploid individuals from quickHaplo(nInd=200, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.6 (setVarE(h2=0.6)), and stays fixed after. Each generation: phenotype everyone, keep the 4 with the highest phenotypes (selectInd, use='pheno'), and make 200 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected mean genetic value of the population after one generation, in founder additive genetic SD units (the founder mean is 0)? Answers within \u00b139% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 1.83765,
+    "half_width": 0.71668,
+    "tolerance_pct": 39
+   },
+   "key": {
+    "theory": "breeder's equation per cycle, Bulmer-reduced variance",
+    "slack": 0.03,
+    "half_width": 0.71246,
+    "mc_fraction": 0.92262,
+    "calibration_mean": 1.87393,
+    "calibration_se": 0.06632,
+    "calibration_ok": true,
+    "sigma_f": 0.21172,
+    "sigma_s": 0.25229,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "response_1cycle",
+   "design": {
+    "n_ind": 200,
+    "n_select": 60,
+    "h2": 0.4,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 200
+   },
+   "id": "q09",
+   "question": "Consider this AlphaSimR simulation. Founders: 200 diploid individuals from quickHaplo(nInd=200, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.4 (setVarE(h2=0.4)), and stays fixed after. Each generation: phenotype everyone, keep the 60 with the highest phenotypes (selectInd, use='pheno'), and make 200 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected mean genetic value of the population after one generation, in founder additive genetic SD units (the founder mean is 0)? Answers within \u00b125% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.72983,
+    "half_width": 0.18246,
+    "tolerance_pct": 25
+   },
+   "key": {
+    "theory": "breeder's equation per cycle, Bulmer-reduced variance",
+    "slack": 0.03,
+    "half_width": 0.17847,
+    "mc_fraction": 0.87732,
+    "calibration_mean": 0.71896,
+    "calibration_se": 0.01654,
+    "calibration_ok": true,
+    "sigma_f": 0.04849,
+    "sigma_s": 0.0863,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "response_1cycle",
+   "design": {
+    "n_ind": 500,
+    "n_select": 150,
+    "h2": 0.4,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 500
+   },
+   "id": "q10",
+   "question": "Consider this AlphaSimR simulation. Founders: 500 diploid individuals from quickHaplo(nInd=500, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.4 (setVarE(h2=0.4)), and stays fixed after. Each generation: phenotype everyone, keep the 150 with the highest phenotypes (selectInd, use='pheno'), and make 500 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected mean genetic value of the population after one generation, in founder additive genetic SD units (the founder mean is 0)? Answers within \u00b19% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.73173,
+    "half_width": 0.06586,
+    "tolerance_pct": 9
+   },
+   "key": {
+    "theory": "breeder's equation per cycle, Bulmer-reduced variance",
+    "slack": 0.03,
+    "half_width": 0.06449,
+    "mc_fraction": 0.65963,
+    "calibration_mean": 0.7265,
+    "calibration_se": 0.00647,
+    "calibration_ok": true,
+    "sigma_f": 0.0,
+    "sigma_s": 0.06342,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "response_1cycle",
+   "design": {
+    "n_ind": 1000,
+    "n_select": 100,
+    "h2": 0.5,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 1000
+   },
+   "id": "q11",
+   "question": "Consider this AlphaSimR simulation. Founders: 1000 diploid individuals from quickHaplo(nInd=1000, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.5 (setVarE(h2=0.5)), and stays fixed after. Each generation: phenotype everyone, keep the 100 with the highest phenotypes (selectInd, use='pheno'), and make 1000 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected mean genetic value of the population after one generation, in founder additive genetic SD units (the founder mean is 0)? Answers within \u00b18% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 1.23915,
+    "half_width": 0.09913,
+    "tolerance_pct": 8
+   },
+   "key": {
+    "theory": "breeder's equation per cycle, Bulmer-reduced variance",
+    "slack": 0.03,
+    "half_width": 0.09899,
+    "mc_fraction": 0.62448,
+    "calibration_mean": 1.25863,
+    "calibration_se": 0.00771,
+    "calibration_ok": true,
+    "sigma_f": 0.01522,
+    "sigma_s": 0.06212,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "response_1cycle",
+   "design": {
+    "n_ind": 500,
+    "n_select": 100,
+    "h2": 0.1,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 500
+   },
+   "id": "q12",
+   "question": "Consider this AlphaSimR simulation. Founders: 500 diploid individuals from quickHaplo(nInd=500, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.1 (setVarE(h2=0.1)), and stays fixed after. Each generation: phenotype everyone, keep the 100 with the highest phenotypes (selectInd, use='pheno'), and make 500 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected mean genetic value of the population after one generation, in founder additive genetic SD units (the founder mean is 0)? Answers within \u00b117% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.44176,
+    "half_width": 0.0751,
+    "tolerance_pct": 17
+   },
+   "key": {
+    "theory": "breeder's equation per cycle, Bulmer-reduced variance",
+    "slack": 0.03,
+    "half_width": 0.07367,
+    "mc_fraction": 0.8201,
+    "calibration_mean": 0.43895,
+    "calibration_se": 0.00919,
+    "calibration_ok": true,
+    "sigma_f": 0.0,
+    "sigma_s": 0.09006,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "response_1cycle",
+   "design": {
+    "n_ind": 500,
+    "n_select": 100,
+    "h2": 0.3,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 500
+   },
+   "id": "q13",
+   "question": "Consider this AlphaSimR simulation. Founders: 500 diploid individuals from quickHaplo(nInd=500, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.3 (setVarE(h2=0.3)), and stays fixed after. Each generation: phenotype everyone, keep the 100 with the highest phenotypes (selectInd, use='pheno'), and make 500 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected mean genetic value of the population after one generation, in founder additive genetic SD units (the founder mean is 0)? Answers within \u00b115% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.76515,
+    "half_width": 0.11477,
+    "tolerance_pct": 15
+   },
+   "key": {
+    "theory": "breeder's equation per cycle, Bulmer-reduced variance",
+    "slack": 0.03,
+    "half_width": 0.11227,
+    "mc_fraction": 0.79554,
+    "calibration_mean": 0.79026,
+    "calibration_se": 0.0108,
+    "calibration_ok": true,
+    "sigma_f": 0.02331,
+    "sigma_s": 0.0828,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "response_1cycle",
+   "design": {
+    "n_ind": 200,
+    "n_select": 60,
+    "h2": 0.5,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 200
+   },
+   "id": "q14",
+   "question": "Consider this AlphaSimR simulation. Founders: 200 diploid individuals from quickHaplo(nInd=200, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.5 (setVarE(h2=0.5)), and stays fixed after. Each generation: phenotype everyone, keep the 60 with the highest phenotypes (selectInd, use='pheno'), and make 200 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected mean genetic value of the population after one generation, in founder additive genetic SD units (the founder mean is 0)? Answers within \u00b111% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.81597,
+    "half_width": 0.08976,
+    "tolerance_pct": 11
+   },
+   "key": {
+    "theory": "breeder's equation per cycle, Bulmer-reduced variance",
+    "slack": 0.03,
+    "half_width": 0.08859,
+    "mc_fraction": 0.72369,
+    "calibration_mean": 0.81658,
+    "calibration_se": 0.00975,
+    "calibration_ok": true,
+    "sigma_f": 0.0,
+    "sigma_s": 0.09558,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "bulmer_variance",
+   "design": {
+    "n_ind": 200,
+    "n_select": 20,
+    "h2": 0.5,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 200
+   },
+   "id": "q15",
+   "question": "Consider this AlphaSimR simulation. Founders: 200 diploid individuals from quickHaplo(nInd=200, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.5 (setVarE(h2=0.5)), and stays fixed after. Each generation: phenotype everyone, keep the 20 with the highest phenotypes (selectInd, use='pheno'), and make 200 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected additive genetic variance of the progeny after one generation (the population variance of their genetic values), as a fraction of the founder variance? Answers within \u00b135% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.75974,
+    "half_width": 0.26591,
+    "tolerance_pct": 35
+   },
+   "key": {
+    "theory": "Bulmer: between-pair + Mendelian variance, finite n",
+    "slack": 0.03,
+    "half_width": 0.25917,
+    "mc_fraction": 0.91206,
+    "calibration_mean": 0.74662,
+    "calibration_se": 0.0241,
+    "calibration_ok": true,
+    "sigma_f": 0.0755,
+    "sigma_s": 0.10088,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "bulmer_variance",
+   "design": {
+    "n_ind": 500,
+    "n_select": 10,
+    "h2": 0.9,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 500
+   },
+   "id": "q16",
+   "question": "Consider this AlphaSimR simulation. Founders: 500 diploid individuals from quickHaplo(nInd=500, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.9 (setVarE(h2=0.9)), and stays fixed after. Each generation: phenotype everyone, keep the 10 with the highest phenotypes (selectInd, use='pheno'), and make 500 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected additive genetic variance of the progeny after one generation (the population variance of their genetic values), as a fraction of the founder variance? Answers within \u00b136% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.57942,
+    "half_width": 0.20859,
+    "tolerance_pct": 36
+   },
+   "key": {
+    "theory": "Bulmer: between-pair + Mendelian variance, finite n",
+    "slack": 0.03,
+    "half_width": 0.20796,
+    "mc_fraction": 0.91642,
+    "calibration_mean": 0.54937,
+    "calibration_se": 0.01885,
+    "calibration_ok": true,
+    "sigma_f": 0.06231,
+    "sigma_s": 0.05533,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "bulmer_variance",
+   "design": {
+    "n_ind": 1000,
+    "n_select": 50,
+    "h2": 0.6,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 1000
+   },
+   "id": "q17",
+   "question": "Consider this AlphaSimR simulation. Founders: 1000 diploid individuals from quickHaplo(nInd=1000, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.6 (setVarE(h2=0.6)), and stays fixed after. Each generation: phenotype everyone, keep the 50 with the highest phenotypes (selectInd, use='pheno'), and make 1000 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected additive genetic variance of the progeny after one generation (the population variance of their genetic values), as a fraction of the founder variance? Answers within \u00b115% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.73111,
+    "half_width": 0.10967,
+    "tolerance_pct": 15
+   },
+   "key": {
+    "theory": "Bulmer: between-pair + Mendelian variance, finite n",
+    "slack": 0.03,
+    "half_width": 0.1047,
+    "mc_fraction": 0.79052,
+    "calibration_mean": 0.71376,
+    "calibration_se": 0.00866,
+    "calibration_ok": true,
+    "sigma_f": 0.02586,
+    "sigma_s": 0.04302,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "bulmer_variance",
+   "design": {
+    "n_ind": 200,
+    "n_select": 10,
+    "h2": 0.9,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 200
+   },
+   "id": "q18",
+   "question": "Consider this AlphaSimR simulation. Founders: 200 diploid individuals from quickHaplo(nInd=200, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.9 (setVarE(h2=0.9)), and stays fixed after. Each generation: phenotype everyone, keep the 10 with the highest phenotypes (selectInd, use='pheno'), and make 200 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected additive genetic variance of the progeny after one generation (the population variance of their genetic values), as a fraction of the founder variance? Answers within \u00b156% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.5875,
+    "half_width": 0.329,
+    "tolerance_pct": 56
+   },
+   "key": {
+    "theory": "Bulmer: between-pair + Mendelian variance, finite n",
+    "slack": 0.03,
+    "half_width": 0.32678,
+    "mc_fraction": 0.94607,
+    "calibration_mean": 0.57396,
+    "calibration_se": 0.03022,
+    "calibration_ok": true,
+    "sigma_f": 0.10196,
+    "sigma_s": 0.06705,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "bulmer_variance",
+   "design": {
+    "n_ind": 1000,
+    "n_select": 20,
+    "h2": 0.5,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 1000
+   },
+   "id": "q19",
+   "question": "Consider this AlphaSimR simulation. Founders: 1000 diploid individuals from quickHaplo(nInd=1000, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.5 (setVarE(h2=0.5)), and stays fixed after. Each generation: phenotype everyone, keep the 20 with the highest phenotypes (selectInd, use='pheno'), and make 1000 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected additive genetic variance of the progeny after one generation (the population variance of their genetic values), as a fraction of the founder variance? Answers within \u00b134% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.74946,
+    "half_width": 0.25482,
+    "tolerance_pct": 34
+   },
+   "key": {
+    "theory": "Bulmer: between-pair + Mendelian variance, finite n",
+    "slack": 0.03,
+    "half_width": 0.25131,
+    "mc_fraction": 0.91053,
+    "calibration_mean": 0.76146,
+    "calibration_se": 0.02309,
+    "calibration_ok": true,
+    "sigma_f": 0.07371,
+    "sigma_s": 0.08776,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "bulmer_variance",
+   "design": {
+    "n_ind": 500,
+    "n_select": 25,
+    "h2": 0.8,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 500
+   },
+   "id": "q20",
+   "question": "Consider this AlphaSimR simulation. Founders: 500 diploid individuals from quickHaplo(nInd=500, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.8 (setVarE(h2=0.8)), and stays fixed after. Each generation: phenotype everyone, keep the 25 with the highest phenotypes (selectInd, use='pheno'), and make 500 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected additive genetic variance of the progeny after one generation (the population variance of their genetic values), as a fraction of the founder variance? Answers within \u00b125% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.64193,
+    "half_width": 0.16048,
+    "tolerance_pct": 25
+   },
+   "key": {
+    "theory": "Bulmer: between-pair + Mendelian variance, finite n",
+    "slack": 0.03,
+    "half_width": 0.1554,
+    "mc_fraction": 0.87607,
+    "calibration_mean": 0.63019,
+    "calibration_se": 0.01363,
+    "calibration_ok": true,
+    "sigma_f": 0.04412,
+    "sigma_s": 0.04748,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "multi_cycle_gain",
+   "design": {
+    "n_ind": 200,
+    "n_select": 40,
+    "h2": 0.2,
+    "cycles": 2,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 200
+   },
+   "id": "q21",
+   "question": "Consider this AlphaSimR simulation. Founders: 200 diploid individuals from quickHaplo(nInd=200, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.2 (setVarE(h2=0.2)), and stays fixed after. Each generation: phenotype everyone, keep the 40 with the highest phenotypes (selectInd, use='pheno'), and make 200 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected mean genetic value of the population after 2 generations, in founder additive genetic SD units (the founder mean is 0)? Answers within \u00b123% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 1.18703,
+    "half_width": 0.27302,
+    "tolerance_pct": 23
+   },
+   "key": {
+    "theory": "breeder's equation per cycle, Bulmer-reduced variance",
+    "slack": 0.04,
+    "half_width": 0.26487,
+    "mc_fraction": 0.82074,
+    "calibration_mean": 1.19394,
+    "calibration_se": 0.02502,
+    "calibration_ok": true,
+    "sigma_f": 0.06117,
+    "sigma_s": 0.17371,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "multi_cycle_gain",
+   "design": {
+    "n_ind": 200,
+    "n_select": 40,
+    "h2": 0.6,
+    "cycles": 3,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 200
+   },
+   "id": "q22",
+   "question": "Consider this AlphaSimR simulation. Founders: 200 diploid individuals from quickHaplo(nInd=200, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.6 (setVarE(h2=0.6)), and stays fixed after. Each generation: phenotype everyone, keep the 40 with the highest phenotypes (selectInd, use='pheno'), and make 200 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected mean genetic value of the population after 3 generations, in founder additive genetic SD units (the founder mean is 0)? Answers within \u00b122% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 2.78888,
+    "half_width": 0.61355,
+    "tolerance_pct": 22
+   },
+   "key": {
+    "theory": "breeder's equation per cycle, Bulmer-reduced variance",
+    "slack": 0.04,
+    "half_width": 0.61282,
+    "mc_fraction": 0.81796,
+    "calibration_mean": 2.77083,
+    "calibration_se": 0.05028,
+    "calibration_ok": true,
+    "sigma_f": 0.16218,
+    "sigma_s": 0.17973,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "multi_cycle_gain",
+   "design": {
+    "n_ind": 1000,
+    "n_select": 50,
+    "h2": 0.4,
+    "cycles": 3,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 1000
+   },
+   "id": "q23",
+   "question": "Consider this AlphaSimR simulation. Founders: 1000 diploid individuals from quickHaplo(nInd=1000, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.4 (setVarE(h2=0.4)), and stays fixed after. Each generation: phenotype everyone, keep the 50 with the highest phenotypes (selectInd, use='pheno'), and make 1000 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected mean genetic value of the population after 3 generations, in founder additive genetic SD units (the founder mean is 0)? Answers within \u00b115% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 3.45064,
+    "half_width": 0.5176,
+    "tolerance_pct": 15
+   },
+   "key": {
+    "theory": "breeder's equation per cycle, Bulmer-reduced variance",
+    "slack": 0.04,
+    "half_width": 0.49082,
+    "mc_fraction": 0.71878,
+    "calibration_mean": 3.35095,
+    "calibration_se": 0.03682,
+    "calibration_ok": true,
+    "sigma_f": 0.11047,
+    "sigma_s": 0.18032,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "multi_cycle_gain",
+   "design": {
+    "n_ind": 1000,
+    "n_select": 50,
+    "h2": 0.1,
+    "cycles": 3,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 1000
+   },
+   "id": "q24",
+   "question": "Consider this AlphaSimR simulation. Founders: 1000 diploid individuals from quickHaplo(nInd=1000, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.1 (setVarE(h2=0.1)), and stays fixed after. Each generation: phenotype everyone, keep the 50 with the highest phenotypes (selectInd, use='pheno'), and make 1000 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected mean genetic value of the population after 3 generations, in founder additive genetic SD units (the founder mean is 0)? Answers within \u00b113% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 1.85654,
+    "half_width": 0.24135,
+    "tolerance_pct": 13
+   },
+   "key": {
+    "theory": "breeder's equation per cycle, Bulmer-reduced variance",
+    "slack": 0.04,
+    "half_width": 0.23236,
+    "mc_fraction": 0.68041,
+    "calibration_mean": 1.86732,
+    "calibration_se": 0.02405,
+    "calibration_ok": true,
+    "sigma_f": 0.0,
+    "sigma_s": 0.23568,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "multi_cycle_gain",
+   "design": {
+    "n_ind": 200,
+    "n_select": 40,
+    "h2": 0.1,
+    "cycles": 2,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 200
+   },
+   "id": "q25",
+   "question": "Consider this AlphaSimR simulation. Founders: 200 diploid individuals from quickHaplo(nInd=200, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.1 (setVarE(h2=0.1)), and stays fixed after. Each generation: phenotype everyone, keep the 40 with the highest phenotypes (selectInd, use='pheno'), and make 200 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected mean genetic value of the population after 2 generations, in founder additive genetic SD units (the founder mean is 0)? Answers within \u00b132% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.85281,
+    "half_width": 0.2729,
+    "tolerance_pct": 32
+   },
+   "key": {
+    "theory": "breeder's equation per cycle, Bulmer-reduced variance",
+    "slack": 0.04,
+    "half_width": 0.26862,
+    "mc_fraction": 0.87301,
+    "calibration_mean": 0.82158,
+    "calibration_se": 0.02823,
+    "calibration_ok": true,
+    "sigma_f": 0.06172,
+    "sigma_s": 0.21453,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "multi_cycle_gain",
+   "design": {
+    "n_ind": 500,
+    "n_select": 25,
+    "h2": 0.2,
+    "cycles": 3,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 500
+   },
+   "id": "q26",
+   "question": "Consider this AlphaSimR simulation. Founders: 500 diploid individuals from quickHaplo(nInd=500, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.2 (setVarE(h2=0.2)), and stays fixed after. Each generation: phenotype everyone, keep the 25 with the highest phenotypes (selectInd, use='pheno'), and make 500 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected mean genetic value of the population after 3 generations, in founder additive genetic SD units (the founder mean is 0)? Answers within \u00b120% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 2.51134,
+    "half_width": 0.50227,
+    "tolerance_pct": 20
+   },
+   "key": {
+    "theory": "breeder's equation per cycle, Bulmer-reduced variance",
+    "slack": 0.04,
+    "half_width": 0.49892,
+    "mc_fraction": 0.79866,
+    "calibration_mean": 2.56781,
+    "calibration_se": 0.04426,
+    "calibration_ok": true,
+    "sigma_f": 0.11719,
+    "sigma_s": 0.27955,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "multi_cycle_gain",
+   "design": {
+    "n_ind": 1000,
+    "n_select": 50,
+    "h2": 0.6,
+    "cycles": 2,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 1000
+   },
+   "id": "q27",
+   "question": "Consider this AlphaSimR simulation. Founders: 1000 diploid individuals from quickHaplo(nInd=1000, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.6 (setVarE(h2=0.6)), and stays fixed after. Each generation: phenotype everyone, keep the 50 with the highest phenotypes (selectInd, use='pheno'), and make 1000 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected mean genetic value of the population after 2 generations, in founder additive genetic SD units (the founder mean is 0)? Answers within \u00b117% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 2.86694,
+    "half_width": 0.48738,
+    "tolerance_pct": 17
+   },
+   "key": {
+    "theory": "breeder's equation per cycle, Bulmer-reduced variance",
+    "slack": 0.04,
+    "half_width": 0.47551,
+    "mc_fraction": 0.75883,
+    "calibration_mean": 2.88254,
+    "calibration_se": 0.03595,
+    "calibration_ok": true,
+    "sigma_f": 0.11735,
+    "sigma_s": 0.11791,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "multi_cycle_gain",
+   "design": {
+    "n_ind": 500,
+    "n_select": 50,
+    "h2": 0.3,
+    "cycles": 3,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 500
+   },
+   "id": "q28",
+   "question": "Consider this AlphaSimR simulation. Founders: 500 diploid individuals from quickHaplo(nInd=500, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.3 (setVarE(h2=0.3)), and stays fixed after. Each generation: phenotype everyone, keep the 50 with the highest phenotypes (selectInd, use='pheno'), and make 500 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected mean genetic value of the population after 3 generations, in founder additive genetic SD units (the founder mean is 0)? Answers within \u00b122% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 2.60209,
+    "half_width": 0.57246,
+    "tolerance_pct": 22
+   },
+   "key": {
+    "theory": "breeder's equation per cycle, Bulmer-reduced variance",
+    "slack": 0.04,
+    "half_width": 0.55079,
+    "mc_fraction": 0.81103,
+    "calibration_mean": 2.57135,
+    "calibration_se": 0.04514,
+    "calibration_ok": true,
+    "sigma_f": 0.14372,
+    "sigma_s": 0.17414,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "paired_difference",
+   "design": {
+    "n_ind": 500,
+    "n_select": 10,
+    "n_select_b": 250,
+    "h2": 0.3,
+    "cycles": 2,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 500
+   },
+   "id": "q29",
+   "question": "Consider this AlphaSimR simulation. Founders: 500 diploid individuals from quickHaplo(nInd=500, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.3 (setVarE(h2=0.3)), and stays fixed after. Two programmes start from these same founders and run for 2 generations. Each generation, programme A keeps the 10 and programme B the 250 individuals with the highest phenotypes (selectInd, use='pheno'); both make 500 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected difference in mean genetic value after 2 generations, A minus B, in founder additive genetic SD units? Answers within \u00b126% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 1.55576,
+    "half_width": 0.4045,
+    "tolerance_pct": 26
+   },
+   "key": {
+    "theory": "difference of two programme() means",
+    "slack": 0.03,
+    "half_width": 0.40113,
+    "mc_fraction": 0.88365,
+    "calibration_mean": 1.49198,
+    "calibration_se": 0.04502,
+    "calibration_ok": true,
+    "sigma_f": 0.08397,
+    "sigma_s": 0.3717,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "paired_difference",
+   "design": {
+    "n_ind": 1000,
+    "n_select": 50,
+    "n_select_b": 300,
+    "h2": 0.3,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 1000
+   },
+   "id": "q30",
+   "question": "Consider this AlphaSimR simulation. Founders: 1000 diploid individuals from quickHaplo(nInd=1000, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.3 (setVarE(h2=0.3)), and stays fixed after. Two programmes start from these same founders and run for one generation. Each generation, programme A keeps the 50 and programme B the 300 individuals with the highest phenotypes (selectInd, use='pheno'); both make 1000 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected difference in mean genetic value after one generation, A minus B, in founder additive genetic SD units? Answers within \u00b121% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.49303,
+    "half_width": 0.10354,
+    "tolerance_pct": 21
+   },
+   "key": {
+    "theory": "difference of two programme() means",
+    "slack": 0.03,
+    "half_width": 0.10293,
+    "mc_fraction": 0.8563,
+    "calibration_mean": 0.4933,
+    "calibration_se": 0.01295,
+    "calibration_ok": true,
+    "sigma_f": 0.00985,
+    "sigma_s": 0.12379,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "paired_difference",
+   "design": {
+    "n_ind": 500,
+    "n_select": 25,
+    "n_select_b": 150,
+    "h2": 0.2,
+    "cycles": 2,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 500
+   },
+   "id": "q31",
+   "question": "Consider this AlphaSimR simulation. Founders: 500 diploid individuals from quickHaplo(nInd=500, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.2 (setVarE(h2=0.2)), and stays fixed after. Two programmes start from these same founders and run for 2 generations. Each generation, programme A keeps the 25 and programme B the 150 individuals with the highest phenotypes (selectInd, use='pheno'); both make 500 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected difference in mean genetic value after 2 generations, A minus B, in founder additive genetic SD units? Answers within \u00b142% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.73882,
+    "half_width": 0.3103,
+    "tolerance_pct": 42
+   },
+   "key": {
+    "theory": "difference of two programme() means",
+    "slack": 0.03,
+    "half_width": 0.30941,
+    "mc_fraction": 0.92836,
+    "calibration_mean": 0.731,
+    "calibration_se": 0.03541,
+    "calibration_ok": true,
+    "sigma_f": 0.07246,
+    "sigma_s": 0.27992,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "paired_difference",
+   "design": {
+    "n_ind": 200,
+    "n_select": 10,
+    "n_select_b": 40,
+    "h2": 0.5,
+    "cycles": 2,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 200
+   },
+   "id": "q32",
+   "question": "Consider this AlphaSimR simulation. Founders: 200 diploid individuals from quickHaplo(nInd=200, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.5 (setVarE(h2=0.5)), and stays fixed after. Two programmes start from these same founders and run for 2 generations. Each generation, programme A keeps the 10 and programme B the 40 individuals with the highest phenotypes (selectInd, use='pheno'); both make 200 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected difference in mean genetic value after 2 generations, A minus B, in founder additive genetic SD units? Answers within \u00b146% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.76416,
+    "half_width": 0.35151,
+    "tolerance_pct": 46
+   },
+   "key": {
+    "theory": "difference of two programme() means",
+    "slack": 0.03,
+    "half_width": 0.35101,
+    "mc_fraction": 0.93469,
+    "calibration_mean": 0.77257,
+    "calibration_se": 0.04347,
+    "calibration_ok": true,
+    "sigma_f": 0.06939,
+    "sigma_s": 0.37802,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "paired_difference",
+   "design": {
+    "n_ind": 1000,
+    "n_select": 50,
+    "n_select_b": 500,
+    "h2": 0.5,
+    "cycles": 2,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 1000
+   },
+   "id": "q33",
+   "question": "Consider this AlphaSimR simulation. Founders: 1000 diploid individuals from quickHaplo(nInd=1000, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.5 (setVarE(h2=0.5)), and stays fixed after. Two programmes start from these same founders and run for 2 generations. Each generation, programme A keeps the 50 and programme B the 500 individuals with the highest phenotypes (selectInd, use='pheno'); both make 1000 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected difference in mean genetic value after 2 generations, A minus B, in founder additive genetic SD units? Answers within \u00b117% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 1.59256,
+    "half_width": 0.27073,
+    "tolerance_pct": 17
+   },
+   "key": {
+    "theory": "difference of two programme() means",
+    "slack": 0.03,
+    "half_width": 0.26769,
+    "mc_fraction": 0.82152,
+    "calibration_mean": 1.54324,
+    "calibration_se": 0.02391,
+    "calibration_ok": true,
+    "sigma_f": 0.06619,
+    "sigma_s": 0.14085,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "paired_difference",
+   "design": {
+    "n_ind": 1000,
+    "n_select": 20,
+    "n_select_b": 200,
+    "h2": 0.2,
+    "cycles": 1,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 1000
+   },
+   "id": "q34",
+   "question": "Consider this AlphaSimR simulation. Founders: 1000 diploid individuals from quickHaplo(nInd=1000, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.2 (setVarE(h2=0.2)), and stays fixed after. Two programmes start from these same founders and run for one generation. Each generation, programme A keeps the 20 and programme B the 200 individuals with the highest phenotypes (selectInd, use='pheno'); both make 1000 progeny from random pairs of the kept individuals (randCross, one progeny per cross). What is the expected difference in mean genetic value after one generation, A minus B, in founder additive genetic SD units? Answers within \u00b138% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.4528,
+    "half_width": 0.17206,
+    "tolerance_pct": 38
+   },
+   "key": {
+    "theory": "difference of two programme() means",
+    "slack": 0.03,
+    "half_width": 0.17082,
+    "mc_fraction": 0.92048,
+    "calibration_mean": 0.42294,
+    "calibration_se": 0.02278,
+    "calibration_ok": true,
+    "sigma_f": 0.02062,
+    "sigma_s": 0.21548,
+    "replicates_assumed": 20
+   }
+  },
+  {
+   "category": "drift_sd",
+   "design": {
+    "n_ind": 100,
+    "n_select": 100,
+    "h2": 0.4,
+    "cycles": 20,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 100
+   },
+   "id": "q35",
+   "question": "Consider this AlphaSimR simulation. Founders: 100 diploid individuals from quickHaplo(nInd=100, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.4 (setVarE(h2=0.4)), and stays fixed after. Every generation all 100 individuals are kept as parents (no selection) and make 100 progeny from random pairs (randCross, one progeny per cross). Many replicate populations are run independently from the same founders. What is the expected standard deviation, across replicates, of the population's mean genetic value after 20 generations, in founder additive genetic SD units? Answers within \u00b127% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.43472,
+    "half_width": 0.11737,
+    "tolerance_pct": 27
+   },
+   "key": {
+    "theory": "sqrt(2 F_t), F_t = 1 - (1 - 1/(2 Ne))^t, Ne = 101.00",
+    "slack": 0.05,
+    "half_width": 0.11734,
+    "mc_fraction": 0.81476,
+    "calibration_mean": 0.43542,
+    "calibration_se": 0.02043,
+    "calibration_ok": true,
+    "sigma_f": 0.00689,
+    "sigma_s": 0.43781,
+    "replicates_assumed": 100
+   }
+  },
+  {
+   "category": "drift_sd",
+   "design": {
+    "n_ind": 50,
+    "n_select": 50,
+    "h2": 0.4,
+    "cycles": 5,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 50
+   },
+   "id": "q36",
+   "question": "Consider this AlphaSimR simulation. Founders: 50 diploid individuals from quickHaplo(nInd=50, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.4 (setVarE(h2=0.4)), and stays fixed after. Every generation all 50 individuals are kept as parents (no selection) and make 50 progeny from random pairs (randCross, one progeny per cross). Many replicate populations are run independently from the same founders. What is the expected standard deviation, across replicates, of the population's mean genetic value after 5 generations, in founder additive genetic SD units? Answers within \u00b125% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.31006,
+    "half_width": 0.07751,
+    "tolerance_pct": 25
+   },
+   "key": {
+    "theory": "sqrt(2 F_t), F_t = 1 - (1 - 1/(2 Ne))^t, Ne = 51.00",
+    "slack": 0.05,
+    "half_width": 0.07461,
+    "mc_fraction": 0.79223,
+    "calibration_mean": 0.27659,
+    "calibration_se": 0.01282,
+    "calibration_ok": true,
+    "sigma_f": 0.0,
+    "sigma_s": 0.27726,
+    "replicates_assumed": 100
+   }
+  },
+  {
+   "category": "drift_sd",
+   "design": {
+    "n_ind": 100,
+    "n_select": 100,
+    "h2": 0.4,
+    "cycles": 5,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 100
+   },
+   "id": "q37",
+   "question": "Consider this AlphaSimR simulation. Founders: 100 diploid individuals from quickHaplo(nInd=100, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.4 (setVarE(h2=0.4)), and stays fixed after. Every generation all 100 individuals are kept as parents (no selection) and make 100 progeny from random pairs (randCross, one progeny per cross). Many replicate populations are run independently from the same founders. What is the expected standard deviation, across replicates, of the population's mean genetic value after 5 generations, in founder additive genetic SD units? Answers within \u00b125% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.2214,
+    "half_width": 0.05535,
+    "tolerance_pct": 25
+   },
+   "key": {
+    "theory": "sqrt(2 F_t), F_t = 1 - (1 - 1/(2 Ne))^t, Ne = 101.00",
+    "slack": 0.05,
+    "half_width": 0.05466,
+    "mc_fraction": 0.79747,
+    "calibration_mean": 0.20395,
+    "calibration_se": 0.00945,
+    "calibration_ok": true,
+    "sigma_f": 0.0,
+    "sigma_s": 0.20445,
+    "replicates_assumed": 100
+   }
+  },
+  {
+   "category": "drift_sd",
+   "design": {
+    "n_ind": 50,
+    "n_select": 50,
+    "h2": 0.4,
+    "cycles": 10,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 50
+   },
+   "id": "q38",
+   "question": "Consider this AlphaSimR simulation. Founders: 50 diploid individuals from quickHaplo(nInd=50, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.4 (setVarE(h2=0.4)), and stays fixed after. Every generation all 50 individuals are kept as parents (no selection) and make 50 progeny from random pairs (randCross, one progeny per cross). Many replicate populations are run independently from the same founders. What is the expected standard deviation, across replicates, of the population's mean genetic value after 10 generations, in founder additive genetic SD units? Answers within \u00b128% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.43319,
+    "half_width": 0.12129,
+    "tolerance_pct": 28
+   },
+   "key": {
+    "theory": "sqrt(2 F_t), F_t = 1 - (1 - 1/(2 Ne))^t, Ne = 51.00",
+    "slack": 0.05,
+    "half_width": 0.11765,
+    "mc_fraction": 0.8159,
+    "calibration_mean": 0.44829,
+    "calibration_se": 0.02081,
+    "calibration_ok": true,
+    "sigma_f": 0.0,
+    "sigma_s": 0.45022,
+    "replicates_assumed": 100
+   }
+  },
+  {
+   "category": "drift_sd",
+   "design": {
+    "n_ind": 200,
+    "n_select": 200,
+    "h2": 0.4,
+    "cycles": 5,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 200
+   },
+   "id": "q39",
+   "question": "Consider this AlphaSimR simulation. Founders: 200 diploid individuals from quickHaplo(nInd=200, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.4 (setVarE(h2=0.4)), and stays fixed after. Every generation all 200 individuals are kept as parents (no selection) and make 200 progeny from random pairs (randCross, one progeny per cross). Many replicate populations are run independently from the same founders. What is the expected standard deviation, across replicates, of the population's mean genetic value after 5 generations, in founder additive genetic SD units? Answers within \u00b126% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.15733,
+    "half_width": 0.04091,
+    "tolerance_pct": 26
+   },
+   "key": {
+    "theory": "sqrt(2 F_t), F_t = 1 - (1 - 1/(2 Ne))^t, Ne = 201.00",
+    "slack": 0.05,
+    "half_width": 0.03986,
+    "mc_fraction": 0.80263,
+    "calibration_mean": 0.14957,
+    "calibration_se": 0.00694,
+    "calibration_ok": true,
+    "sigma_f": 0.0,
+    "sigma_s": 0.15005,
+    "replicates_assumed": 100
+   }
+  },
+  {
+   "category": "drift_sd",
+   "design": {
+    "n_ind": 200,
+    "n_select": 200,
+    "h2": 0.4,
+    "cycles": 10,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_cross": 200
+   },
+   "id": "q40",
+   "question": "Consider this AlphaSimR simulation. Founders: 200 diploid individuals from quickHaplo(nInd=200, nChr=10, segSites=100), so loci start in linkage equilibrium. One purely additive trait with 10 QTL per chromosome (addTraitA: founder genetic mean 0, founder additive genetic variance 1). Residual variance is set once, at founding, so that narrow-sense heritability in the founders is 0.4 (setVarE(h2=0.4)), and stays fixed after. Every generation all 200 individuals are kept as parents (no selection) and make 200 progeny from random pairs (randCross, one progeny per cross). Many replicate populations are run independently from the same founders. What is the expected standard deviation, across replicates, of the population's mean genetic value after 10 generations, in founder additive genetic SD units? Answers within \u00b127% of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.22181,
+    "half_width": 0.05989,
+    "tolerance_pct": 27
+   },
+   "key": {
+    "theory": "sqrt(2 F_t), F_t = 1 - (1 - 1/(2 Ne))^t, Ne = 201.00",
+    "slack": 0.05,
+    "half_width": 0.05794,
+    "mc_fraction": 0.80859,
+    "calibration_mean": 0.21888,
+    "calibration_se": 0.01016,
+    "calibration_ok": true,
+    "sigma_f": 0.0,
+    "sigma_s": 0.21974,
+    "replicates_assumed": 100
+   }
+  }
+ ]
+}
