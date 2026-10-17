@@ -6,6 +6,22 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- `benchmarks/agent_qa/`: an agent A/B benchmark. 40 quantitative-genetics
+  questions (selection intensity, one-cycle response, Bulmer variance, gain
+  over 2-3 cycles, paired programme differences, drift SD) asked to Claude
+  with no tools, with Bash + R/AlphaSimR + web, and with this server. The key
+  is theory (`theory.py`, never imports the package); each band is 3 SE of a
+  one-session simulation estimate, measured by an independent AlphaSimR
+  calibration, plus a stated per-category slack. Harness and pilot only; the
+  full sweep has not run.
+- `tests/perf_ratchet.py` + `tests/perf_baseline.json`: a work-count gate.
+  Each tool runs a tiny seeded workload through `call_tool` in a fresh
+  process; package-function calls, R evaluations and R function invocations
+  must equal the baseline exactly (`--update` records a drop, a rise also
+  needs `--allow-increase`). Runs in the existing `pytest` CI matrix.
+
 ## [0.5.1] - 2026-09-26
 
 ### Changed
