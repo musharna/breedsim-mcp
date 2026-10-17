@@ -46,6 +46,12 @@ jobs:
           mkdir -p ~/R/library
           Rscript -e 'install.packages("AlphaSimR", lib="~/R/library", repos="https://cloud.r-project.org", Ncpus=4)'
 
+      # jsonlite carries the agent benchmark's key script (simulate_key.R),
+      # which tests/test_agent_qa_key_matches_server.py runs against the server.
+      - name: Install jsonlite
+        run: |
+          Rscript -e 'if (!requireNamespace("jsonlite", lib.loc=path.expand("~/R/library"), quietly=TRUE)) install.packages("jsonlite", lib="~/R/library", repos="https://cloud.r-project.org")'
+
       - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
         with:
           enable-cache: true
