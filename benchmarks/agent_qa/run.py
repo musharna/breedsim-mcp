@@ -11,7 +11,10 @@ servers, an empty working directory per run):
 
 Each finished run is appended to ``results.jsonl`` with its score; a rerun
 skips (arm, question, rep) triples already there, so an interrupted sweep
-resumes. Raw stream-json transcripts go to ``runs/<arm>/<qid>-<rep>.jsonl``.
+resumes. Raw stream-json transcripts go to ``<runs>/<arm>/<qid>-<rep>.jsonl``
+(``--runs``; keep it, and ``--results``, outside the repository for new
+sweeps, e.g. under ~/breedsim-mcp-artifacts/, so a Bash-armed agent cannot
+come across earlier transcripts by listing the tree).
 
     uv run python benchmarks/agent_qa/run.py --reps 3 --workers 1
 """
@@ -77,8 +80,13 @@ def arm_flags(arm: str, tmp: Path) -> list[str]:
     raise ValueError(arm)
 
 
-def run_env() -> dict[str, str]:
+def run_env(tmp: Path) -> dict[str, str]:
     env = dict(os.environ, R_LIBS_USER=R_LIBS_USER, OMP_NUM_THREADS="1")
+    # A private TMPDIR per run, so tempfile-using code in one run cannot see
+    # another's files. (A script that writes a literal /tmp path still can;
+    # the README says so.)
+    (tmp / "tmp").mkdir(exist_ok=True)
+    env["TMPDIR"] = str(tmp / "tmp")
     # A 100-replicate run_program is tens of seconds; Claude Code's default
     # MCP tool timeout would cut it off and read as the server failing.
     env.setdefault("MCP_TOOL_TIMEOUT", "900000")
@@ -90,8 +98,11 @@ def run_env() -> dict[str, str]:
     return env
 
 
+RUNS = HERE / "runs"
+
+
 def run_one(arm: str, q: dict[str, Any], rep: int) -> dict[str, Any]:
-    out = HERE / "runs" / arm / f"{q['id']}-{rep}.jsonl"
+    out = RUNS / arm / f"{q['id']}-{rep}.jsonl"
     out.parent.mkdir(parents=True, exist_ok=True)
     prompt = PROMPT.format(question=q["question"], answer_format=q["answer_format"])
     with tempfile.TemporaryDirectory(prefix=f"agentqa-{arm}-") as d:
@@ -109,7 +120,7 @@ def run_one(arm: str, q: dict[str, Any], rep: int) -> dict[str, Any]:
                 capture_output=True,
                 text=True,
                 timeout=RUN_TIMEOUT_S,
-                env=run_env(),
+                env=run_env(tmp),
                 check=False,  # a failed run is recorded with its exit code, not raised
             )
             stdout, rc = proc.stdout, proc.returncode
@@ -154,6 +165,32 @@ def run_one(arm: str, q: dict[str, Any], rep: int) -> dict[str, Any]:
     }
 
 
+def alphasimr_version() -> str:
+    env = dict(os.environ, R_LIBS_USER=R_LIBS_USER)
+    return subprocess.run(
+        ["Rscript", "-e", 'cat(as.character(packageVersion("AlphaSimR")))'],
+        check=True, capture_output=True, text=True, env=env, timeout=120,
+    ).stdout.strip()  # fmt: skip
+
+
+def preflight(key: dict[str, Any]) -> None:
+    """Refuse to start a sweep whose R library is not the key's AlphaSimR
+    (every arm uses it), or whose scorer would not score the key itself right."""
+    have = alphasimr_version()
+    if have != key["alphasimr"]:
+        sys.exit(
+            f"AlphaSimR {have} in {R_LIBS_USER}, but the key was built on "
+            f"{key['alphasimr']}: rebuild the key or install that version"
+        )
+    wrong = [
+        q["id"]
+        for q in key["questions"]
+        if score(q, f"ANSWER: {q['truth']['value']}")["verdict"] != "right"
+    ]
+    if wrong:
+        sys.exit(f"oracle check failed: the key's own values score wrong for {wrong}")
+
+
 def rescore(results: Path, by_id: dict[str, dict[str, Any]]) -> None:
     """Score each stored reply again, so a key or scorer fix reaches runs
     made before it; prints every verdict that changed."""
@@ -176,16 +213,21 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=1)
     ap.add_argument("--only", default="", help="comma-separated question ids")
     ap.add_argument("--results", default=str(HERE / "results.jsonl"))
+    ap.add_argument("--runs", default=str(HERE / "runs"), help="where transcripts go")
     ap.add_argument(
         "--rescore",
         action="store_true",
         help="re-score every stored reply against the current questions.json, run nothing",
     )
     a = ap.parse_args()
-    questions = json.loads((HERE / "questions.json").read_text())["questions"]
+    global RUNS
+    RUNS = Path(a.runs).expanduser()
+    key = json.loads((HERE / "questions.json").read_text())
+    questions = key["questions"]
     if a.rescore:
         rescore(Path(a.results), {q["id"]: q for q in questions})
         return
+    preflight(key)
     if a.only:
         keep = set(a.only.split(","))
         questions = [q for q in questions if q["id"] in keep]

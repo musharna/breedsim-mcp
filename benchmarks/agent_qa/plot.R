@@ -1,10 +1,13 @@
-# Figures for the agent benchmark, from results.jsonl and questions.json.
+# Figures for the agent benchmark, from results.jsonl, questions.json and
+# analyse.py's analysis.json (validity) and baselines.tsv (no-LLM answers).
 #
-#   Rscript benchmarks/agent_qa/plot.R [results.jsonl] [outdir]
+#   uv run python benchmarks/agent_qa/analyse.py && Rscript benchmarks/agent_qa/plot.R
 #
-# Writes summary.tsv (verdicts, cost and time per setup; verdicts per setup x
-# kind of question) and four figures:
-#   agent_qa.png             right / wrong / declined per setup (the README one)
+# Writes summary.tsv (verdicts, cost and time per setup over the headline
+# questions and over all; verdicts per setup x kind of question; the no-LLM
+# baselines) and four figures:
+#   agent_qa.png             right / wrong / declined per setup and baseline,
+#                            headline questions only (the README one)
 #   agent_qa_cost_time.png   cost and seconds per answer, every run
 #   agent_qa_by_category.png right / wrong / declined per setup x kind of question
 #   agent_qa_error.png       each numeric answer's miss, in units of its band
@@ -20,8 +23,17 @@ outdir <- if (length(args) >= 2) args[2] else "benchmarks/agent_qa"
 source("benchmarks/theme_breedsim.R")
 
 r <- jsonlite::stream_in(file(results_path), verbose = FALSE)
+# A run that failed the validity rule (analyse.py) is shown as "invalid", never
+# as its scored verdict.
+an <- jsonlite::fromJSON(file.path(dirname(results_path), "analysis.json"))
+run_id <- function(x) paste(x$arm, x$qid, x$rep)
+valid <- setNames(an$rows$valid, run_id(an$rows))
+stopifnot(setequal(names(valid), run_id(r)))
+r$verdict[!valid[run_id(r)]] <- "invalid"
+not_headline <- names(an$not_headline_categories)
 stopifnot(all(r$verdict %in% names(pal_verdict)))
 key <- jsonlite::fromJSON("benchmarks/agent_qa/questions.json")$questions
+stopifnot(length(not_headline) >= 1, all(not_headline %in% key$category))
 half <- setNames(key$truth$half_width, key$id)
 truth <- setNames(key$truth$value, key$id)
 stopifnot(all(r$qid %in% names(half)))
@@ -57,6 +69,7 @@ tally <- function(x) {
   data.frame(
     right = sum(x$verdict == "right"), wrong = sum(x$verdict == "wrong"),
     declined = sum(x$verdict == "declined"), no_answer = sum(x$verdict == "no_answer"),
+    invalid = sum(x$verdict == "invalid"),
     # Repeats of one question are not independent: also count questions.
     questions_right_every_run = sum(tapply(x$verdict == "right", x$qid, all)),
     median_abs_error_in_bands = round(median(abs(x$number - truth[x$qid]) / half[x$qid],
@@ -64,10 +77,9 @@ tally <- function(x) {
     ), 2)
   )
 }
-per_arm <- do.call(rbind, lapply(names(arm_labels), function(a) {
-  x <- r[r$arm == a, ]
+arm_row <- function(a, x, category) {
   cbind(
-    level = "arm", arm = a, category = "all", tally(x),
+    level = "arm", arm = a, category = category, tally(x),
     cost_usd_mean = round(mean(x$cost_usd), 4),
     cost_usd_median = round(median(x$cost_usd), 4),
     cost_usd_total = round(sum(x$cost_usd), 2),
@@ -76,7 +88,14 @@ per_arm <- do.call(rbind, lapply(names(arm_labels), function(a) {
     seconds_max = max(x$seconds),
     tool_calls_mean = round(mean(lengths(x$tool_calls)), 2)
   )
-}))
+}
+headline_label <- sprintf("headline (all but %s)", paste(not_headline, collapse = ", "))
+per_arm <- do.call(rbind, c(
+  lapply(names(arm_labels), function(a) {
+    arm_row(a, r[r$arm == a & !(r$category %in% not_headline), ], headline_label)
+  }),
+  lapply(names(arm_labels), function(a) arm_row(a, r[r$arm == a, ], "all"))
+))
 per_cat <- do.call(rbind, lapply(names(arm_labels), function(a) {
   do.call(rbind, lapply(names(cat_labels), function(k) {
     cbind(
@@ -87,26 +106,65 @@ per_cat <- do.call(rbind, lapply(names(arm_labels), function(a) {
     )
   }))
 }))
+# No-LLM baselines, one answer per question, scored by analyse.py through
+# score.py. Two go on figure 1: the best single constant per category, and
+# the best named closed form per question (an upper bound for theory alone).
+bl <- read.delim(file.path(dirname(results_path), "baselines.tsv"), check.names = FALSE)
+stopifnot(all(bl$qid %in% key$id))
+bl_row <- function(name, x, category) {
+  data.frame(
+    level = "baseline", arm = name, category = category,
+    right = sum(x$right), wrong = sum(!x$right), declined = 0, no_answer = 0, invalid = 0,
+    questions_right_every_run = sum(x$right), median_abs_error_in_bands = NA,
+    cost_usd_mean = NA, cost_usd_median = NA, cost_usd_total = NA,
+    seconds_mean = NA, seconds_median = NA, seconds_max = NA, tool_calls_mean = NA
+  )
+}
+per_base <- do.call(rbind, lapply(unique(bl$setup), function(b) {
+  x <- bl[bl$setup == b, ]
+  rbind(
+    bl_row(b, x[!(x$category %in% not_headline), ], headline_label),
+    do.call(rbind, lapply(unique(x$category), function(k) bl_row(b, x[x$category == k, ], k)))
+  )
+}))
 # na = "NA", not "": a line ending in tabs is trailing whitespace the
 # pre-commit hook strips, which would drop those columns.
-write.table(rbind(per_arm, per_cat), file.path(outdir, "summary.tsv"),
+write.table(rbind(per_arm, per_cat, per_base), file.path(outdir, "summary.tsv"),
   sep = "\t", quote = FALSE, row.names = FALSE, na = "NA"
 )
 
 setup_note <- sprintf("Claude Opus 5.5 in Claude Code, %d questions × %d runs.", n_q, n_rep)
 key_note <- "Key: AlphaSimR, 300-400 replicates on the stated founders; band = noise of a 50-100 replicate answer."
-legend_counts <- function(v) {
+legend_counts <- function(v, d = r) {
   sprintf("%s (%s)", v, vapply(v, function(k) {
     paste(vapply(names(arm_labels), function(a) {
-      as.character(sum(r$verdict == k & r$arm == a))
+      as.character(sum(d$verdict == k & d$arm == a))
     }, ""), collapse = " / ")
   }, ""))
 }
 
-# Figure 1: one bar per setup, segments = verdict share, labelled with counts.
-counts <- as.data.frame(table(arm_label = r$arm_label, verdict = r$verdict))
+# Figure 1: headline questions only. One bar per setup (answers = questions x
+# runs) and per no-LLM baseline (one answer per question); segments = verdict
+# share, labelled with counts.
+h <- r[!(r$category %in% not_headline), ]
+counts <- as.data.frame(table(arm_label = h$arm_label, verdict = h$verdict))
 counts <- counts[counts$Freq > 0, ]
-counts$share <- counts$Freq / n_ans
+counts$share <- counts$Freq / ave(counts$Freq, counts$arm_label, FUN = sum)
+base_labels <- c(
+  "best constant: the category median of the key" = "No LLM: one constant per kind of question",
+  "any named closed form (the best one per question)" = "No LLM: best closed form per question"
+)
+stopifnot(all(names(base_labels) %in% bl$setup))
+hb <- bl[bl$setup %in% names(base_labels) & !(bl$category %in% not_headline), ]
+bc <- as.data.frame(table(
+  arm_label = base_labels[hb$setup], verdict = ifelse(hb$right, "right", "wrong")
+))
+bc <- bc[bc$Freq > 0, ]
+bc$share <- bc$Freq / ave(bc$Freq, bc$arm_label, FUN = sum)
+counts <- rbind(counts, bc)
+counts$arm_label <- factor(counts$arm_label, levels = c(rev(base_labels), levels(r$arm_label)))
+counts$verdict <- factor(counts$verdict, levels = names(pal_verdict))
+n_head <- length(unique(h$qid))
 p1 <- ggplot(counts, aes(x = share, y = arm_label, fill = verdict)) +
   geom_col(width = 0.62, position = position_stack(reverse = TRUE)) +
   geom_text(
@@ -117,19 +175,28 @@ p1 <- ggplot(counts, aes(x = share, y = arm_label, fill = verdict)) +
   scale_colour_manual(values = verdict_label_colour, guide = "none") +
   # Slices too thin to hold a number are counted in the legend instead.
   scale_fill_manual(
-    values = pal_verdict, labels = legend_counts, drop = TRUE,
-    name = sprintf("Answers (%s):", paste(names(arm_labels), collapse = " / "))
+    values = pal_verdict, labels = function(v) legend_counts(v, h), drop = TRUE,
+    name = sprintf("Headline answers (%s):", paste(names(arm_labels), collapse = " / "))
   ) +
   guides(fill = guide_legend(title.position = "top", title.hjust = 0.5)) +
   scale_x_continuous(labels = scales::percent, expand = c(0, 0)) +
   labs(
-    x = sprintf("Share of %d answers per setup", n_ans), y = NULL,
-    title = "Quantitative-genetics questions: right, wrong or declined",
-    subtitle = paste0(setup_note, "\n", key_note)
+    x = sprintf(
+      "Share of answers: %d per setup (%d questions × %d runs), %d per baseline",
+      n_head * n_rep, n_head, n_rep, n_head
+    ), y = NULL,
+    title = sprintf(
+      "Breeding-simulation questions: right, wrong or declined (%d headline questions)", n_head
+    ),
+    subtitle = paste0(
+      setup_note, "\nNot in the headline: ", paste(not_headline, collapse = ", "),
+      " (one constant lands in most of its bands; shown by kind in agent_qa_by_category.png).\n",
+      key_note
+    )
   ) +
   theme_breedsim(base_size = 13) +
   theme(panel.grid.major.y = element_blank(), plot.margin = margin(8, 24, 8, 8))
-ggsave(file.path(outdir, "agent_qa.png"), p1, width = 11, height = 4.2, dpi = 200, bg = "white")
+ggsave(file.path(outdir, "agent_qa.png"), p1, width = 12, height = 5.4, dpi = 200, bg = "white")
 
 # Figure 2: cost and seconds per answer, one point per run, box over them.
 long <- rbind(
@@ -205,8 +272,8 @@ p4 <- ggplot(e, aes(x = miss, y = arm_label)) +
   facet_wrap(~cat_strip, ncol = 1) +
   scale_x_continuous(limits = c(-6, 6), breaks = seq(-6, 6, 2)) +
   labs(
-    x = "Answer minus theory, in units of the question's band (shaded: within the band)",
-    y = NULL, title = "How far each answer landed from theory", subtitle = setup_note
+    x = "Answer minus the key, in units of the question's band (shaded: within the band)",
+    y = NULL, title = "How far each answer landed from the key", subtitle = setup_note
   ) +
   theme_breedsim(base_size = 12) +
   theme(panel.grid.major.y = element_blank(), plot.margin = margin(8, 24, 8, 8))

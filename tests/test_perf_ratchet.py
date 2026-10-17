@@ -65,3 +65,29 @@ def test_the_comparison_names_the_function_and_its_delta_and_passes_an_equal_row
     assert "    +1  x.py:f  (4 -> 5)" in problems
     assert not any(p.startswith("b:") for p in problems)
     assert pr.compare(base, base) == []
+
+
+def _row(python_calls: int, sig: list) -> dict:
+    return {
+        "signature": sig,
+        "counts": {"python_calls": python_calls, "r_evals": 3, "r_function_calls": 3},
+    }
+
+
+def test_update_refuses_a_rise_without_allow_increase_and_records_a_drop():
+    base = {"a": _row(10, [2, 5]), "b": _row(7, [1])}
+    rise = {"a": _row(11, [2, 5]), "b": _row(7, [1])}
+    drop = {"a": _row(9, [2, 5]), "b": _row(7, [1])}
+    assert "rose in ['a']" in pr.update_refusal(base, rise, allow_increase=False)
+    assert pr.update_refusal(base, rise, allow_increase=True) is None
+    assert pr.update_refusal(base, drop, allow_increase=False) is None
+
+
+def test_update_refuses_a_changed_output_signature_even_with_allow_increase():
+    base = {"a": _row(10, [2, 5]), "b": _row(7, [1])}
+    other = {"a": _row(10, [2, 4]), "b": _row(7, [1])}
+    for allow in (False, True):
+        msg = pr.update_refusal(base, other, allow_increase=allow)
+        assert msg and "signature changed in ['a']" in msg
+    # Same signature, same counts: nothing to refuse.
+    assert pr.update_refusal(base, base, allow_increase=False) is None

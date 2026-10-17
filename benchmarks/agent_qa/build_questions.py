@@ -504,19 +504,73 @@ def main() -> None:
         )
 
 
+CONSTANT = "best constant: the category median of the key"
+# Categories kept out of the headline score, and why. A single constant (the
+# category median of the key, which no arm can know) lands inside 5 of the 6
+# probability bands: they are wide (a proportion from 100 replicates) and
+# the designs' probabilities cluster near 0.75, so a right answer there does
+# not show that the simulation was run.
+NOT_HEADLINE = {
+    "prob_beats": "the category-median constant lands inside 5 of its 6 bands"
+}
+
+
+def category_constants(questions: list[dict[str, Any]]) -> dict[str, float]:
+    """category -> the median of its key values: the best single number an
+    answerer who knew the key's distribution, but not the question, could give."""
+    by: dict[str, list[float]] = {}
+    for q in questions:
+        by.setdefault(q["category"], []).append(q["truth"]["value"])
+    return {c: float(np.median(v)) for c, v in by.items()}
+
+
+def constant_inside_share(questions: list[dict[str, Any]]) -> dict[str, float]:
+    """category -> share of its bands the category-median constant lands in."""
+    const = category_constants(questions)
+    hits: dict[str, list[bool]] = {}
+    for q in questions:
+        t = q["truth"]
+        hits.setdefault(q["category"], []).append(
+            abs(const[q["category"]] - t["value"]) <= t["half_width"]
+        )
+    return {c: sum(v) / len(v) for c, v in hits.items()}
+
+
 def discrimination() -> None:
-    """Per category and shortcut: in how many questions it misses the band."""
+    """Per category and shortcut: in how many questions it misses the band.
+    The category-median constant is listed last in each category: it was not a
+    selection rule, so its count is what it is; where it lands in more than
+    half the bands the README says so, and NOT_HEADLINE holds the categories
+    left out of the headline."""
     qs = json.loads((HERE / "questions.json").read_text())["questions"]
     tally: dict[tuple[str, str, str], list[bool]] = {}
+    const = category_constants(qs)
     for q in qs:
         for name, s in q["key"]["shortcuts"].items():
             tally.setdefault((q["category"], name, s["role"]), []).append(
                 s["outside_band"]
             )
+    for q in qs:
+        t = q["truth"]
+        tally.setdefault((q["category"], CONSTANT, "constant"), []).append(
+            abs(const[q["category"]] - t["value"]) > t["half_width"]
+        )
+    rows = sorted(
+        tally.items(),
+        key=lambda kv: (list(PLAN).index(kv[0][0]), kv[0][2] == "constant"),
+    )
     print("| Kind | Shortcut | Must | Outside the band in |\n|---|---|---|---|")
-    for (c, name, role), v in tally.items():
-        must = {"outside": "miss", "inside": "hit", "info": "(reported)"}[role]
-        print(f"| {c} | {name} | {must} | {sum(v)} of {len(v)} |")
+    for (c, name, role), v in rows:
+        must = {
+            "outside": "miss",
+            "inside": "hit",
+            "info": "(reported)",
+            "constant": "miss",
+        }[role]
+        label = f"{name} ({const[c]:.3g})" if role == "constant" else name
+        if c in NOT_HEADLINE and role == "constant":
+            label += " - not in the headline"
+        print(f"| {c} | {label} | {must} | {sum(v)} of {len(v)} |")
 
 
 if __name__ == "__main__":

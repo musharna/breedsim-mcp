@@ -288,6 +288,40 @@ def compare(baseline: dict[str, Any], measured: dict[str, Any]) -> list[str]:
     return problems
 
 
+def update_refusal(
+    baseline: dict[str, Any], measured: dict[str, Any], *, allow_increase: bool
+) -> str | None:
+    """Why ``--update`` must not write the measured counts, or None if it may.
+
+    A changed output signature is always refused: the workload computed
+    something else, so its counts are not comparable and recording them would
+    hide the change. A rise in any total is refused unless ``allow_increase``.
+    A drop, or a new workload, may be recorded.
+    """
+    changed = [
+        name
+        for name in measured
+        if name in baseline
+        and baseline[name].get("signature") != measured[name].get("signature")
+    ]
+    if changed:
+        return (
+            f"output signature changed in {changed}; fix the workload, not the baseline"
+        )
+    rises = [
+        name
+        for name in measured
+        if name in baseline
+        and any(
+            measured[name]["counts"].get(t, 0) > baseline[name]["counts"].get(t, 0)
+            for t in TOTALS
+        )
+    ]
+    if rises and not allow_increase:
+        return f"counts rose in {rises}; re-run with --allow-increase to accept"
+    return None
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--worker", help=argparse.SUPPRESS)
@@ -310,17 +344,9 @@ def main() -> None:
     print("\n".join(problems))
     if not a.update:
         sys.exit(1)
-    rises = [
-        name
-        for name in measured
-        if name in baseline
-        and any(
-            measured[name]["counts"].get(t, 0) > baseline[name]["counts"].get(t, 0)
-            for t in TOTALS
-        )
-    ]
-    if rises and not a.allow_increase:
-        sys.exit(f"counts rose in {rises}; re-run with --allow-increase to accept")
+    refusal = update_refusal(baseline, measured, allow_increase=a.allow_increase)
+    if refusal:
+        sys.exit(refusal)
     BASELINE.write_text(json.dumps(measured, indent=1, sort_keys=True) + "\n")
     print(f"wrote {BASELINE.name}")
 

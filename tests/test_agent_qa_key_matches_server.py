@@ -130,3 +130,21 @@ def test_a_paired_comparison_matches_the_keys_paired_difference(server_runs):
     assert compare["cycles"][-1]["difference"]["mean"] == pytest.approx(
         statistics.fmean(diffs), abs=1e-9
     )
+
+
+def test_the_installed_alphasimr_is_the_version_the_key_was_built_on():
+    """The key is a simulation, so it holds only for its AlphaSimR version;
+    CI pins that version (scripts/install-r-deps.R) and this checks the pin."""
+    built = json.loads((KEY_R.parent / "questions.json").read_text())["alphasimr"]
+    pinned = next(
+        ln.split('"')[1]
+        for ln in (KEY_R.parents[2] / "scripts" / "install-r-deps.R")
+        .read_text()
+        .splitlines()
+        if ln.startswith("ALPHASIMR <-")
+    )
+    have = subprocess.run(
+        ["Rscript", "-e", 'cat(as.character(packageVersion("AlphaSimR")))'],
+        check=True, capture_output=True, text=True, timeout=120,
+    ).stdout.strip()  # fmt: skip
+    assert built == pinned == have, (built, pinned, have)

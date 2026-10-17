@@ -22,16 +22,21 @@ theme_breedsim <- function(base_size = 12) {
     )
 }
 
-# Verdicts, the same four colours in every figure: green right, red wrong,
-# light grey declined, orange for a reply with no ANSWER line.
+# Verdicts, the same colours in every figure: green right, red wrong, light
+# grey declined, orange for a reply with no ANSWER line, dark grey for a run
+# that failed the validity rule (benchmarks/agent_qa/analyse.py).
 pal_verdict <- c(
   right = "#2E7D5B",
   wrong = "#C0392B",
   declined = "#BDBDBD",
-  no_answer = "#E69F00"
+  no_answer = "#E69F00",
+  invalid = "#4D4D4D"
 )
-# Count labels: white on green, red and orange; dark on the light grey.
-verdict_label_colour <- c(right = "white", wrong = "white", declined = "grey15", no_answer = "grey15")
+# Count labels: white on green, red, orange and dark grey; dark on the light grey.
+verdict_label_colour <- c(
+  right = "white", wrong = "white", declined = "grey15", no_answer = "grey15",
+  invalid = "white"
+)
 
 # Per-run scatter (shape 21) over a box: thin white outline so overlapping
 # points stay countable.

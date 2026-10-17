@@ -32,25 +32,18 @@ jobs:
           sudo apt-get install -y r-base r-base-dev libtirpc-dev
 
       # AlphaSimR is an Rcpp/RcppArmadillo compile measured in minutes, so it is
-      # cached on the R version rather than rebuilt every run.
+      # cached, keyed on this workflow and the installer (which pins the version
+      # the agent benchmark's key was built on).
       - name: Cache AlphaSimR
         id: cache-alphasimr
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/R/library
-          key: alphasimr-${{ runner.os }}-${{ hashFiles('.github/workflows/ci.yml') }}
+          key: alphasimr-${{ runner.os }}-${{ hashFiles('.github/workflows/ci.yml', 'scripts/install-r-deps.R') }}
 
-      - name: Install AlphaSimR
-        if: steps.cache-alphasimr.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p ~/R/library
-          Rscript -e 'install.packages("AlphaSimR", lib="~/R/library", repos="https://cloud.r-project.org", Ncpus=4)'
-
-      # jsonlite carries the agent benchmark's key script (simulate_key.R),
-      # which tests/test_agent_qa_key_matches_server.py runs against the server.
-      - name: Install jsonlite
-        run: |
-          Rscript -e 'if (!requireNamespace("jsonlite", lib.loc=path.expand("~/R/library"), quietly=TRUE)) install.packages("jsonlite", lib="~/R/library", repos="https://cloud.r-project.org")'
+      # Runs on a cache hit too: it only checks the pinned versions then.
+      - name: Install R packages (AlphaSimR pinned)
+        run: Rscript scripts/install-r-deps.R ~/R/library
 
       - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
         with:
