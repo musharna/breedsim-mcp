@@ -139,3 +139,42 @@ def test_baselines_score_through_the_real_scorer_and_the_textbook_control_hits()
     assert shares["prob_beats"] > 2 / 3 and "prob_beats" in B.NOT_HEADLINE
     assert sum(by[(B.CONSTANT, "prob_beats")]) == round(shares["prob_beats"] * 6)
     assert all(c in B.PLAN for c in B.NOT_HEADLINE)
+
+
+def test_exact_wilcoxon_matches_hand_counted_tails():
+    """All n differences one way: p = 2 / 2^n. Balanced: p = 1."""
+    assert A.wilcoxon_exact([0.01] * 5) == pytest.approx(2 / 32)
+    assert A.wilcoxon_exact(
+        [-0.01, -0.02, -0.03, -0.04, -0.05, -0.06]
+    ) == pytest.approx(2 / 64)
+    # n = 3, d = 1, 2, -3: W+ = 3; P(W+ <= 3) = 5/8 and P(W+ >= 3) = 5/8 -> 1.
+    assert A.wilcoxon_exact([1.0, 2.0, -3.0]) == pytest.approx(1.0)
+    # Ties share their rank: |d| = 1, 1, 2 -> ranks 1.5, 1.5, 3, so W+ = 4.5.
+    # Of the 8 sign patterns, 3 reach W+ >= 4.5 (4.5, 4.5, 6): p = 2 x 3/8.
+    assert A.wilcoxon_exact([1.0, -1.0, 2.0]) == pytest.approx(0.75)
+    # Average ranks, not positional ones: d = -1, 1, 1 gives W+ = 4 of 6 (p = 1);
+    # ranks 1, 2, 3 by position would give W+ = 5 (p = 0.5).
+    assert A.wilcoxon_exact([-1.0, 1.0, 1.0]) == pytest.approx(1.0)
+    assert A.wilcoxon_exact([0.0, 0.0]) == 1.0
+
+
+def test_cost_paired_finds_a_cheaper_arm_and_not_an_equal_one():
+    def rows(mcp_cost):
+        out = []
+        for i in range(12):
+            for rep in (1, 2, 3):
+                out.append({"arm": "alt", "qid": f"q{i}", "cost_usd": 0.03 + 0.001 * i})
+                out.append({"arm": "mcp", "qid": f"q{i}", "cost_usd": mcp_cost(i, rep)})
+        return out
+
+    cheaper = A.cost_paired(rows(lambda i, rep: 0.02 + 0.001 * i))
+    assert cheaper["p_exact_wilcoxon"] == pytest.approx(2 / 2**12)
+    assert cheaper["difference_ci95"][1] < 0
+    assert cheaper["questions mcp cheaper"] == 12
+    assert cheaper["difference"] == pytest.approx(-0.01)
+    # Positive control: the same costs, jittered both ways, are not separated.
+    same = A.cost_paired(
+        rows(lambda i, rep: 0.03 + 0.001 * i + (0.002 if (i + rep) % 2 else -0.002))
+    )
+    assert same["p_exact_wilcoxon"] > 0.05
+    assert same["difference_ci95"][0] <= 0 <= same["difference_ci95"][1]

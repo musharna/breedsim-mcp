@@ -138,7 +138,8 @@ an agent sets up and runs the stated simulation correctly, not whether
 AlphaSimR is right.
 [`tests/test_agent_qa_key_matches_server.py`](../../tests/test_agent_qa_key_matches_server.py)
 checks this on the real engine: on the same seeds the server's means equal the
-key script's to 1e-9 for phenotypic selection, genomic selection and a paired
+key script's to the 4 significant figures the tools report (1e-9 before
+2026-10-18) for phenotypic selection, genomic selection and a paired
 comparison, a different selection intensity must not match, and two planted
 mutations of the key script make it fail.
 

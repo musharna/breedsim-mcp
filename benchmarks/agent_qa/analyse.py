@@ -162,6 +162,78 @@ def bootstrap(
     return {k: _ci(v) for k, v in draws.items()}
 
 
+def wilcoxon_exact(d: list[float]) -> float:
+    """Two-sided exact Wilcoxon signed-rank p on paired differences. Zeros are
+    dropped; tied |d| get their average rank. Ranks are doubled so they are
+    integers, and the null distribution of the positive-rank sum is counted
+    exactly over all 2^n sign patterns."""
+    d = [x for x in d if x != 0]
+    n = len(d)
+    if n == 0:
+        return 1.0
+    order = sorted(range(n), key=lambda i: abs(d[i]))
+    rank2 = [0] * n  # 2 x rank
+    i = 0
+    while i < n:
+        j = i
+        while j + 1 < n and abs(d[order[j + 1]]) == abs(d[order[i]]):
+            j += 1
+        for k in range(i, j + 1):
+            rank2[order[k]] = i + j + 2  # 2 x the average of ranks i+1..j+1
+        i = j + 1
+    total = sum(rank2)
+    counts = [0] * (total + 1)  # counts[w] = sign patterns with positive sum w
+    counts[0] = 1
+    for r in rank2:
+        for w in range(total, r - 1, -1):
+            counts[w] += counts[w - r]
+    w_pos = sum(r for r, x in zip(rank2, d, strict=True) if x > 0)
+    lower = sum(counts[: w_pos + 1]) / 2**n
+    upper = sum(counts[w_pos:]) / 2**n
+    return min(1.0, 2 * min(lower, upper))
+
+
+def cost_paired(
+    rows: list[dict[str, Any]], a: str = "mcp", b: str = "alt", seed: int = 1
+) -> dict[str, Any]:
+    """The 2026-10-18 primary endpoint: median cost per answer, a vs b.
+
+    Every run counts (an invalid run still cost money). The test is the exact
+    Wilcoxon signed-rank over questions on each question's mean cost per
+    answer (a - b); the interval is the 95% bootstrap over questions of the
+    difference of the two medians per answer."""
+    cost: dict[tuple[str, str], list[float]] = {}
+    for r in rows:
+        cost.setdefault((r["arm"], r["qid"]), []).append(r["cost_usd"] or 0.0)
+    qids = sorted(
+        {q for arm, q in cost if arm == a} & {q for arm, q in cost if arm == b}
+    )
+    if not qids:
+        return {}
+    d = [statistics.fmean(cost[a, q]) - statistics.fmean(cost[b, q]) for q in qids]
+    med = {
+        arm: statistics.median(x for q in qids for x in cost[arm, q]) for arm in (a, b)
+    }
+    rng = random.Random(seed)
+    draws = []
+    for _ in range(BOOT):
+        pick = [rng.choice(qids) for _ in qids]
+        draws.append(
+            statistics.median(x for q in pick for x in cost[a, q])
+            - statistics.median(x for q in pick for x in cost[b, q])
+        )
+    return {
+        "questions": len(qids),
+        f"{a} median cost": med[a],
+        f"{b} median cost": med[b],
+        "difference": med[a] - med[b],
+        "difference_ci95": _ci(draws),
+        f"questions {a} cheaper": sum(x < 0 for x in d),
+        f"questions {b} cheaper": sum(x > 0 for x in d),
+        "p_exact_wilcoxon": wilcoxon_exact(d),
+    }
+
+
 def per_question(rows: list[dict[str, Any]], arm: str) -> dict[str, bool]:
     """qid -> right in every run of this arm."""
     out: dict[str, bool] = {}
@@ -272,6 +344,7 @@ def analyse(
             "mcp_vs_alt": paired(rs, "mcp", "alt"),
             "mcp_vs_bare": paired(rs, "mcp", "bare"),
             "alt_vs_bare": paired(rs, "alt", "bare"),
+            "cost_mcp_vs_alt": cost_paired(rs),
             "bootstrap_95": bootstrap(rs, qids) if qids else {},
         }
     base = baselines(questions)

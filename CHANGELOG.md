@@ -6,8 +6,29 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- **Cheaper to read for an agent** (from the 2026-10-18 token diagnosis of the
+  benchmark transcripts). The server instructions are cut from 3,106 to 357
+  characters: Claude Code places them after the question, outside the cached
+  prompt prefix, so their ~1,100 tokens were written to the cache in every
+  conversation. The guidance moved into the tool descriptions, which are
+  cached, and the instructions now say to call tools by their prefixed name.
+  Every float in a tool response is rounded to 4 significant figures (the
+  library still returns full precision); a 17-digit double cost about three
+  times the tokens.
+
 ### Added
 
+- `final_only` on `run_program` and `compare_programs`: return only the last
+  cycle. Warnings still read every cycle.
+- `benchmarks/agent_qa/run.py --server-spec git+https://...@<sha>` runs an
+  unreleased commit instead of the PyPI pin (with `--exclude-newer` for its
+  dependencies), records it per row and in `versions.json`, and pauses the
+  sweep when the account's five-hour usage window reaches 85%.
+  `diagnose.py` breaks each arm's tokens down per run; `analyse.py` adds the
+  paired cost endpoint (exact Wilcoxon over questions, bootstrap CI of the
+  difference of median costs).
 - `benchmarks/agent_qa/`: an agent A/B benchmark. Quantitative-genetics
   questions asked to Claude with no tools, with Bash + R/AlphaSimR + web, and
   with this server. Most sit where closed forms fail (gain and remaining

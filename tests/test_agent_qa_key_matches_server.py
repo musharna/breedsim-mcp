@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pytest
 
-from breedsim_mcp.server import build_server
+from breedsim_mcp.server import SIG_FIGS, build_server
 
 KEY_R = (
     Path(__file__).resolve().parent.parent
@@ -57,6 +57,11 @@ def _mean(rows: list[list[float]], cycle: int) -> float:
     return statistics.fmean(r[cycle] for r in rows)
 
 
+def _rounded(x: float) -> float:
+    """The key's value as the tool reports it: 4 significant figures (server.SIG_FIGS)."""
+    return float(f"{x:.{SIG_FIGS}g}")
+
+
 def _call(srv, name: str, args: dict) -> dict:
     res = asyncio.run(srv.call_tool(name, args))
     assert not res.is_error, res.content
@@ -88,10 +93,10 @@ def test_phenotypic_gain_and_variance_match_the_key_seed_for_seed(server_runs):
     key = _key([{"label": "a", "method": "pheno", "n_select": 6, "n_cross": 30}])["a"]
     for c in range(CYCLES):
         assert pheno["cycles"][c]["genetic_gain"]["mean"] == pytest.approx(
-            _mean(key["gain"], c), abs=1e-9
+            _rounded(_mean(key["gain"], c)), abs=1e-12
         )
         assert pheno["cycles"][c]["genetic_variance"]["mean"] == pytest.approx(
-            _mean(key["var"], c), abs=1e-9
+            _rounded(_mean(key["var"], c)), abs=1e-12
         )
     # Positive control for the comparison itself: a different selection
     # intensity must NOT match, or the equality above could be vacuous.
@@ -109,10 +114,10 @@ def test_genomic_gain_and_out_of_sample_accuracy_match_the_key(server_runs):
     for c in range(CYCLES):
         cyc = genomic["cycles"][c]
         assert cyc["genetic_gain"]["mean"] == pytest.approx(
-            _mean(key["gain"], c), abs=1e-9
+            _rounded(_mean(key["gain"], c)), abs=1e-12
         )
         assert cyc["prediction_accuracy"]["mean"] == pytest.approx(
-            _mean(key["acc"], c), abs=1e-9
+            _rounded(_mean(key["acc"], c)), abs=1e-12
         )
 
 
@@ -128,7 +133,7 @@ def test_a_paired_comparison_matches_the_keys_paired_difference(server_runs):
         a[-1] - b[-1] for a, b in zip(key["a"]["gain"], key["b"]["gain"], strict=True)
     ]
     assert compare["cycles"][-1]["difference"]["mean"] == pytest.approx(
-        statistics.fmean(diffs), abs=1e-9
+        _rounded(statistics.fmean(diffs)), abs=1e-12
     )
 
 
