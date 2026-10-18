@@ -47,6 +47,9 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   measurements, warnings table and reproducibility detail moved unchanged to
   `docs/REFERENCE.md`; `scripts/readme_examples.py` now regenerates the
   examples there.
+- `agent_qa.png` re-rendered at 8.5 in wide so its text stays legible at the
+  README's 780 px; the title names only the verdicts shown and the 34
+  headline questions it plots. Same data, counts and colors.
 
 ## [0.5.1] - 2026-09-26
 

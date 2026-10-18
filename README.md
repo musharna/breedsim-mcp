@@ -1,13 +1,13 @@
 # breedsim-mcp
 
-An MCP server that runs [AlphaSimR](https://github.com/gaynorr/AlphaSimR) breeding-program
-simulations for AI agents. It returns the spread over replicates, never a single stochastic
+breedsim-mcp is an MCP server that lets AI agents run [AlphaSimR](https://github.com/gaynorr/AlphaSimR)
+breeding-program simulations. It returns the spread over replicates, never a single stochastic
 run, so an agent can say what a selection scheme would gain and how sure that is.
 
-[![ci](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/musharna/breedsim-mcp/ci.yml?branch=master&label=CI)](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/breedsim-mcp)](https://pypi.org/project/breedsim-mcp/)
-[![python](https://img.shields.io/pypi/pyversions/breedsim-mcp)](https://pypi.org/project/breedsim-mcp/)
-[![license](https://img.shields.io/pypi/l/breedsim-mcp)](LICENSE)
+[![Python](https://img.shields.io/pypi/pyversions/breedsim-mcp)](https://pypi.org/project/breedsim-mcp/)
+[![License](https://img.shields.io/pypi/l/breedsim-mcp)](LICENSE)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21713210.svg)](https://doi.org/10.5281/zenodo.21713210)
 [![Glama](https://glama.ai/mcp/servers/musharna/breedsim-mcp/badges/score.svg)](https://glama.ai/mcp/servers/musharna/breedsim-mcp)
 
@@ -19,7 +19,7 @@ Yes, compared with Claude alone. Compared with Claude writing its own AlphaSimR 
 is not measurably more accurate and costs more.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/musharna/breedsim-mcp/master/benchmarks/agent_qa/agent_qa.png" width="900"
+  <img src="https://raw.githubusercontent.com/musharna/breedsim-mcp/master/benchmarks/agent_qa/agent_qa.png" width="780"
        alt="Stacked bar chart of right and wrong answers to 34 breeding-simulation questions, 3 runs each. Claude alone: 51 right, 51 wrong. Claude with Bash, R and web: 99 right, 3 wrong. Claude with breedsim-mcp: 102 right, 0 wrong. No-LLM baselines, one answer per question: one constant per kind of question, 12 right and 22 wrong; best closed form per question, 15 right and 19 wrong.">
 </p>
 
@@ -103,20 +103,20 @@ can currently produce reproducible results**.
 
 ## Tools
 
-| tool                                                           | returns                                                           |
-| -------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `list_methods()`                                               | engine versions, generators, selection methods, replicate floor   |
-| `found_population(generator, seed, n_ind, n_snp_per_chr, ...)` | `session_id`, founder provenance, `reproducible`, measured **LD** |
-| `run_program(session_id, cycles, replicates, ...)`             | per-cycle **distributions**: mean, sd, 95% CI                     |
-| `compare_programs(session_id, a_n_select, b_n_select, ...)`    | the **paired difference** between two programs, with a CI         |
-| `describe_session(session_id)`                                 | provenance, trait architecture, cycles run                        |
+| Tool               | Returns                                                           |
+| ------------------ | ----------------------------------------------------------------- |
+| `list_methods`     | engine versions, generators, selection methods, replicate floor   |
+| `found_population` | `session_id`, founder provenance, `reproducible`, measured **LD** |
+| `run_program`      | per-cycle **distributions**: mean, sd, 95% CI                     |
+| `compare_programs` | the **paired difference** between two programs, with a CI         |
+| `describe_session` | provenance, trait architecture, cycles run                        |
 
 Typical loop: `found_population` → `run_program` → read the CI and the warnings. To compare
-two schemes: `found_population` → `compare_programs` → read `difference`. Both run tools
-take `selection_method="phenotypic"` or `"genomic"`.
+two schemes: `found_population` → `compare_programs` → read `difference`. `run_program`
+takes `selection_method="phenotypic"` or `"genomic"`; `compare_programs` takes one per arm.
 
-[docs/REFERENCE.md](docs/REFERENCE.md) has example outputs, the full warnings table, and the
-measurements behind the points below.
+[docs/REFERENCE.md](docs/REFERENCE.md) has the full tool signatures, example outputs, the
+warnings table, and the measurements behind the points below.
 
 - **Compare with `compare_programs`, not two `run_program` calls.** It runs both arms on
   the same seeds and differences them within each pair, so shared luck cancels. Two
@@ -133,6 +133,12 @@ measurements behind the points below.
   session and advances across calls, so a repeat call in this long-lived process differs
   (`reproducible: false`).
 - **Warnings explain; none of them withhold results.**
+- **Multi-trait selection.** Pass `h2` as a list and `index_weights` to select on a
+  weighted index. `trait_correlation` must be a real correlation matrix (for n equally
+  correlated traits, not below −1/(n−1)); an invalid one is refused, not replaced by the
+  nearest valid matrix. Genomic selection fits one RRBLUP model per trait, applies the index
+  to the estimated breeding values, and reports `prediction_accuracy` in each `traits`
+  entry.
 - **Species.** `species` applies only to `runMacs`, which has demographic histories for
   `GENERIC`, `CATTLE`, `WHEAT` and `MAIZE`; anything else is refused. The default is
   `MAIZE`, but this is not a plant-only simulator.
@@ -152,12 +158,6 @@ calls and R evaluations, not on time.
 
 ## Limitations
 
-- Multi-trait selection works: pass `h2` as a list and `index_weights` to select on a
-  weighted index. `trait_correlation` must be a real correlation matrix (for n equally
-  correlated traits, not below −1/(n−1)); an invalid one is refused, not replaced by the
-  nearest valid matrix. Genomic selection fits one RRBLUP model per trait, applies the index
-  to the estimated breeding values, and reports `prediction_accuracy` in each `traits`
-  entry.
 - `compare_programs` is single-trait: one paired verdict needs one criterion, and with
   several traits that is the index, for which AlphaSimR reports no gain.
 - No G×E, optimal contribution selection, crossing-block optimization or genotype-matrix

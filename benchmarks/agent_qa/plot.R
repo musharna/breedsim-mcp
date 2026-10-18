@@ -134,7 +134,6 @@ write.table(rbind(per_arm, per_cat, per_base), file.path(outdir, "summary.tsv"),
 )
 
 setup_note <- sprintf("Claude Opus 5.5 in Claude Code, %d questions × %d runs.", n_q, n_rep)
-key_note <- "Key: AlphaSimR, 300-400 replicates on the stated founders; band = noise of a 50-100 replicate answer."
 legend_counts <- function(v, d = r) {
   sprintf("%s (%s)", v, vapply(v, function(k) {
     paste(vapply(names(arm_labels), function(a) {
@@ -165,6 +164,13 @@ counts <- rbind(counts, bc)
 counts$arm_label <- factor(counts$arm_label, levels = c(rev(base_labels), levels(r$arm_label)))
 counts$verdict <- factor(counts$verdict, levels = names(pal_verdict))
 n_head <- length(unique(h$qid))
+# Name only the verdicts a bar actually shows, so the title cannot list one
+# (e.g. "declined") that no setup produced.
+shown <- names(pal_verdict)[names(pal_verdict) %in% counts$verdict]
+shown_text <- if (length(shown) == 1) shown else {
+  paste(paste(head(shown, -1), collapse = ", "), "or", tail(shown, 1))
+}
+substr(shown_text, 1, 1) <- toupper(substr(shown_text, 1, 1))
 p1 <- ggplot(counts, aes(x = share, y = arm_label, fill = verdict)) +
   geom_col(width = 0.62, position = position_stack(reverse = TRUE)) +
   geom_text(
@@ -182,21 +188,24 @@ p1 <- ggplot(counts, aes(x = share, y = arm_label, fill = verdict)) +
   scale_x_continuous(labels = scales::percent, expand = c(0, 0)) +
   labs(
     x = sprintf(
-      "Share of answers: %d per setup (%d questions × %d runs), %d per baseline",
+      "Share of answers: %d per setup (%d × %d runs), %d per baseline",
       n_head * n_rep, n_head, n_rep, n_head
     ), y = NULL,
-    title = sprintf(
-      "Breeding-simulation questions: right, wrong or declined (%d headline questions)", n_head
-    ),
-    subtitle = paste0(
-      setup_note, "\nNot in the headline: ", paste(not_headline, collapse = ", "),
-      " (one constant lands in most of its bands; shown by kind in agent_qa_by_category.png).\n",
-      key_note
-    )
+    title = sprintf("%s, %d headline breeding-simulation questions", shown_text, n_head),
+    # One line: the README shows this figure at 780 px. The questions left out
+    # of the headline, and the key's replicate counts, are in the benchmark
+    # README and agent_qa_by_category.png.
+    subtitle = "Claude Opus 5.5 in Claude Code; key: AlphaSimR run directly on the stated founders."
   ) +
   theme_breedsim(base_size = 13) +
-  theme(panel.grid.major.y = element_blank(), plot.margin = margin(8, 24, 8, 8))
-ggsave(file.path(outdir, "agent_qa.png"), p1, width = 12, height = 5.4, dpi = 200, bg = "white")
+  theme(
+    panel.grid.major.y = element_blank(), plot.margin = margin(8, 24, 8, 8),
+    # Right-aligned to the panel: centred, it overruns the right edge at this width.
+    axis.title.x = element_text(hjust = 1)
+  )
+# 8.5 in wide so that at the README's 780 px display width the axis and legend
+# text (0.8 x base_size = 10.4 pt) render at about 13 px.
+ggsave(file.path(outdir, "agent_qa.png"), p1, width = 8.5, height = 4.8, dpi = 200, bg = "white")
 
 # Figure 2: cost and seconds per answer, one point per run, box over them.
 long <- rbind(

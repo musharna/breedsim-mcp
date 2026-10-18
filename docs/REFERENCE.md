@@ -1,8 +1,32 @@
 # Reference
 
-Detail behind the [README](../README.md): species and size limits, example outputs,
-the paired comparison, genomic selection and its LD guard, the warnings, and
-reproducibility.
+Detail behind the [README](../README.md): tool signatures, species and size limits,
+example outputs, the paired comparison, genomic selection and its LD guard, the
+warnings, and reproducibility.
+
+## Tool signatures
+
+Defaults as in `src/breedsim_mcp/server.py`; `replicates` defaults to 10 and may not
+go below 5.
+
+```python
+list_methods()
+found_population(
+    generator="quickHaplo", seed=1, n_ind=100, n_chr=10, seg_sites=100,
+    n_qtl_per_chr=10, h2=0.4, species="MAIZE", n_snp_per_chr=0,
+    trait_correlation=0.0,
+)  # h2 may be a list, one value per trait
+run_program(
+    session_id, cycles=3, replicates=10, n_select=10, n_cross=None,
+    base_seed=1000, selection_method="phenotypic", index_weights=None,
+)
+compare_programs(
+    session_id, a_n_select=10, b_n_select=25, cycles=3, replicates=10,
+    a_n_cross=None, b_n_cross=None, base_seed=1000, a_label="A", b_label="B",
+    a_selection_method="phenotypic", b_selection_method="phenotypic",
+)
+describe_session(session_id)
+```
 
 ## Species
 
@@ -164,7 +188,7 @@ the only reproducible one, **has none**. Measured once while building v0.2.0
 (2026-07-29, AlphaSimR 2.1.0; 10 chromosomes × 100 segregating sites, 50 SNPs per
 chromosome, accuracy at 500 founders) and not re-run since:
 
-| generator    | mean \|r\| adjacent SNP | mean \|r\| distant pairs | ratio    | out-of-sample accuracy |
+| Generator    | Mean \|r\| adjacent SNP | Mean \|r\| distant pairs | Ratio    | Out-of-sample accuracy |
 | ------------ | ----------------------- | ------------------------ | -------- | ---------------------- |
 | `quickHaplo` | 0.0444                  | 0.0462                   | **0.96** | 0.097                  |
 | `runMacs`    | 0.1979                  | 0.0495                   | **4.00** | 0.351                  |
@@ -187,7 +211,7 @@ The obvious alternative — fit the model, warn if accuracy is poor — cannot d
 job. Measured once while building v0.2.0 (2026-07-29, AlphaSimR 2.1.0) at 20
 replicates, 200 individuals, three cycles, and not re-run since:
 
-| selection | `quickHaplo` (LD ratio 1.00) | `runMacs` (LD ratio 3.7)  |
+| Selection | `quickHaplo` (LD ratio 1.00) | `runMacs` (LD ratio 3.7)  |
 | --------- | ---------------------------- | ------------------------- |
 | 10% kept  | 0.104 → 0.159 → **0.208**    | 0.105 → 0.130 → 0.167     |
 | 50% kept  | 0.162 → 0.207 → 0.226        | 0.217 → 0.257 → **0.253** |
@@ -210,7 +234,7 @@ you, not as proof that genomic selection is working for the reason you assume.
 
 ## Warnings
 
-| code                           | meaning                                                                  |
+| Code                           | Meaning                                                                  |
 | ------------------------------ | ------------------------------------------------------------------------ |
 | `nondeterministic_founders`    | founders came from `runMacs`; a repeat call will differ                  |
 | `no_linkage_disequilibrium`    | founder markers carry no linkage; genomic prediction cannot work here    |
@@ -229,7 +253,7 @@ an answer is too noisy to use — they explain rather than refuse.
 Two independent things break it. Both were measured once while building v0.1.0
 (2026-07-29, AlphaSimR 2.1.0); the numbers below are from that run:
 
-| source                | symptom                                         | fix                                          |
+| Source                | Symptom                                         | Fix                                          |
 | --------------------- | ----------------------------------------------- | -------------------------------------------- |
 | `runMacs` founder RNG | a **repeat** seeded call in one session differs | use `quickHaplo`                             |
 | OpenMP in selection   | same seed, fixed founders → 2.397 vs 2.125      | `OMP_NUM_THREADS=1` **before R initializes** |
