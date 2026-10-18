@@ -12,7 +12,7 @@ much, while time is not separated. The main limitation is that each question
 spells out the AlphaSimR calls, so this tests running a stated simulation, not
 designing one.
 
-![Right, wrong or declined per setup and per no-LLM baseline](agent_qa.png)
+![Right and wrong answers per setup and per no-LLM baseline, 34 headline questions](agent_qa.png)
 
 ## Results
 

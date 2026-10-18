@@ -171,6 +171,9 @@ shown_text <- if (length(shown) == 1) shown else {
   paste(paste(head(shown, -1), collapse = ", "), "or", tail(shown, 1))
 }
 substr(shown_text, 1, 1) <- toupper(substr(shown_text, 1, 1))
+# Short plain names for the legend title, in arm order (the counts follow it).
+legend_arms <- c(bare = "alone", alt = "own scripts", mcp = "breedsim-mcp")
+stopifnot(all(names(arm_labels) %in% names(legend_arms)))
 p1 <- ggplot(counts, aes(x = share, y = arm_label, fill = verdict)) +
   geom_col(width = 0.62, position = position_stack(reverse = TRUE)) +
   geom_text(
@@ -182,7 +185,7 @@ p1 <- ggplot(counts, aes(x = share, y = arm_label, fill = verdict)) +
   # Slices too thin to hold a number are counted in the legend instead.
   scale_fill_manual(
     values = pal_verdict, labels = function(v) legend_counts(v, h), drop = TRUE,
-    name = sprintf("Headline answers (%s):", paste(names(arm_labels), collapse = " / "))
+    name = sprintf("Headline answers (%s):", paste(legend_arms[names(arm_labels)], collapse = " / "))
   ) +
   guides(fill = guide_legend(title.position = "top", title.hjust = 0.5)) +
   scale_x_continuous(labels = scales::percent, expand = c(0, 0)) +
