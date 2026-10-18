@@ -1,7 +1,7 @@
-"""Regenerate the two JSON examples in README.md by calling the MCP tools.
+"""Regenerate the two JSON examples in docs/REFERENCE.md by calling the MCP tools.
 
 Every call goes through `call_tool`, the layer a client uses, with the
-parameters printed alongside the output, so the README examples can be checked
+parameters printed alongside the output, so the examples can be checked
 by re-running this rather than trusted.
 
     uv run python scripts/readme_examples.py
