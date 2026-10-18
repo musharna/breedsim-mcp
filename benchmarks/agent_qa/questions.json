@@ -1,0 +1,2028 @@
+{
+ "built": "2026-10-17",
+ "seed": 20261016,
+ "alphasimr": "2.1.0",
+ "band": "3.0 * sd * sqrt(1/R_answer + 1/R_key), rounded up to 2 significant figures",
+ "candidates": {
+  "control_response": {
+   "wanted": 6,
+   "drawn": 18,
+   "rejected": 3
+  },
+  "long_term_gain": {
+   "wanted": 8,
+   "drawn": 16,
+   "rejected": 0
+  },
+  "remaining_variance": {
+   "wanted": 8,
+   "drawn": 16,
+   "rejected": 1
+  },
+  "scheme_difference": {
+   "wanted": 7,
+   "drawn": 14,
+   "rejected": 0
+  },
+  "prob_beats": {
+   "wanted": 6,
+   "drawn": 40,
+   "rejected": 14
+  },
+  "genomic_accuracy": {
+   "wanted": 5,
+   "drawn": 12,
+   "rejected": 0
+  }
+ },
+ "questions": [
+  {
+   "category": "control_response",
+   "design": {
+    "founder_seed": 139879,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 1000,
+    "h2": 0.6,
+    "cycles": 1,
+    "n_select": 200,
+    "n_cross": 1000
+   },
+   "candidate": 0,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(139879); founders <- quickHaplo(nInd=1000, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.6)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=200, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=1000, simParam=SP)`. Run one generation. What is the expected meanG(pop) after generation 1? Base your answer on 50 replicates. Answers within \u00b10.02 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 1.07847,
+    "half_width": 0.02,
+    "tolerance": "0.02"
+   },
+   "key": {
+    "sd": 0.04267,
+    "shortcuts": {
+     "breeder's equation, R = i(n,N) h": {
+      "value": 1.08318,
+      "role": "inside",
+      "outside_band": false
+     },
+     "R = i h2 (sigma_P dropped)": {
+      "value": 0.83903,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.00213,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q01"
+  },
+  {
+   "category": "control_response",
+   "design": {
+    "founder_seed": 465617,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 500,
+    "h2": 0.2,
+    "cycles": 1,
+    "n_select": 50,
+    "n_cross": 500
+   },
+   "candidate": 1,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(465617); founders <- quickHaplo(nInd=500, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.2)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=50, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=500, simParam=SP)`. Run one generation. What is the expected meanG(pop) after generation 1? Base your answer on 50 replicates. Answers within \u00b10.053 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.78181,
+    "half_width": 0.053,
+    "tolerance": "0.053"
+   },
+   "key": {
+    "sd": 0.11673,
+    "shortcuts": {
+     "breeder's equation, R = i(n,N) h": {
+      "value": 0.78257,
+      "role": "inside",
+      "outside_band": false
+     },
+     "R = i h2 (sigma_P dropped)": {
+      "value": 0.34997,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.00584,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q02"
+  },
+  {
+   "category": "control_response",
+   "design": {
+    "founder_seed": 555918,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 1000,
+    "h2": 0.2,
+    "cycles": 1,
+    "n_select": 100,
+    "n_cross": 1000
+   },
+   "candidate": 2,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(555918); founders <- quickHaplo(nInd=1000, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.2)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=100, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=1000, simParam=SP)`. Run one generation. What is the expected meanG(pop) after generation 1? Base your answer on 50 replicates. Answers within \u00b10.04 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.79298,
+    "half_width": 0.04,
+    "tolerance": "0.04"
+   },
+   "key": {
+    "sd": 0.08794,
+    "shortcuts": {
+     "breeder's equation, R = i(n,N) h": {
+      "value": 0.78371,
+      "role": "inside",
+      "outside_band": false
+     },
+     "R = i h2 (sigma_P dropped)": {
+      "value": 0.35048,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.0044,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q03"
+  },
+  {
+   "category": "control_response",
+   "design": {
+    "founder_seed": 762109,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 500,
+    "h2": 0.2,
+    "cycles": 1,
+    "n_select": 150,
+    "n_cross": 500
+   },
+   "candidate": 3,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(762109); founders <- quickHaplo(nInd=500, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.2)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=150, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=500, simParam=SP)`. Run one generation. What is the expected meanG(pop) after generation 1? Base your answer on 50 replicates. Answers within \u00b10.033 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.52348,
+    "half_width": 0.033,
+    "tolerance": "0.033"
+   },
+   "key": {
+    "sd": 0.07187,
+    "shortcuts": {
+     "breeder's equation, R = i(n,N) h": {
+      "value": 0.51741,
+      "role": "inside",
+      "outside_band": false
+     },
+     "R = i h2 (sigma_P dropped)": {
+      "value": 0.23139,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.00359,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q04"
+  },
+  {
+   "category": "control_response",
+   "design": {
+    "founder_seed": 375324,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 1000,
+    "h2": 0.4,
+    "cycles": 1,
+    "n_select": 300,
+    "n_cross": 1000
+   },
+   "candidate": 4,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(375324); founders <- quickHaplo(nInd=1000, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.4)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=300, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=1000, simParam=SP)`. Run one generation. What is the expected meanG(pop) after generation 1? Base your answer on 50 replicates. Answers within \u00b10.019 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.72124,
+    "half_width": 0.019,
+    "tolerance": "0.019"
+   },
+   "key": {
+    "sd": 0.04125,
+    "shortcuts": {
+     "breeder's equation, R = i(n,N) h": {
+      "value": 0.73236,
+      "role": "inside",
+      "outside_band": false
+     },
+     "R = i h2 (sigma_P dropped)": {
+      "value": 0.46319,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.00206,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q05"
+  },
+  {
+   "category": "control_response",
+   "design": {
+    "founder_seed": 582977,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 1000,
+    "h2": 0.3,
+    "cycles": 1,
+    "n_select": 100,
+    "n_cross": 1000
+   },
+   "candidate": 8,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(582977); founders <- quickHaplo(nInd=1000, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.3)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=100, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=1000, simParam=SP)`. Run one generation. What is the expected meanG(pop) after generation 1? Base your answer on 50 replicates. Answers within \u00b10.035 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.96589,
+    "half_width": 0.035,
+    "tolerance": "0.035"
+   },
+   "key": {
+    "sd": 0.07739,
+    "shortcuts": {
+     "breeder's equation, R = i(n,N) h": {
+      "value": 0.95984,
+      "role": "inside",
+      "outside_band": false
+     },
+     "R = i h2 (sigma_P dropped)": {
+      "value": 0.52573,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.00387,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q06"
+  },
+  {
+   "category": "long_term_gain",
+   "design": {
+    "founder_seed": 646316,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 30,
+    "h2": 0.6,
+    "n_select": 6,
+    "cycles": 8,
+    "n_cross": 30
+   },
+   "candidate": 18,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(646316); founders <- quickHaplo(nInd=30, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.6)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=6, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=30, simParam=SP)`. Run 8 generations. What is the expected meanG(pop) after generation 8? Base your answer on 50 replicates. Answers within \u00b10.32 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 5.87041,
+    "half_width": 0.32,
+    "tolerance": "0.32"
+   },
+   "key": {
+    "sd": 0.70565,
+    "shortcuts": {
+     "R = h2 S every cycle, infinite-population i": {
+      "value": 8.6743,
+      "role": "outside",
+      "outside_band": true
+     },
+     "R = h2 S every cycle, finite i(n,N)": {
+      "value": 8.38857,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 7.08658,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 5.4465,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.03528,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q07"
+  },
+  {
+   "category": "long_term_gain",
+   "design": {
+    "founder_seed": 66217,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 30,
+    "h2": 0.8,
+    "n_select": 9,
+    "cycles": 8,
+    "n_cross": 30
+   },
+   "candidate": 19,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(66217); founders <- quickHaplo(nInd=30, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.8)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=9, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=30, simParam=SP)`. Run 8 generations. What is the expected meanG(pop) after generation 8? Base your answer on 50 replicates. Answers within \u00b10.23 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 5.73652,
+    "half_width": 0.23,
+    "tolerance": "0.23"
+   },
+   "key": {
+    "sd": 0.50379,
+    "shortcuts": {
+     "R = h2 S every cycle, infinite-population i": {
+      "value": 8.29295,
+      "role": "outside",
+      "outside_band": true
+     },
+     "R = h2 S every cycle, finite i(n,N)": {
+      "value": 8.05863,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 6.65884,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 5.70984,
+      "role": "info",
+      "outside_band": false
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.02519,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q08"
+  },
+  {
+   "category": "long_term_gain",
+   "design": {
+    "founder_seed": 218028,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 100,
+    "h2": 0.2,
+    "n_select": 20,
+    "cycles": 8,
+    "n_cross": 100
+   },
+   "candidate": 20,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(218028); founders <- quickHaplo(nInd=100, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.2)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=20, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=100, simParam=SP)`. Run 8 generations. What is the expected meanG(pop) after generation 8? Base your answer on 50 replicates. Answers within \u00b10.21 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 3.64807,
+    "half_width": 0.21,
+    "tolerance": "0.21"
+   },
+   "key": {
+    "sd": 0.46289,
+    "shortcuts": {
+     "R = h2 S every cycle, infinite-population i": {
+      "value": 5.00811,
+      "role": "outside",
+      "outside_band": true
+     },
+     "R = h2 S every cycle, finite i(n,N)": {
+      "value": 4.95749,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 4.55765,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 4.06601,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.02314,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q09"
+  },
+  {
+   "category": "long_term_gain",
+   "design": {
+    "founder_seed": 928333,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 20,
+    "h2": 0.8,
+    "n_select": 4,
+    "cycles": 5,
+    "n_cross": 20
+   },
+   "candidate": 21,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(928333); founders <- quickHaplo(nInd=20, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.8)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=4, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=20, simParam=SP)`. Run 5 generations. What is the expected meanG(pop) after generation 5? Base your answer on 50 replicates. Answers within \u00b10.22 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 4.23134,
+    "half_width": 0.22,
+    "tolerance": "0.22"
+   },
+   "key": {
+    "sd": 0.48453,
+    "shortcuts": {
+     "R = h2 S every cycle, infinite-population i": {
+      "value": 6.26014,
+      "role": "outside",
+      "outside_band": true
+     },
+     "R = h2 S every cycle, finite i(n,N)": {
+      "value": 5.95578,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 5.10266,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 4.10082,
+      "role": "info",
+      "outside_band": false
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.02423,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q10"
+  },
+  {
+   "category": "long_term_gain",
+   "design": {
+    "founder_seed": 720231,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 50,
+    "h2": 0.8,
+    "n_select": 5,
+    "cycles": 8,
+    "n_cross": 50
+   },
+   "candidate": 22,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(720231); founders <- quickHaplo(nInd=50, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.8)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=5, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=50, simParam=SP)`. Run 8 generations. What is the expected meanG(pop) after generation 8? Base your answer on 50 replicates. Answers within \u00b10.22 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 6.66532,
+    "half_width": 0.22,
+    "tolerance": "0.22"
+   },
+   "key": {
+    "sd": 0.4865,
+    "shortcuts": {
+     "R = h2 S every cycle, infinite-population i": {
+      "value": 12.55764,
+      "role": "outside",
+      "outside_band": true
+     },
+     "R = h2 S every cycle, finite i(n,N)": {
+      "value": 12.20343,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 9.8516,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 7.77118,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.02433,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q11"
+  },
+  {
+   "category": "long_term_gain",
+   "design": {
+    "founder_seed": 777424,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 100,
+    "h2": 0.8,
+    "n_select": 30,
+    "cycles": 10,
+    "n_cross": 100
+   },
+   "candidate": 23,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(777424); founders <- quickHaplo(nInd=100, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.8)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=30, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=100, simParam=SP)`. Run 10 generations. What is the expected meanG(pop) after generation 10? Base your answer on 50 replicates. Answers within \u00b10.12 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 6.37661,
+    "half_width": 0.12,
+    "tolerance": "0.12"
+   },
+   "key": {
+    "sd": 0.25957,
+    "shortcuts": {
+     "R = h2 S every cycle, infinite-population i": {
+      "value": 10.36619,
+      "role": "outside",
+      "outside_band": true
+     },
+     "R = h2 S every cycle, finite i(n,N)": {
+      "value": 10.27681,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 8.25142,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 7.79722,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.01298,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q12"
+  },
+  {
+   "category": "long_term_gain",
+   "design": {
+    "founder_seed": 554296,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 50,
+    "h2": 0.4,
+    "n_select": 5,
+    "cycles": 5,
+    "n_cross": 50
+   },
+   "candidate": 24,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(554296); founders <- quickHaplo(nInd=50, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.4)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=5, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=50, simParam=SP)`. Run 5 generations. What is the expected meanG(pop) after generation 5? Base your answer on 50 replicates. Answers within \u00b10.29 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 3.78133,
+    "half_width": 0.29,
+    "tolerance": "0.29"
+   },
+   "key": {
+    "sd": 0.6419,
+    "shortcuts": {
+     "R = h2 S every cycle, infinite-population i": {
+      "value": 5.54974,
+      "role": "outside",
+      "outside_band": true
+     },
+     "R = h2 S every cycle, finite i(n,N)": {
+      "value": 5.39321,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 4.80253,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 3.793,
+      "role": "info",
+      "outside_band": false
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.03209,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q13"
+  },
+  {
+   "category": "long_term_gain",
+   "design": {
+    "founder_seed": 215033,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 50,
+    "h2": 0.6,
+    "n_select": 5,
+    "cycles": 5,
+    "n_cross": 50
+   },
+   "candidate": 25,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(215033); founders <- quickHaplo(nInd=50, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.6)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=5, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=50, simParam=SP)`. Run 5 generations. What is the expected meanG(pop) after generation 5? Base your answer on 50 replicates. Answers within \u00b10.26 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 4.16018,
+    "half_width": 0.26,
+    "tolerance": "0.26"
+   },
+   "key": {
+    "sd": 0.55932,
+    "shortcuts": {
+     "R = h2 S every cycle, infinite-population i": {
+      "value": 6.79702,
+      "role": "outside",
+      "outside_band": true
+     },
+     "R = h2 S every cycle, finite i(n,N)": {
+      "value": 6.6053,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 5.63496,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 4.65651,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.02797,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q14"
+  },
+  {
+   "category": "remaining_variance",
+   "design": {
+    "founder_seed": 895373,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 20,
+    "h2": 0.2,
+    "n_select": 6,
+    "cycles": 5,
+    "n_cross": 20
+   },
+   "candidate": 34,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(895373); founders <- quickHaplo(nInd=20, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.2)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=6, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=20, simParam=SP)`. Run 5 generations. What is the expected genetic variance, varG(pop), after generation 5? Base your answer on 50 replicates. Answers within \u00b10.095 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.53657,
+    "half_width": 0.095,
+    "tolerance": "0.095"
+   },
+   "key": {
+    "sd": 0.20992,
+    "shortcuts": {
+     "unchanged (1)": {
+      "value": 1.0,
+      "role": "outside",
+      "outside_band": true
+     },
+     "drift only, (1 - 1/(2n))^t over the n parents": {
+      "value": 0.64723,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 0.88355,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 0.50355,
+      "role": "info",
+      "outside_band": false
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.0105,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q15"
+  },
+  {
+   "category": "remaining_variance",
+   "design": {
+    "founder_seed": 952233,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 50,
+    "h2": 0.8,
+    "n_select": 15,
+    "cycles": 10,
+    "n_cross": 50
+   },
+   "candidate": 36,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(952233); founders <- quickHaplo(nInd=50, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.8)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=15, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=50, simParam=SP)`. Run 10 generations. What is the expected genetic variance, varG(pop), after generation 10? Base your answer on 50 replicates. Answers within \u00b10.025 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.19384,
+    "half_width": 0.025,
+    "tolerance": "0.025"
+   },
+   "key": {
+    "sd": 0.05457,
+    "shortcuts": {
+     "unchanged (1)": {
+      "value": 1.0,
+      "role": "outside",
+      "outside_band": true
+     },
+     "drift only, (1 - 1/(2n))^t over the n parents": {
+      "value": 0.71247,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 0.65283,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 0.47588,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.00273,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q16"
+  },
+  {
+   "category": "remaining_variance",
+   "design": {
+    "founder_seed": 347848,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 30,
+    "h2": 0.6,
+    "n_select": 6,
+    "cycles": 10,
+    "n_cross": 30
+   },
+   "candidate": 37,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(347848); founders <- quickHaplo(nInd=30, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.6)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=6, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=30, simParam=SP)`. Run 10 generations. What is the expected genetic variance, varG(pop), after generation 10? Base your answer on 50 replicates. Answers within \u00b10.036 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.19786,
+    "half_width": 0.036,
+    "tolerance": "0.036"
+   },
+   "key": {
+    "sd": 0.07783,
+    "shortcuts": {
+     "unchanged (1)": {
+      "value": 1.0,
+      "role": "outside",
+      "outside_band": true
+     },
+     "drift only, (1 - 1/(2n))^t over the n parents": {
+      "value": 0.4189,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 0.71243,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 0.31452,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.00389,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q17"
+  },
+  {
+   "category": "remaining_variance",
+   "design": {
+    "founder_seed": 645095,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 50,
+    "h2": 0.8,
+    "n_select": 15,
+    "cycles": 10,
+    "n_cross": 50
+   },
+   "candidate": 38,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(645095); founders <- quickHaplo(nInd=50, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.8)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=15, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=50, simParam=SP)`. Run 10 generations. What is the expected genetic variance, varG(pop), after generation 10? Base your answer on 50 replicates. Answers within \u00b10.022 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.16478,
+    "half_width": 0.022,
+    "tolerance": "0.022"
+   },
+   "key": {
+    "sd": 0.04869,
+    "shortcuts": {
+     "unchanged (1)": {
+      "value": 1.0,
+      "role": "outside",
+      "outside_band": true
+     },
+     "drift only, (1 - 1/(2n))^t over the n parents": {
+      "value": 0.71247,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 0.65283,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 0.47588,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.00243,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q18"
+  },
+  {
+   "category": "remaining_variance",
+   "design": {
+    "founder_seed": 962789,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 30,
+    "h2": 0.8,
+    "n_select": 9,
+    "cycles": 5,
+    "n_cross": 30
+   },
+   "candidate": 39,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(962789); founders <- quickHaplo(nInd=30, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.8)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=9, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=30, simParam=SP)`. Run 5 generations. What is the expected genetic variance, varG(pop), after generation 5? Base your answer on 50 replicates. Answers within \u00b10.059 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.43453,
+    "half_width": 0.059,
+    "tolerance": "0.059"
+   },
+   "key": {
+    "sd": 0.13061,
+    "shortcuts": {
+     "unchanged (1)": {
+      "value": 1.0,
+      "role": "outside",
+      "outside_band": true
+     },
+     "drift only, (1 - 1/(2n))^t over the n parents": {
+      "value": 0.75142,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 0.65286,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 0.49318,
+      "role": "info",
+      "outside_band": false
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.00653,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q19"
+  },
+  {
+   "category": "remaining_variance",
+   "design": {
+    "founder_seed": 608001,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 20,
+    "h2": 0.8,
+    "n_select": 6,
+    "cycles": 10,
+    "n_cross": 20
+   },
+   "candidate": 40,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(608001); founders <- quickHaplo(nInd=20, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.8)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=6, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=20, simParam=SP)`. Run 10 generations. What is the expected genetic variance, varG(pop), after generation 10? Base your answer on 50 replicates. Answers within \u00b10.032 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.1672,
+    "half_width": 0.032,
+    "tolerance": "0.032"
+   },
+   "key": {
+    "sd": 0.07108,
+    "shortcuts": {
+     "unchanged (1)": {
+      "value": 1.0,
+      "role": "outside",
+      "outside_band": true
+     },
+     "drift only, (1 - 1/(2n))^t over the n parents": {
+      "value": 0.4189,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 0.65283,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 0.29272,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.00355,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q20"
+  },
+  {
+   "category": "remaining_variance",
+   "design": {
+    "founder_seed": 362521,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 100,
+    "h2": 0.6,
+    "n_select": 20,
+    "cycles": 10,
+    "n_cross": 100
+   },
+   "candidate": 41,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(362521); founders <- quickHaplo(nInd=100, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.6)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=20, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=100, simParam=SP)`. Run 10 generations. What is the expected genetic variance, varG(pop), after generation 10? Base your answer on 50 replicates. Answers within \u00b10.025 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.23142,
+    "half_width": 0.025,
+    "tolerance": "0.025"
+   },
+   "key": {
+    "sd": 0.05342,
+    "shortcuts": {
+     "unchanged (1)": {
+      "value": 1.0,
+      "role": "outside",
+      "outside_band": true
+     },
+     "drift only, (1 - 1/(2n))^t over the n parents": {
+      "value": 0.77633,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 0.71243,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 0.56228,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.00267,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q21"
+  },
+  {
+   "category": "remaining_variance",
+   "design": {
+    "founder_seed": 106367,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 50,
+    "h2": 0.8,
+    "n_select": 10,
+    "cycles": 5,
+    "n_cross": 50
+   },
+   "candidate": 42,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(106367); founders <- quickHaplo(nInd=50, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.8)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then, each generation: `sel <- selectInd(pop, nInd=10, use=\"pheno\", simParam=SP); pop <- randCross(sel, nCrosses=50, simParam=SP)`. Run 5 generations. What is the expected genetic variance, varG(pop), after generation 5? Base your answer on 50 replicates. Answers within \u00b10.039 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.35624,
+    "half_width": 0.039,
+    "tolerance": "0.039"
+   },
+   "key": {
+    "sd": 0.08605,
+    "shortcuts": {
+     "unchanged (1)": {
+      "value": 1.0,
+      "role": "outside",
+      "outside_band": true
+     },
+     "drift only, (1 - 1/(2n))^t over the n parents": {
+      "value": 0.77378,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 0.64025,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 0.50334,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.0043,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q22"
+  },
+  {
+   "category": "scheme_difference",
+   "design": {
+    "founder_seed": 286045,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 50,
+    "h2": 0.2,
+    "n_select": 5,
+    "n_select_b": 25,
+    "cycles": 5,
+    "n_cross": 50
+   },
+   "candidate": 50,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(286045); founders <- quickHaplo(nInd=50, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.2)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Two schemes run for 5 generations. Each generation, scheme A keeps nInd=5 and scheme B nInd=25 (selectInd, use=\"pheno\"), and both make nCrosses=50 with randCross. Replicates are paired: for each seed s, set.seed(s) before scheme A's newPop and again before scheme B's. What is the expected difference meanG(A) - meanG(B) after generation 5? Base your answer on 50 paired replicates. Answers within \u00b10.41 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 1.31929,
+    "half_width": 0.41,
+    "tolerance": "0.41"
+   },
+   "key": {
+    "sd": 0.89202,
+    "shortcuts": {
+     "R = h2 S every cycle, infinite-population i": {
+      "value": 2.14014,
+      "role": "outside",
+      "outside_band": true
+     },
+     "R = h2 S every cycle, finite i(n,N)": {
+      "value": 2.05713,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 1.93564,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 1.16441,
+      "role": "info",
+      "outside_band": false
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.0446,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q23"
+  },
+  {
+   "category": "scheme_difference",
+   "design": {
+    "founder_seed": 105770,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 50,
+    "h2": 0.2,
+    "n_select": 5,
+    "n_select_b": 25,
+    "cycles": 5,
+    "n_cross": 50
+   },
+   "candidate": 51,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(105770); founders <- quickHaplo(nInd=50, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.2)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Two schemes run for 5 generations. Each generation, scheme A keeps nInd=5 and scheme B nInd=25 (selectInd, use=\"pheno\"), and both make nCrosses=50 with randCross. Replicates are paired: for each seed s, set.seed(s) before scheme A's newPop and again before scheme B's. What is the expected difference meanG(A) - meanG(B) after generation 5? Base your answer on 50 paired replicates. Answers within \u00b10.33 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.93378,
+    "half_width": 0.33,
+    "tolerance": "0.33"
+   },
+   "key": {
+    "sd": 0.72397,
+    "shortcuts": {
+     "R = h2 S every cycle, infinite-population i": {
+      "value": 2.14014,
+      "role": "outside",
+      "outside_band": true
+     },
+     "R = h2 S every cycle, finite i(n,N)": {
+      "value": 2.05713,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 1.93564,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 1.16441,
+      "role": "info",
+      "outside_band": false
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.0362,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q24"
+  },
+  {
+   "category": "scheme_difference",
+   "design": {
+    "founder_seed": 596466,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 100,
+    "h2": 0.2,
+    "n_select": 10,
+    "n_select_b": 30,
+    "cycles": 10,
+    "n_cross": 100
+   },
+   "candidate": 52,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(596466); founders <- quickHaplo(nInd=100, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.2)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Two schemes run for 10 generations. Each generation, scheme A keeps nInd=10 and scheme B nInd=30 (selectInd, use=\"pheno\"), and both make nCrosses=100 with randCross. Replicates are paired: for each seed s, set.seed(s) before scheme A's newPop and again before scheme B's. What is the expected difference meanG(A) - meanG(B) after generation 10? Base your answer on 50 paired replicates. Answers within \u00b10.37 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.95591,
+    "half_width": 0.37,
+    "tolerance": "0.37"
+   },
+   "key": {
+    "sd": 0.81783,
+    "shortcuts": {
+     "R = h2 S every cycle, infinite-population i": {
+      "value": 2.66543,
+      "role": "outside",
+      "outside_band": true
+     },
+     "R = h2 S every cycle, finite i(n,N)": {
+      "value": 2.59746,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 2.3502,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 1.20458,
+      "role": "info",
+      "outside_band": false
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.04089,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q25"
+  },
+  {
+   "category": "scheme_difference",
+   "design": {
+    "founder_seed": 378543,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 30,
+    "h2": 0.4,
+    "n_select": 3,
+    "n_select_b": 9,
+    "cycles": 10,
+    "n_cross": 30
+   },
+   "candidate": 53,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(378543); founders <- quickHaplo(nInd=30, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.4)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Two schemes run for 10 generations. Each generation, scheme A keeps nInd=3 and scheme B nInd=9 (selectInd, use=\"pheno\"), and both make nCrosses=30 with randCross. Replicates are paired: for each seed s, set.seed(s) before scheme A's newPop and again before scheme B's. What is the expected difference meanG(A) - meanG(B) after generation 10? Base your answer on 50 paired replicates. Answers within \u00b10.53 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": -0.01596,
+    "half_width": 0.53,
+    "tolerance": "0.53"
+   },
+   "key": {
+    "sd": 1.17245,
+    "shortcuts": {
+     "R = h2 S every cycle, infinite-population i": {
+      "value": 3.76949,
+      "role": "outside",
+      "outside_band": true
+     },
+     "R = h2 S every cycle, finite i(n,N)": {
+      "value": 3.46689,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 3.06408,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": -0.28645,
+      "role": "info",
+      "outside_band": false
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.05862,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q26"
+  },
+  {
+   "category": "scheme_difference",
+   "design": {
+    "founder_seed": 502143,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 30,
+    "h2": 0.4,
+    "n_select": 2,
+    "n_select_b": 15,
+    "cycles": 5,
+    "n_cross": 30
+   },
+   "candidate": 54,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(502143); founders <- quickHaplo(nInd=30, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.4)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Two schemes run for 5 generations. Each generation, scheme A keeps nInd=2 and scheme B nInd=15 (selectInd, use=\"pheno\"), and both make nCrosses=30 with randCross. Replicates are paired: for each seed s, set.seed(s) before scheme A's newPop and again before scheme B's. What is the expected difference meanG(A) - meanG(B) after generation 5? Base your answer on 50 paired replicates. Answers within \u00b10.46 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 1.40925,
+    "half_width": 0.46,
+    "tolerance": "0.46"
+   },
+   "key": {
+    "sd": 1.01106,
+    "shortcuts": {
+     "R = h2 S every cycle, infinite-population i": {
+      "value": 3.61042,
+      "role": "outside",
+      "outside_band": true
+     },
+     "R = h2 S every cycle, finite i(n,N)": {
+      "value": 3.32597,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 3.04003,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 0.92849,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.05055,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q27"
+  },
+  {
+   "category": "scheme_difference",
+   "design": {
+    "founder_seed": 183250,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 100,
+    "h2": 0.6,
+    "n_select": 10,
+    "n_select_b": 50,
+    "cycles": 10,
+    "n_cross": 100
+   },
+   "candidate": 55,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(183250); founders <- quickHaplo(nInd=100, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.6)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Two schemes run for 10 generations. Each generation, scheme A keeps nInd=10 and scheme B nInd=50 (selectInd, use=\"pheno\"), and both make nCrosses=100 with randCross. Replicates are paired: for each seed s, set.seed(s) before scheme A's newPop and again before scheme B's. What is the expected difference meanG(A) - meanG(B) after generation 10? Base your answer on 50 paired replicates. Answers within \u00b10.25 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 2.44934,
+    "half_width": 0.25,
+    "tolerance": "0.25"
+   },
+   "key": {
+    "sd": 0.53611,
+    "shortcuts": {
+     "R = h2 S every cycle, infinite-population i": {
+      "value": 7.41366,
+      "role": "outside",
+      "outside_band": true
+     },
+     "R = h2 S every cycle, finite i(n,N)": {
+      "value": 7.26676,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 5.72226,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": 4.20883,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.02681,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q28"
+  },
+  {
+   "category": "scheme_difference",
+   "design": {
+    "founder_seed": 278710,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 30,
+    "h2": 0.6,
+    "n_select": 2,
+    "n_select_b": 15,
+    "cycles": 15,
+    "n_cross": 30
+   },
+   "candidate": 56,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(278710); founders <- quickHaplo(nInd=30, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.6)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Two schemes run for 15 generations. Each generation, scheme A keeps nInd=2 and scheme B nInd=15 (selectInd, use=\"pheno\"), and both make nCrosses=30 with randCross. Replicates are paired: for each seed s, set.seed(s) before scheme A's newPop and again before scheme B's. What is the expected difference meanG(A) - meanG(B) after generation 15? Base your answer on 50 paired replicates. Answers within \u00b10.41 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.50224,
+    "half_width": 0.41,
+    "tolerance": "0.41"
+   },
+   "key": {
+    "sd": 0.88971,
+    "shortcuts": {
+     "R = h2 S every cycle, infinite-population i": {
+      "value": 13.26554,
+      "role": "outside",
+      "outside_band": true
+     },
+     "R = h2 S every cycle, finite i(n,N)": {
+      "value": 12.22041,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer effect, no drift": {
+      "value": 10.09717,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Bulmer + drift, infinitesimal": {
+      "value": -1.18745,
+      "role": "info",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 50,
+    "key_se": 0.04449,
+    "answer_noise_share": 0.88889
+   },
+   "id": "q29"
+  },
+  {
+   "category": "prob_beats",
+   "design": {
+    "founder_seed": 141864,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 30,
+    "h2": 0.4,
+    "n_select": 3,
+    "n_select_b": 9,
+    "cycles": 5,
+    "n_cross": 30
+   },
+   "candidate": 64,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(141864); founders <- quickHaplo(nInd=30, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.4)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Two schemes run for 5 generations. Each generation, scheme A keeps nInd=3 and scheme B nInd=9 (selectInd, use=\"pheno\"), and both make nCrosses=30 with randCross. Replicates are paired: for each seed s, set.seed(s) before scheme A's newPop and again before scheme B's. In what fraction of paired replicates does scheme A end generation 5 with a higher meanG than scheme B? Base your answer on 100 paired replicates and give it as a proportion between 0 and 1. Answers within \u00b10.15 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.775,
+    "half_width": 0.15,
+    "tolerance": "0.15"
+   },
+   "key": {
+    "sd": 0.41758,
+    "shortcuts": {
+     "certain: 1 or 0 by the sign of the breeder's-equation difference": {
+      "value": 1.0,
+      "role": "outside",
+      "outside_band": true
+     },
+     "coin flip (0.5)": {
+      "value": 0.5,
+      "role": "outside",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 100,
+    "key_se": 0.02088,
+    "answer_noise_share": 0.8
+   },
+   "id": "q30"
+  },
+  {
+   "category": "prob_beats",
+   "design": {
+    "founder_seed": 195871,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 30,
+    "h2": 0.4,
+    "n_select": 2,
+    "n_select_b": 15,
+    "cycles": 10,
+    "n_cross": 30
+   },
+   "candidate": 66,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(195871); founders <- quickHaplo(nInd=30, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.4)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Two schemes run for 10 generations. Each generation, scheme A keeps nInd=2 and scheme B nInd=15 (selectInd, use=\"pheno\"), and both make nCrosses=30 with randCross. Replicates are paired: for each seed s, set.seed(s) before scheme A's newPop and again before scheme B's. In what fraction of paired replicates does scheme A end generation 10 with a higher meanG than scheme B? Base your answer on 100 paired replicates and give it as a proportion between 0 and 1. Answers within \u00b10.16 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.705,
+    "half_width": 0.16,
+    "tolerance": "0.16"
+   },
+   "key": {
+    "sd": 0.45604,
+    "shortcuts": {
+     "certain: 1 or 0 by the sign of the breeder's-equation difference": {
+      "value": 1.0,
+      "role": "outside",
+      "outside_band": true
+     },
+     "coin flip (0.5)": {
+      "value": 0.5,
+      "role": "outside",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 100,
+    "key_se": 0.0228,
+    "answer_noise_share": 0.8
+   },
+   "id": "q31"
+  },
+  {
+   "category": "prob_beats",
+   "design": {
+    "founder_seed": 486238,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 30,
+    "h2": 0.2,
+    "n_select": 3,
+    "n_select_b": 15,
+    "cycles": 5,
+    "n_cross": 30
+   },
+   "candidate": 67,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(486238); founders <- quickHaplo(nInd=30, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.2)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Two schemes run for 5 generations. Each generation, scheme A keeps nInd=3 and scheme B nInd=15 (selectInd, use=\"pheno\"), and both make nCrosses=30 with randCross. Replicates are paired: for each seed s, set.seed(s) before scheme A's newPop and again before scheme B's. In what fraction of paired replicates does scheme A end generation 5 with a higher meanG than scheme B? Base your answer on 100 paired replicates and give it as a proportion between 0 and 1. Answers within \u00b10.14 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.795,
+    "half_width": 0.14,
+    "tolerance": "0.14"
+   },
+   "key": {
+    "sd": 0.4037,
+    "shortcuts": {
+     "certain: 1 or 0 by the sign of the breeder's-equation difference": {
+      "value": 1.0,
+      "role": "outside",
+      "outside_band": true
+     },
+     "coin flip (0.5)": {
+      "value": 0.5,
+      "role": "outside",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 100,
+    "key_se": 0.02019,
+    "answer_noise_share": 0.8
+   },
+   "id": "q32"
+  },
+  {
+   "category": "prob_beats",
+   "design": {
+    "founder_seed": 437700,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 30,
+    "h2": 0.6,
+    "n_select": 3,
+    "n_select_b": 15,
+    "cycles": 15,
+    "n_cross": 30
+   },
+   "candidate": 68,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(437700); founders <- quickHaplo(nInd=30, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.6)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Two schemes run for 15 generations. Each generation, scheme A keeps nInd=3 and scheme B nInd=15 (selectInd, use=\"pheno\"), and both make nCrosses=30 with randCross. Replicates are paired: for each seed s, set.seed(s) before scheme A's newPop and again before scheme B's. In what fraction of paired replicates does scheme A end generation 15 with a higher meanG than scheme B? Base your answer on 100 paired replicates and give it as a proportion between 0 and 1. Answers within \u00b10.15 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.75,
+    "half_width": 0.15,
+    "tolerance": "0.15"
+   },
+   "key": {
+    "sd": 0.43301,
+    "shortcuts": {
+     "certain: 1 or 0 by the sign of the breeder's-equation difference": {
+      "value": 1.0,
+      "role": "outside",
+      "outside_band": true
+     },
+     "coin flip (0.5)": {
+      "value": 0.5,
+      "role": "outside",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 100,
+    "key_se": 0.02165,
+    "answer_noise_share": 0.8
+   },
+   "id": "q33"
+  },
+  {
+   "category": "prob_beats",
+   "design": {
+    "founder_seed": 205636,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 50,
+    "h2": 0.6,
+    "n_select": 2,
+    "n_select_b": 15,
+    "cycles": 15,
+    "n_cross": 50
+   },
+   "candidate": 81,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(205636); founders <- quickHaplo(nInd=50, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.6)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Two schemes run for 15 generations. Each generation, scheme A keeps nInd=2 and scheme B nInd=15 (selectInd, use=\"pheno\"), and both make nCrosses=50 with randCross. Replicates are paired: for each seed s, set.seed(s) before scheme A's newPop and again before scheme B's. In what fraction of paired replicates does scheme A end generation 15 with a higher meanG than scheme B? Base your answer on 100 paired replicates and give it as a proportion between 0 and 1. Answers within \u00b10.077 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.055,
+    "half_width": 0.077,
+    "tolerance": "0.077"
+   },
+   "key": {
+    "sd": 0.22798,
+    "shortcuts": {
+     "certain: 1 or 0 by the sign of the breeder's-equation difference": {
+      "value": 1.0,
+      "role": "outside",
+      "outside_band": true
+     },
+     "coin flip (0.5)": {
+      "value": 0.5,
+      "role": "outside",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 100,
+    "key_se": 0.0114,
+    "answer_noise_share": 0.8
+   },
+   "id": "q34"
+  },
+  {
+   "category": "prob_beats",
+   "design": {
+    "founder_seed": 858565,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 0,
+    "n_ind": 100,
+    "h2": 0.2,
+    "n_select": 5,
+    "n_select_b": 30,
+    "cycles": 5,
+    "n_cross": 100
+   },
+   "candidate": 83,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(858565); founders <- quickHaplo(nInd=100, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$setVarE(h2=0.2)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Two schemes run for 5 generations. Each generation, scheme A keeps nInd=5 and scheme B nInd=30 (selectInd, use=\"pheno\"), and both make nCrosses=100 with randCross. Replicates are paired: for each seed s, set.seed(s) before scheme A's newPop and again before scheme B's. In what fraction of paired replicates does scheme A end generation 5 with a higher meanG than scheme B? Base your answer on 100 paired replicates and give it as a proportion between 0 and 1. Answers within \u00b10.12 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.865,
+    "half_width": 0.12,
+    "tolerance": "0.12"
+   },
+   "key": {
+    "sd": 0.34172,
+    "shortcuts": {
+     "certain: 1 or 0 by the sign of the breeder's-equation difference": {
+      "value": 1.0,
+      "role": "outside",
+      "outside_band": true
+     },
+     "coin flip (0.5)": {
+      "value": 0.5,
+      "role": "outside",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 400,
+    "replicates_answer": 100,
+    "key_se": 0.01709,
+    "answer_noise_share": 0.8
+   },
+   "id": "q35"
+  },
+  {
+   "category": "genomic_accuracy",
+   "design": {
+    "founder_seed": 320647,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 20,
+    "n_ind": 200,
+    "h2": 0.8,
+    "n_select": 40,
+    "cycles": 6,
+    "n_cross": 200
+   },
+   "candidate": 104,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(320647); founders <- quickHaplo(nInd=200, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$addSnpChip(nSnpPerChr=20); SP$setVarE(h2=0.8)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then 6 generations of genomic selection, each one: `sol <- RRBLUP(pop, simParam=SP); pop <- setEBV(pop, sol, simParam=SP); sel <- selectInd(pop, nInd=40, use=\"ebv\", simParam=SP); pop <- randCross(sel, nCrosses=200, simParam=SP); pop <- setEBV(pop, sol, simParam=SP)`, so each generation's model is fitted afresh and then scored on the progeny it never saw. The prediction accuracy of a generation is cor(ebv(pop), gv(pop)) at the end of it, taken as 0 if undefined. What is the expected prediction accuracy in generation 6? Base your answer on 50 replicates. Answers within \u00b10.043 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.22911,
+    "half_width": 0.043,
+    "tolerance": "0.043"
+   },
+   "key": {
+    "sd": 0.09249,
+    "shortcuts": {
+     "accuracy of phenotypic selection, h": {
+      "value": 0.89443,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Daetwyler, Me = number of markers": {
+      "value": 0.66667,
+      "role": "outside",
+      "outside_band": true
+     },
+     "zero (no LD in quickHaplo founders)": {
+      "value": 0.0,
+      "role": "outside",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 300,
+    "replicates_answer": 50,
+    "key_se": 0.00534,
+    "answer_noise_share": 0.85714
+   },
+   "id": "q36"
+  },
+  {
+   "category": "genomic_accuracy",
+   "design": {
+    "founder_seed": 161553,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 20,
+    "n_ind": 100,
+    "h2": 0.2,
+    "n_select": 20,
+    "cycles": 6,
+    "n_cross": 100
+   },
+   "candidate": 105,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(161553); founders <- quickHaplo(nInd=100, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$addSnpChip(nSnpPerChr=20); SP$setVarE(h2=0.2)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then 6 generations of genomic selection, each one: `sol <- RRBLUP(pop, simParam=SP); pop <- setEBV(pop, sol, simParam=SP); sel <- selectInd(pop, nInd=20, use=\"ebv\", simParam=SP); pop <- randCross(sel, nCrosses=100, simParam=SP); pop <- setEBV(pop, sol, simParam=SP)`, so each generation's model is fitted afresh and then scored on the progeny it never saw. The prediction accuracy of a generation is cor(ebv(pop), gv(pop)) at the end of it, taken as 0 if undefined. What is the expected prediction accuracy in generation 6? Base your answer on 50 replicates. Answers within \u00b10.072 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.14177,
+    "half_width": 0.072,
+    "tolerance": "0.072"
+   },
+   "key": {
+    "sd": 0.15569,
+    "shortcuts": {
+     "accuracy of phenotypic selection, h": {
+      "value": 0.44721,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Daetwyler, Me = number of markers": {
+      "value": 0.30151,
+      "role": "outside",
+      "outside_band": true
+     },
+     "zero (no LD in quickHaplo founders)": {
+      "value": 0.0,
+      "role": "outside",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 300,
+    "replicates_answer": 50,
+    "key_se": 0.00899,
+    "answer_noise_share": 0.85714
+   },
+   "id": "q37"
+  },
+  {
+   "category": "genomic_accuracy",
+   "design": {
+    "founder_seed": 527078,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 20,
+    "n_ind": 200,
+    "h2": 0.8,
+    "n_select": 20,
+    "cycles": 6,
+    "n_cross": 200
+   },
+   "candidate": 106,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(527078); founders <- quickHaplo(nInd=200, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$addSnpChip(nSnpPerChr=20); SP$setVarE(h2=0.8)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then 6 generations of genomic selection, each one: `sol <- RRBLUP(pop, simParam=SP); pop <- setEBV(pop, sol, simParam=SP); sel <- selectInd(pop, nInd=20, use=\"ebv\", simParam=SP); pop <- randCross(sel, nCrosses=200, simParam=SP); pop <- setEBV(pop, sol, simParam=SP)`, so each generation's model is fitted afresh and then scored on the progeny it never saw. The prediction accuracy of a generation is cor(ebv(pop), gv(pop)) at the end of it, taken as 0 if undefined. What is the expected prediction accuracy in generation 6? Base your answer on 50 replicates. Answers within \u00b10.046 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.29516,
+    "half_width": 0.046,
+    "tolerance": "0.046"
+   },
+   "key": {
+    "sd": 0.10035,
+    "shortcuts": {
+     "accuracy of phenotypic selection, h": {
+      "value": 0.89443,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Daetwyler, Me = number of markers": {
+      "value": 0.66667,
+      "role": "outside",
+      "outside_band": true
+     },
+     "zero (no LD in quickHaplo founders)": {
+      "value": 0.0,
+      "role": "outside",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 300,
+    "replicates_answer": 50,
+    "key_se": 0.00579,
+    "answer_noise_share": 0.85714
+   },
+   "id": "q38"
+  },
+  {
+   "category": "genomic_accuracy",
+   "design": {
+    "founder_seed": 800354,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 10,
+    "n_ind": 300,
+    "h2": 0.5,
+    "n_select": 60,
+    "cycles": 6,
+    "n_cross": 300
+   },
+   "candidate": 107,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(800354); founders <- quickHaplo(nInd=300, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$addSnpChip(nSnpPerChr=10); SP$setVarE(h2=0.5)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then 6 generations of genomic selection, each one: `sol <- RRBLUP(pop, simParam=SP); pop <- setEBV(pop, sol, simParam=SP); sel <- selectInd(pop, nInd=60, use=\"ebv\", simParam=SP); pop <- randCross(sel, nCrosses=300, simParam=SP); pop <- setEBV(pop, sol, simParam=SP)`, so each generation's model is fitted afresh and then scored on the progeny it never saw. The prediction accuracy of a generation is cor(ebv(pop), gv(pop)) at the end of it, taken as 0 if undefined. What is the expected prediction accuracy in generation 6? Base your answer on 50 replicates. Answers within \u00b10.036 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.141,
+    "half_width": 0.036,
+    "tolerance": "0.036"
+   },
+   "key": {
+    "sd": 0.07753,
+    "shortcuts": {
+     "accuracy of phenotypic selection, h": {
+      "value": 0.70711,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Daetwyler, Me = number of markers": {
+      "value": 0.7746,
+      "role": "outside",
+      "outside_band": true
+     },
+     "zero (no LD in quickHaplo founders)": {
+      "value": 0.0,
+      "role": "outside",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 300,
+    "replicates_answer": 50,
+    "key_se": 0.00448,
+    "answer_noise_share": 0.85714
+   },
+   "id": "q39"
+  },
+  {
+   "category": "genomic_accuracy",
+   "design": {
+    "founder_seed": 614202,
+    "n_chr": 10,
+    "seg_sites": 100,
+    "n_qtl_per_chr": 10,
+    "n_snp_per_chr": 20,
+    "n_ind": 300,
+    "h2": 0.5,
+    "n_select": 60,
+    "cycles": 6,
+    "n_cross": 300
+   },
+   "candidate": 108,
+   "question": "This question is about a stochastic simulation in the R package AlphaSimR. Founders and trait, exactly these calls in this order: `set.seed(614202); founders <- quickHaplo(nInd=300, nChr=10, segSites=100); SP <- SimParam$new(founders); SP$addTraitA(nQtlPerChr=10); SP$addSnpChip(nSnpPerChr=20); SP$setVarE(h2=0.5)`. The trait is purely additive, with founder genetic mean 0 and founder genetic variance 1. Each replicate starts from these same founders with its own seed s: `set.seed(s); pop <- newPop(founders, simParam=SP)`. Then 6 generations of genomic selection, each one: `sol <- RRBLUP(pop, simParam=SP); pop <- setEBV(pop, sol, simParam=SP); sel <- selectInd(pop, nInd=60, use=\"ebv\", simParam=SP); pop <- randCross(sel, nCrosses=300, simParam=SP); pop <- setEBV(pop, sol, simParam=SP)`, so each generation's model is fitted afresh and then scored on the progeny it never saw. The prediction accuracy of a generation is cor(ebv(pop), gv(pop)) at the end of it, taken as 0 if undefined. What is the expected prediction accuracy in generation 6? Base your answer on 50 replicates. Answers within \u00b10.034 of the expected value count as right.",
+   "answer_format": "a single number (decimal, not a fraction or range)",
+   "truth": {
+    "value": 0.19219,
+    "half_width": 0.034,
+    "tolerance": "0.034"
+   },
+   "key": {
+    "sd": 0.07417,
+    "shortcuts": {
+     "accuracy of phenotypic selection, h": {
+      "value": 0.70711,
+      "role": "outside",
+      "outside_band": true
+     },
+     "Daetwyler, Me = number of markers": {
+      "value": 0.65465,
+      "role": "outside",
+      "outside_band": true
+     },
+     "zero (no LD in quickHaplo founders)": {
+      "value": 0.0,
+      "role": "outside",
+      "outside_band": true
+     }
+    },
+    "replicates_key": 300,
+    "replicates_answer": 50,
+    "key_se": 0.00428,
+    "answer_noise_share": 0.85714
+   },
+   "id": "q40"
+  }
+ ]
+}
