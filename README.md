@@ -42,17 +42,22 @@ the R engine layer and checks the response against the breeder's equation `R = h
 selection-programme code; the rest of the suite tests that code, but not against an
 outside reference. CI installs R and compiles
 AlphaSimR, so the suite runs against the real engine on Python 3.11, 3.12 and 3.13 —
-not against a mock.
-
-[benchmarks/agent_qa/](benchmarks/agent_qa/README.md) asks Claude breeding-simulation
-questions that closed-form theory gets wrong (many cycles in small populations, scheme
-comparisons, genomic accuracy), with no tools, with its own R and AlphaSimR, and with
-this server; the key is AlphaSimR run directly. With the server Claude got 102 of 102
-headline answers right, with its own AlphaSimR 99 of 102 (not a significant difference;
-its own scripts cost less), and alone 51 of 102. `tests/test_perf_ratchet.py` gates each tool on exact counts of
+not against a mock. `tests/test_perf_ratchet.py` gates each tool on exact counts of
 package-function calls and R evaluations, not on time.
 
 Requires `mcp` 2.x.
+
+## Does it help?
+
+We asked Claude Opus 5.5 34 breeding-simulation questions, keyed by AlphaSimR run
+directly, three times each. Most need a simulation rather than a textbook formula:
+the best named formula lands in only 15 of 34. With this server Claude got 102 of 102
+answers right, with its own R and AlphaSimR 99 of 102, and alone 51 of 102. The
+server and Claude's own scripts are not separated on accuracy (exact McNemar
+p = 1.0); both beat Claude alone (p < 1e-6). The server costs about 1.8 times as
+much per answer ($0.051 against $0.028 median, intervals not overlapping); time is
+not separated. Six probability questions that a constant passes are reported
+separately in [`benchmarks/agent_qa/`](benchmarks/agent_qa/README.md).
 
 ## Install tax — read this first
 
