@@ -89,7 +89,9 @@ must reject, and each was seen to fail under a planted mutation.
   scheme differences and 3 of 5 genomic accuracies. A right answer on the last
   two kinds is weaker evidence than one on gains.
 - **The 6 probability questions are out of the headline.** The same constant
-  lands inside 5 of their 6 bands. We decided to leave them out after the
+  lands inside 5 of their 6 bands, because those bands are wide (a proportion
+  from 100 replicates) and 5 of the 6 true probabilities lie between 0.70 and
+  0.87. We decided to leave them out after the
   sweep, as a judgment on that result, not by a cutoff set in advance. It only
   lowers Claude alone's number: it got 15 of 18 right on them, and both tool
   setups 18 of 18. Over all 40 questions the setups got 66, 117 and 120 of 120,
