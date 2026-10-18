@@ -30,8 +30,9 @@ McNemar p = 1.0), and alone 51 of 102 (both tool setups beat it, p < 1e-6). The 
 median answer cost $0.051 against $0.028 for Claude's own scripts, about 1.8 times as much;
 time is not separated.
 
-Method, controls, limitations, and six probability questions reported separately:
-[benchmarks/agent_qa](benchmarks/agent_qa/README.md).
+Each question spells out the AlphaSimR calls, so this tests running a stated simulation, not
+designing one unaided; method, controls, other limitations, and six probability questions
+reported separately are in [benchmarks/agent_qa](benchmarks/agent_qa/README.md).
 
 ## Why replicates
 
