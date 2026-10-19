@@ -1,0 +1,212 @@
+setup	qid	category	right
+best constant: the category median of the key	q01	control_response	FALSE
+breeder's equation, R = i(n,N) h	q01	control_response	TRUE
+R = i h2 (sigma_P dropped)	q01	control_response	FALSE
+any named closed form (the best one per question)	q01	control_response	TRUE
+best constant: the category median of the key	q02	control_response	TRUE
+breeder's equation, R = i(n,N) h	q02	control_response	TRUE
+R = i h2 (sigma_P dropped)	q02	control_response	FALSE
+any named closed form (the best one per question)	q02	control_response	TRUE
+best constant: the category median of the key	q03	control_response	TRUE
+breeder's equation, R = i(n,N) h	q03	control_response	TRUE
+R = i h2 (sigma_P dropped)	q03	control_response	FALSE
+any named closed form (the best one per question)	q03	control_response	TRUE
+best constant: the category median of the key	q04	control_response	FALSE
+breeder's equation, R = i(n,N) h	q04	control_response	TRUE
+R = i h2 (sigma_P dropped)	q04	control_response	FALSE
+any named closed form (the best one per question)	q04	control_response	TRUE
+best constant: the category median of the key	q05	control_response	FALSE
+breeder's equation, R = i(n,N) h	q05	control_response	TRUE
+R = i h2 (sigma_P dropped)	q05	control_response	FALSE
+any named closed form (the best one per question)	q05	control_response	TRUE
+best constant: the category median of the key	q06	control_response	FALSE
+breeder's equation, R = i(n,N) h	q06	control_response	TRUE
+R = i h2 (sigma_P dropped)	q06	control_response	FALSE
+any named closed form (the best one per question)	q06	control_response	TRUE
+best constant: the category median of the key	q07	long_term_gain	FALSE
+R = h2 S every cycle, infinite-population i	q07	long_term_gain	FALSE
+R = h2 S every cycle, finite i(n,N)	q07	long_term_gain	FALSE
+Bulmer effect, no drift	q07	long_term_gain	FALSE
+Bulmer + drift, infinitesimal	q07	long_term_gain	FALSE
+any named closed form (the best one per question)	q07	long_term_gain	FALSE
+best constant: the category median of the key	q08	long_term_gain	FALSE
+R = h2 S every cycle, infinite-population i	q08	long_term_gain	FALSE
+R = h2 S every cycle, finite i(n,N)	q08	long_term_gain	FALSE
+Bulmer effect, no drift	q08	long_term_gain	FALSE
+Bulmer + drift, infinitesimal	q08	long_term_gain	TRUE
+any named closed form (the best one per question)	q08	long_term_gain	TRUE
+best constant: the category median of the key	q09	long_term_gain	FALSE
+R = h2 S every cycle, infinite-population i	q09	long_term_gain	FALSE
+R = h2 S every cycle, finite i(n,N)	q09	long_term_gain	FALSE
+Bulmer effect, no drift	q09	long_term_gain	FALSE
+Bulmer + drift, infinitesimal	q09	long_term_gain	FALSE
+any named closed form (the best one per question)	q09	long_term_gain	FALSE
+best constant: the category median of the key	q10	long_term_gain	FALSE
+R = h2 S every cycle, infinite-population i	q10	long_term_gain	FALSE
+R = h2 S every cycle, finite i(n,N)	q10	long_term_gain	FALSE
+Bulmer effect, no drift	q10	long_term_gain	FALSE
+Bulmer + drift, infinitesimal	q10	long_term_gain	TRUE
+any named closed form (the best one per question)	q10	long_term_gain	TRUE
+best constant: the category median of the key	q11	long_term_gain	FALSE
+R = h2 S every cycle, infinite-population i	q11	long_term_gain	FALSE
+R = h2 S every cycle, finite i(n,N)	q11	long_term_gain	FALSE
+Bulmer effect, no drift	q11	long_term_gain	FALSE
+Bulmer + drift, infinitesimal	q11	long_term_gain	FALSE
+any named closed form (the best one per question)	q11	long_term_gain	FALSE
+best constant: the category median of the key	q12	long_term_gain	FALSE
+R = h2 S every cycle, infinite-population i	q12	long_term_gain	FALSE
+R = h2 S every cycle, finite i(n,N)	q12	long_term_gain	FALSE
+Bulmer effect, no drift	q12	long_term_gain	FALSE
+Bulmer + drift, infinitesimal	q12	long_term_gain	FALSE
+any named closed form (the best one per question)	q12	long_term_gain	FALSE
+best constant: the category median of the key	q13	long_term_gain	FALSE
+R = h2 S every cycle, infinite-population i	q13	long_term_gain	FALSE
+R = h2 S every cycle, finite i(n,N)	q13	long_term_gain	FALSE
+Bulmer effect, no drift	q13	long_term_gain	FALSE
+Bulmer + drift, infinitesimal	q13	long_term_gain	TRUE
+any named closed form (the best one per question)	q13	long_term_gain	TRUE
+best constant: the category median of the key	q14	long_term_gain	FALSE
+R = h2 S every cycle, infinite-population i	q14	long_term_gain	FALSE
+R = h2 S every cycle, finite i(n,N)	q14	long_term_gain	FALSE
+Bulmer effect, no drift	q14	long_term_gain	FALSE
+Bulmer + drift, infinitesimal	q14	long_term_gain	FALSE
+any named closed form (the best one per question)	q14	long_term_gain	FALSE
+best constant: the category median of the key	q15	remaining_variance	FALSE
+unchanged (1)	q15	remaining_variance	FALSE
+drift only, (1 - 1/(2n))^t over the n parents	q15	remaining_variance	FALSE
+Bulmer effect, no drift	q15	remaining_variance	FALSE
+Bulmer + drift, infinitesimal	q15	remaining_variance	TRUE
+any named closed form (the best one per question)	q15	remaining_variance	TRUE
+best constant: the category median of the key	q16	remaining_variance	TRUE
+unchanged (1)	q16	remaining_variance	FALSE
+drift only, (1 - 1/(2n))^t over the n parents	q16	remaining_variance	FALSE
+Bulmer effect, no drift	q16	remaining_variance	FALSE
+Bulmer + drift, infinitesimal	q16	remaining_variance	FALSE
+any named closed form (the best one per question)	q16	remaining_variance	FALSE
+best constant: the category median of the key	q17	remaining_variance	TRUE
+unchanged (1)	q17	remaining_variance	FALSE
+drift only, (1 - 1/(2n))^t over the n parents	q17	remaining_variance	FALSE
+Bulmer effect, no drift	q17	remaining_variance	FALSE
+Bulmer + drift, infinitesimal	q17	remaining_variance	FALSE
+any named closed form (the best one per question)	q17	remaining_variance	FALSE
+best constant: the category median of the key	q18	remaining_variance	FALSE
+unchanged (1)	q18	remaining_variance	FALSE
+drift only, (1 - 1/(2n))^t over the n parents	q18	remaining_variance	FALSE
+Bulmer effect, no drift	q18	remaining_variance	FALSE
+Bulmer + drift, infinitesimal	q18	remaining_variance	FALSE
+any named closed form (the best one per question)	q18	remaining_variance	FALSE
+best constant: the category median of the key	q19	remaining_variance	FALSE
+unchanged (1)	q19	remaining_variance	FALSE
+drift only, (1 - 1/(2n))^t over the n parents	q19	remaining_variance	FALSE
+Bulmer effect, no drift	q19	remaining_variance	FALSE
+Bulmer + drift, infinitesimal	q19	remaining_variance	TRUE
+any named closed form (the best one per question)	q19	remaining_variance	TRUE
+best constant: the category median of the key	q20	remaining_variance	FALSE
+unchanged (1)	q20	remaining_variance	FALSE
+drift only, (1 - 1/(2n))^t over the n parents	q20	remaining_variance	FALSE
+Bulmer effect, no drift	q20	remaining_variance	FALSE
+Bulmer + drift, infinitesimal	q20	remaining_variance	FALSE
+any named closed form (the best one per question)	q20	remaining_variance	FALSE
+best constant: the category median of the key	q21	remaining_variance	TRUE
+unchanged (1)	q21	remaining_variance	FALSE
+drift only, (1 - 1/(2n))^t over the n parents	q21	remaining_variance	FALSE
+Bulmer effect, no drift	q21	remaining_variance	FALSE
+Bulmer + drift, infinitesimal	q21	remaining_variance	FALSE
+any named closed form (the best one per question)	q21	remaining_variance	FALSE
+best constant: the category median of the key	q22	remaining_variance	FALSE
+unchanged (1)	q22	remaining_variance	FALSE
+drift only, (1 - 1/(2n))^t over the n parents	q22	remaining_variance	FALSE
+Bulmer effect, no drift	q22	remaining_variance	FALSE
+Bulmer + drift, infinitesimal	q22	remaining_variance	FALSE
+any named closed form (the best one per question)	q22	remaining_variance	FALSE
+best constant: the category median of the key	q23	scheme_difference	TRUE
+R = h2 S every cycle, infinite-population i	q23	scheme_difference	FALSE
+R = h2 S every cycle, finite i(n,N)	q23	scheme_difference	FALSE
+Bulmer effect, no drift	q23	scheme_difference	FALSE
+Bulmer + drift, infinitesimal	q23	scheme_difference	TRUE
+any named closed form (the best one per question)	q23	scheme_difference	TRUE
+best constant: the category median of the key	q24	scheme_difference	TRUE
+R = h2 S every cycle, infinite-population i	q24	scheme_difference	FALSE
+R = h2 S every cycle, finite i(n,N)	q24	scheme_difference	FALSE
+Bulmer effect, no drift	q24	scheme_difference	FALSE
+Bulmer + drift, infinitesimal	q24	scheme_difference	TRUE
+any named closed form (the best one per question)	q24	scheme_difference	TRUE
+best constant: the category median of the key	q25	scheme_difference	TRUE
+R = h2 S every cycle, infinite-population i	q25	scheme_difference	FALSE
+R = h2 S every cycle, finite i(n,N)	q25	scheme_difference	FALSE
+Bulmer effect, no drift	q25	scheme_difference	FALSE
+Bulmer + drift, infinitesimal	q25	scheme_difference	TRUE
+any named closed form (the best one per question)	q25	scheme_difference	TRUE
+best constant: the category median of the key	q26	scheme_difference	FALSE
+R = h2 S every cycle, infinite-population i	q26	scheme_difference	FALSE
+R = h2 S every cycle, finite i(n,N)	q26	scheme_difference	FALSE
+Bulmer effect, no drift	q26	scheme_difference	FALSE
+Bulmer + drift, infinitesimal	q26	scheme_difference	TRUE
+any named closed form (the best one per question)	q26	scheme_difference	TRUE
+best constant: the category median of the key	q27	scheme_difference	TRUE
+R = h2 S every cycle, infinite-population i	q27	scheme_difference	FALSE
+R = h2 S every cycle, finite i(n,N)	q27	scheme_difference	FALSE
+Bulmer effect, no drift	q27	scheme_difference	FALSE
+Bulmer + drift, infinitesimal	q27	scheme_difference	FALSE
+any named closed form (the best one per question)	q27	scheme_difference	FALSE
+best constant: the category median of the key	q28	scheme_difference	FALSE
+R = h2 S every cycle, infinite-population i	q28	scheme_difference	FALSE
+R = h2 S every cycle, finite i(n,N)	q28	scheme_difference	FALSE
+Bulmer effect, no drift	q28	scheme_difference	FALSE
+Bulmer + drift, infinitesimal	q28	scheme_difference	FALSE
+any named closed form (the best one per question)	q28	scheme_difference	FALSE
+best constant: the category median of the key	q29	scheme_difference	FALSE
+R = h2 S every cycle, infinite-population i	q29	scheme_difference	FALSE
+R = h2 S every cycle, finite i(n,N)	q29	scheme_difference	FALSE
+Bulmer effect, no drift	q29	scheme_difference	FALSE
+Bulmer + drift, infinitesimal	q29	scheme_difference	FALSE
+any named closed form (the best one per question)	q29	scheme_difference	FALSE
+best constant: the category median of the key	q30	prob_beats	TRUE
+certain: 1 or 0 by the sign of the breeder's-equation difference	q30	prob_beats	FALSE
+coin flip (0.5)	q30	prob_beats	FALSE
+any named closed form (the best one per question)	q30	prob_beats	FALSE
+best constant: the category median of the key	q31	prob_beats	TRUE
+certain: 1 or 0 by the sign of the breeder's-equation difference	q31	prob_beats	FALSE
+coin flip (0.5)	q31	prob_beats	FALSE
+any named closed form (the best one per question)	q31	prob_beats	FALSE
+best constant: the category median of the key	q32	prob_beats	TRUE
+certain: 1 or 0 by the sign of the breeder's-equation difference	q32	prob_beats	FALSE
+coin flip (0.5)	q32	prob_beats	FALSE
+any named closed form (the best one per question)	q32	prob_beats	FALSE
+best constant: the category median of the key	q33	prob_beats	TRUE
+certain: 1 or 0 by the sign of the breeder's-equation difference	q33	prob_beats	FALSE
+coin flip (0.5)	q33	prob_beats	FALSE
+any named closed form (the best one per question)	q33	prob_beats	FALSE
+best constant: the category median of the key	q34	prob_beats	FALSE
+certain: 1 or 0 by the sign of the breeder's-equation difference	q34	prob_beats	FALSE
+coin flip (0.5)	q34	prob_beats	FALSE
+any named closed form (the best one per question)	q34	prob_beats	FALSE
+best constant: the category median of the key	q35	prob_beats	TRUE
+certain: 1 or 0 by the sign of the breeder's-equation difference	q35	prob_beats	FALSE
+coin flip (0.5)	q35	prob_beats	FALSE
+any named closed form (the best one per question)	q35	prob_beats	FALSE
+best constant: the category median of the key	q36	genomic_accuracy	TRUE
+accuracy of phenotypic selection, h	q36	genomic_accuracy	FALSE
+Daetwyler, Me = number of markers	q36	genomic_accuracy	FALSE
+zero (no LD in quickHaplo founders)	q36	genomic_accuracy	FALSE
+any named closed form (the best one per question)	q36	genomic_accuracy	FALSE
+best constant: the category median of the key	q37	genomic_accuracy	TRUE
+accuracy of phenotypic selection, h	q37	genomic_accuracy	FALSE
+Daetwyler, Me = number of markers	q37	genomic_accuracy	FALSE
+zero (no LD in quickHaplo founders)	q37	genomic_accuracy	FALSE
+any named closed form (the best one per question)	q37	genomic_accuracy	FALSE
+best constant: the category median of the key	q38	genomic_accuracy	FALSE
+accuracy of phenotypic selection, h	q38	genomic_accuracy	FALSE
+Daetwyler, Me = number of markers	q38	genomic_accuracy	FALSE
+zero (no LD in quickHaplo founders)	q38	genomic_accuracy	FALSE
+any named closed form (the best one per question)	q38	genomic_accuracy	FALSE
+best constant: the category median of the key	q39	genomic_accuracy	FALSE
+accuracy of phenotypic selection, h	q39	genomic_accuracy	FALSE
+Daetwyler, Me = number of markers	q39	genomic_accuracy	FALSE
+zero (no LD in quickHaplo founders)	q39	genomic_accuracy	FALSE
+any named closed form (the best one per question)	q39	genomic_accuracy	FALSE
+best constant: the category median of the key	q40	genomic_accuracy	TRUE
+accuracy of phenotypic selection, h	q40	genomic_accuracy	FALSE
+Daetwyler, Me = number of markers	q40	genomic_accuracy	FALSE
+zero (no LD in quickHaplo founders)	q40	genomic_accuracy	FALSE
+any named closed form (the best one per question)	q40	genomic_accuracy	FALSE

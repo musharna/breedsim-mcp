@@ -1,0 +1,63 @@
+level	arm	category	right	wrong	declined	no_answer	invalid	questions_right_every_run	median_abs_error_in_bands	cost_usd_mean	cost_usd_median	cost_usd_total	seconds_mean	seconds_median	seconds_max	tool_calls_mean
+arm	alt	headline (all but prob_beats)	102	0	0	0	0	34	0.25	0.0268	0.0266	2.73	18.6	16.6	41.8	1.78
+arm	mcp	headline (all but prob_beats)	102	0	0	0	0	34	0.3	0.036	0.0332	3.67	19.7	17.8	52.5	2
+arm	alt	all	120	0	0	0	0	40	0.25	0.0269	0.0264	3.22	19.4	17.1	50.6	1.81
+arm	mcp	all	120	0	0	0	0	40	0.28	0.0364	0.0352	4.36	20.5	18.3	52.5	2
+arm_x_category	alt	control_response	18	0	0	0	0	6	0.19	NA	NA	NA	NA	NA	NA	NA
+arm_x_category	alt	long_term_gain	24	0	0	0	0	8	0.3	NA	NA	NA	NA	NA	NA	NA
+arm_x_category	alt	remaining_variance	24	0	0	0	0	8	0.26	NA	NA	NA	NA	NA	NA	NA
+arm_x_category	alt	scheme_difference	21	0	0	0	0	7	0.34	NA	NA	NA	NA	NA	NA	NA
+arm_x_category	alt	prob_beats	18	0	0	0	0	6	0.13	NA	NA	NA	NA	NA	NA	NA
+arm_x_category	alt	genomic_accuracy	15	0	0	0	0	5	0.25	NA	NA	NA	NA	NA	NA	NA
+arm_x_category	mcp	control_response	18	0	0	0	0	6	0.28	NA	NA	NA	NA	NA	NA	NA
+arm_x_category	mcp	long_term_gain	24	0	0	0	0	8	0.38	NA	NA	NA	NA	NA	NA	NA
+arm_x_category	mcp	remaining_variance	24	0	0	0	0	8	0.42	NA	NA	NA	NA	NA	NA	NA
+arm_x_category	mcp	scheme_difference	21	0	0	0	0	7	0.17	NA	NA	NA	NA	NA	NA	NA
+arm_x_category	mcp	prob_beats	18	0	0	0	0	6	0.19	NA	NA	NA	NA	NA	NA	NA
+arm_x_category	mcp	genomic_accuracy	15	0	0	0	0	5	0.31	NA	NA	NA	NA	NA	NA	NA
+baseline	best constant: the category median of the key	headline (all but prob_beats)	12	22	0	0	0	12	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	best constant: the category median of the key	control_response	2	4	0	0	0	2	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	best constant: the category median of the key	long_term_gain	0	8	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	best constant: the category median of the key	remaining_variance	3	5	0	0	0	3	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	best constant: the category median of the key	scheme_difference	4	3	0	0	0	4	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	best constant: the category median of the key	prob_beats	5	1	0	0	0	5	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	best constant: the category median of the key	genomic_accuracy	3	2	0	0	0	3	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	breeder's equation, R = i(n,N) h	headline (all but prob_beats)	6	0	0	0	0	6	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	breeder's equation, R = i(n,N) h	control_response	6	0	0	0	0	6	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	R = i h2 (sigma_P dropped)	headline (all but prob_beats)	0	6	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	R = i h2 (sigma_P dropped)	control_response	0	6	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	any named closed form (the best one per question)	headline (all but prob_beats)	15	19	0	0	0	15	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	any named closed form (the best one per question)	control_response	6	0	0	0	0	6	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	any named closed form (the best one per question)	long_term_gain	3	5	0	0	0	3	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	any named closed form (the best one per question)	remaining_variance	2	6	0	0	0	2	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	any named closed form (the best one per question)	scheme_difference	4	3	0	0	0	4	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	any named closed form (the best one per question)	prob_beats	0	6	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	any named closed form (the best one per question)	genomic_accuracy	0	5	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	R = h2 S every cycle, infinite-population i	headline (all but prob_beats)	0	15	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	R = h2 S every cycle, infinite-population i	long_term_gain	0	8	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	R = h2 S every cycle, infinite-population i	scheme_difference	0	7	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	R = h2 S every cycle, finite i(n,N)	headline (all but prob_beats)	0	15	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	R = h2 S every cycle, finite i(n,N)	long_term_gain	0	8	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	R = h2 S every cycle, finite i(n,N)	scheme_difference	0	7	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	Bulmer effect, no drift	headline (all but prob_beats)	0	23	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	Bulmer effect, no drift	long_term_gain	0	8	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	Bulmer effect, no drift	remaining_variance	0	8	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	Bulmer effect, no drift	scheme_difference	0	7	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	Bulmer + drift, infinitesimal	headline (all but prob_beats)	9	14	0	0	0	9	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	Bulmer + drift, infinitesimal	long_term_gain	3	5	0	0	0	3	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	Bulmer + drift, infinitesimal	remaining_variance	2	6	0	0	0	2	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	Bulmer + drift, infinitesimal	scheme_difference	4	3	0	0	0	4	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	unchanged (1)	headline (all but prob_beats)	0	8	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	unchanged (1)	remaining_variance	0	8	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	drift only, (1 - 1/(2n))^t over the n parents	headline (all but prob_beats)	0	8	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	drift only, (1 - 1/(2n))^t over the n parents	remaining_variance	0	8	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	certain: 1 or 0 by the sign of the breeder's-equation difference	headline (all but prob_beats)	0	0	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	certain: 1 or 0 by the sign of the breeder's-equation difference	prob_beats	0	6	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	coin flip (0.5)	headline (all but prob_beats)	0	0	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	coin flip (0.5)	prob_beats	0	6	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	accuracy of phenotypic selection, h	headline (all but prob_beats)	0	5	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	accuracy of phenotypic selection, h	genomic_accuracy	0	5	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	Daetwyler, Me = number of markers	headline (all but prob_beats)	0	5	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	Daetwyler, Me = number of markers	genomic_accuracy	0	5	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	zero (no LD in quickHaplo founders)	headline (all but prob_beats)	0	5	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA
+baseline	zero (no LD in quickHaplo founders)	genomic_accuracy	0	5	0	0	0	0	NA	NA	NA	NA	NA	NA	NA	NA

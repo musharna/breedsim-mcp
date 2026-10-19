@@ -26,9 +26,11 @@ is not measurably more accurate and costs more.
 Claude Opus 5.5 answered 34 breeding-simulation questions three times each, keyed by
 AlphaSimR run directly; the best named formula lands in only 15 of 34. With this server
 Claude got 102 of 102 right, with its own R and AlphaSimR 99 of 102 (not separated, exact
-McNemar p = 1.0), and alone 51 of 102 (both tool setups beat it, p < 1e-6). The server's
-median answer cost $0.051 against $0.028 for Claude's own scripts, about 1.8 times as much;
-time is not separated.
+McNemar p = 1.0), and alone 51 of 102 (both tool setups beat it, p < 1e-6). It still costs
+more than Claude's own scripts. A pre-registered re-run on 2026-10-18, with an unreleased
+commit that cut the server's instructions and rounded its outputs, got 102 of 102 right in
+both setups and lowered the server's median cost per answer from $0.051 to $0.033, but Claude's
+own scripts cost $0.027, cheaper on all 34 questions (p = 1e-10). Time is not separated.
 
 Each question spells out the AlphaSimR calls, so this tests running a stated simulation, not
 designing one unaided; method, controls, other limitations, and six probability questions
