@@ -178,3 +178,24 @@ def test_cost_paired_finds_a_cheaper_arm_and_not_an_equal_one():
     )
     assert same["p_exact_wilcoxon"] > 0.05
     assert same["difference_ci95"][0] <= 0 <= same["difference_ci95"][1]
+
+
+def test_the_leak_scan_ignores_the_runs_own_cwd_but_not_its_siblings(tmp_path):
+    """2026-10-18: run dirs sat under .../agent_qa/rerun_1018/work/, so an alt
+    run that wrote into its own cwd matched `agent_qa`. Its own cwd is ours; a
+    sibling (the sweep's runs/ or results) is still a leak."""
+    cwd = "/home/x/breedsim-mcp-artifacts/agent_qa/rerun_1018/work/agentqa-alt-ab12"
+
+    def scan(cmd: str) -> list[str]:
+        p = tmp_path / f"t{len(list(tmp_path.iterdir()))}.jsonl"
+        events = [
+            {"type": "system", "subtype": "init", "cwd": cwd},
+            {"type": "assistant", "message": {"content": [
+                {"type": "tool_use", "input": {"command": cmd}}]}},
+        ]  # fmt: skip
+        p.write_text("\n".join(json.dumps(e) for e in events))
+        return A.leaks(A.transcript_text(p))
+
+    assert scan(f"cd {cwd} && Rscript s.R") == []
+    assert scan("ls /home/x/breedsim-mcp-artifacts/agent_qa/rerun_1018/runs/alt")
+    assert scan(f"cat {cwd}/../../results.jsonl")

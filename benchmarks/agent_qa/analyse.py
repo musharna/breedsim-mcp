@@ -61,14 +61,22 @@ ANY_SHORTCUT = "any named closed form (the best one per question)"
 
 def transcript_text(path: Path) -> str:
     """Every tool input and every tool output in a stream-json transcript,
-    joined; the prompt and the init event are left out (the prompt is ours)."""
+    joined; the prompt and the init event are left out (the prompt is ours).
+
+    The run's own working directory (the init event's cwd) is replaced by
+    ``<cwd>``: it is ours too, and on 2026-10-18 it sat under a directory
+    named ``agent_qa``, so every alt run that wrote a script into it matched
+    that pattern. Any other path under the same parent still counts."""
     parts: list[str] = []
+    cwd = None
     if not path.exists():
         return ""
     for ln in path.read_text().splitlines():
         if not ln.startswith("{"):
             continue
         e = json.loads(ln)
+        if e.get("type") == "system" and e.get("subtype") == "init":
+            cwd = e.get("cwd")
         content = (e.get("message") or {}).get("content")
         if not isinstance(content, list):
             continue
@@ -78,7 +86,8 @@ def transcript_text(path: Path) -> str:
             elif b.get("type") == "tool_result":
                 c = b.get("content")
                 parts.append(c if isinstance(c, str) else json.dumps(c))
-    return "\n".join(parts)
+    text = "\n".join(parts)
+    return text.replace(cwd, "<cwd>") if cwd else text
 
 
 def leaks(text: str) -> list[str]:
