@@ -112,7 +112,8 @@ def check_results_model(results: Path) -> None:
     """Refuse to resume a results file made on another model: resume skips
     every (arm, question, rep) already there, so a Haiku sweep pointed at the
     Opus results would run nothing and report Opus rows as its own. Rows from
-    before --model existed carry only the served model."""
+    before --model existed carry only the served model, and one that failed
+    before its init event carries none: that row says nothing either way."""
     if not results.exists():
         return
     other = sorted(
@@ -121,7 +122,7 @@ def check_results_model(results: Path) -> None:
             for ln in results.read_text().splitlines()
             if ln.strip()
             for r in [json.loads(ln)]
-            if (m := r.get("model_requested", r.get("model"))) != MODEL
+            if (m := r.get("model_requested") or r.get("model")) not in (None, MODEL)
         }
     )
     if other:
@@ -441,8 +442,8 @@ def main() -> None:
     )
     ap.add_argument(
         "--model",
-        default=MODEL,
-        help=f"claude --model for every arm (default {MODEL}); another model's "
+        default=DEFAULT_MODEL,
+        help=f"claude --model for every arm (default {DEFAULT_MODEL}); another model's "
         "transcripts go to <runs>-<model>/",
     )
     a = ap.parse_args()
@@ -507,9 +508,12 @@ def main() -> None:
     ]
     print(f"{len(todo)} runs to do ({len(done)} already in {results.name})", flush=True)
     lock = threading.Lock()
+    stopped = False
     with ThreadPoolExecutor(max_workers=a.workers) as pool:
         futures = [pool.submit(run_one, *t) for t in todo]
         for n, f in enumerate(as_completed(futures), 1):
+            if f.cancelled():
+                continue
             r = f.result()
             with lock, results.open("a") as fh:
                 fh.write(json.dumps(r) + "\n")
@@ -519,16 +523,18 @@ def main() -> None:
                 f" ${r['cost_usd']}",
                 flush=True,
             )
-            if seven_day_exhausted(r["rate_limit"]):
+            if not stopped and seven_day_exhausted(r["rate_limit"]):
                 print(
                     f"STOP: seven_day {r['rate_limit']['seven_day']} >= {STOP_SEVEN_DAY}",
                     flush=True,
                 )
-                pool.shutdown(wait=True, cancel_futures=True)
-                record_models_served(results)
-                sys.exit(3)
+                stopped = True
+                # Runs not yet started are cancelled; runs in flight finish
+                # and are written above, so no paid-for run is lost.
+                for g in futures:
+                    g.cancel()
     record_models_served(results)
-    sys.exit(0)
+    sys.exit(3 if stopped else 0)
 
 
 if __name__ == "__main__":
