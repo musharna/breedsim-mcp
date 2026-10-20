@@ -7,7 +7,7 @@ run, so an agent can say what a selection scheme would gain and how sure that is
 [![CI](https://img.shields.io/github/actions/workflow/status/musharna/breedsim-mcp/ci.yml?branch=master&label=CI)](https://github.com/musharna/breedsim-mcp/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/breedsim-mcp)](https://pypi.org/project/breedsim-mcp/)
 [![Python](https://img.shields.io/pypi/pyversions/breedsim-mcp)](https://pypi.org/project/breedsim-mcp/)
-[![License](https://img.shields.io/pypi/l/breedsim-mcp)](LICENSE)
+[![License](https://img.shields.io/pypi/l/breedsim-mcp)](https://github.com/musharna/breedsim-mcp/blob/master/LICENSE)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21713210.svg)](https://doi.org/10.5281/zenodo.21713210)
 [![Glama](https://glama.ai/mcp/servers/musharna/breedsim-mcp/badges/score.svg)](https://glama.ai/mcp/servers/musharna/breedsim-mcp)
 
@@ -34,7 +34,7 @@ own scripts cost $0.027, cheaper on all 34 questions (p = 1e-10). Time is not se
 
 Each question spells out the AlphaSimR calls, so this tests running a stated simulation, not
 designing one unaided; method, controls, other limitations, and six probability questions
-reported separately are in [benchmarks/agent_qa](benchmarks/agent_qa/README.md).
+reported separately are in [benchmarks/agent_qa](https://github.com/musharna/breedsim-mcp/blob/master/benchmarks/agent_qa/README.md).
 
 ## Why replicates
 
@@ -117,7 +117,7 @@ Typical loop: `found_population` → `run_program` → read the CI and the warni
 two schemes: `found_population` → `compare_programs` → read `difference`. `run_program`
 takes `selection_method="phenotypic"` or `"genomic"`; `compare_programs` takes one per arm.
 
-[docs/REFERENCE.md](docs/REFERENCE.md) has the full tool signatures, example outputs, the
+[docs/REFERENCE.md](https://github.com/musharna/breedsim-mcp/blob/master/docs/REFERENCE.md) has the full tool signatures, example outputs, the
 warnings table, and the measurements behind the points below.
 
 - **Compare with `compare_programs`, not two `run_program` calls.** It runs both arms on
@@ -152,8 +152,8 @@ warnings table, and the measurements behind the points below.
 
 CI installs R and compiles AlphaSimR, so the suite runs against the real engine on Python
 3.11, 3.12 and 3.13. One test checks the R engine layer against the breeder's equation
-`R = h²S` ([docs/EVAL.md](docs/EVAL.md)); it does not test this server's founding or
-selection code against an outside reference. [docs/MUTATION-CHECKS.md](docs/MUTATION-CHECKS.md)
+`R = h²S` ([docs/EVAL.md](https://github.com/musharna/breedsim-mcp/blob/master/docs/EVAL.md)); it does not test this server's founding or
+selection code against an outside reference. [docs/MUTATION-CHECKS.md](https://github.com/musharna/breedsim-mcp/blob/master/docs/MUTATION-CHECKS.md)
 records 25 deliberate mutants: 24 turned a test red, and one survives because it is
 equivalent. `tests/test_perf_ratchet.py` gates each tool on exact counts of package-function
 calls and R evaluations, not on time.
@@ -172,6 +172,6 @@ calls and R evaluations, not on time.
 
 **GPL-3.0-or-later**, because this imports rpy2, which is GPLv2+. AlphaSimR itself is MIT.
 Unofficial: not affiliated with, endorsed by, or sponsored by the AlphaSimR authors, the
-University of Edinburgh, or the R Foundation. See [NOTICE](NOTICE).
+University of Edinburgh, or the R Foundation. See [NOTICE](https://github.com/musharna/breedsim-mcp/blob/master/NOTICE).
 
-[CHANGELOG.md](CHANGELOG.md) records what changed and why.
+[CHANGELOG.md](https://github.com/musharna/breedsim-mcp/blob/master/CHANGELOG.md) records what changed and why.
