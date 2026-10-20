@@ -25,7 +25,7 @@ sweep() {
     --results "$A/results.jsonl" --runs "$A/runs" --work "$A/work" \
     --server-spec "$SPEC" --exclude-newer 2026-10-17
 }
-cd "$WT"
+cd "$WT" || exit 1
 while true; do
   read -r five seven reset < <(probe)
   echo "probe $(date +%H:%M) $M five_hour=$five seven_day=$seven resets=$(date -d @"$reset" +%H:%M)"
