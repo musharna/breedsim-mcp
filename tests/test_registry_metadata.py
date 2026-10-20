@@ -151,3 +151,26 @@ def test_the_schema_check_rejects_what_the_registry_rejected():
     # document must still validate. Without it, an unloadable schema or a
     # validator that raised on everything would read as "the guard works".
     jsonschema.validate(SERVER_JSON, SCHEMA)
+
+
+_LINK = re.compile(r"\]\(\s*<?([^)\s>]+)|(?:href|src)=\"([^\"]+)\"")
+
+
+def _relative_links(markdown: str) -> list[str]:
+    targets = [a or b for a, b in _LINK.findall(markdown)]
+    return [
+        t for t in targets if not t.startswith(("https://", "http://", "mailto:", "#"))
+    ]
+
+
+def test_every_readme_link_resolves_on_pypi():
+    """The README is the PyPI description, and PyPI resolves a relative link against
+    pypi.org/project/breedsim-mcp/, where no repository file lives: 0.6.0 shipped seven
+    such links (LICENSE, docs/REFERENCE.md, ...), each a 404 there."""
+    assert _relative_links(README) == []
+    # Control: the scan does see a relative link, in both syntaxes, and an absolute one.
+    assert _relative_links('[a](docs/A.md) <img src="b.png"> [c](https://x.org/c)') == [
+        "docs/A.md",
+        "b.png",
+    ]
+    assert len(_LINK.findall(README)) >= 7

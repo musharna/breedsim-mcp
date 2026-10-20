@@ -6,6 +6,11 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- README links are absolute, so they work on the PyPI page: seven relative links
+  (LICENSE, NOTICE, CHANGELOG and four docs) resolved under pypi.org and 404'd there.
+
 ## [0.6.0] - 2026-10-19
 
 ### Changed
