@@ -6,6 +6,8 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-19
+
 ### Changed
 
 - **Cheaper to read for an agent** (from the 2026-10-18 token diagnosis of the
