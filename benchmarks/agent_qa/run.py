@@ -41,6 +41,7 @@ from score import score
 
 HERE = Path(__file__).resolve().parent
 MODEL = "claude-opus-5-5"
+DEFAULT_MODEL = MODEL
 SERVER = "breedsim-mcp==0.5.1"  # latest on PyPI, checked 2026-10-16
 # --server-spec runs an unreleased commit instead of the PyPI pin: the git URL
 # of a commit pushed to the PR branch, by full SHA so it cannot move. Set once by
@@ -54,6 +55,10 @@ EXCLUDE_NEWER: str | None = None
 # A run that sees the five-hour window at or above this, or a rejected request,
 # makes the sweep sleep until the window resets (each pause is logged).
 PAUSE_AT = 0.85
+# The seven-day window does not reset within a sweep: at or above this the
+# sweep stops (exit 3) after writing the run that saw it; a later resume
+# carries on from there.
+STOP_SEVEN_DAY = 0.90
 PAUSES: Path | None = None
 RUN_TIMEOUT_S = 1800
 R_LIBS_USER = os.environ.get("R_LIBS_USER") or str(Path.home() / "R" / "library")
@@ -93,6 +98,36 @@ def set_server_spec(spec: str | None, exclude_newer: str | None) -> None:
                 f"--server-spec must be {SPEC_PREFIX}<full 40-hex sha>, got {spec!r}"
             )
     SERVER_SPEC, EXCLUDE_NEWER = spec, exclude_newer
+
+
+def set_model(model: str, runs: Path) -> None:
+    """--model runs every arm on another model. Its transcripts go to
+    ``<runs>-<model>/`` so they never overwrite the default model's."""
+    global MODEL, RUNS
+    MODEL = model
+    RUNS = runs if model == DEFAULT_MODEL else runs.with_name(f"{runs.name}-{model}")
+
+
+def check_results_model(results: Path) -> None:
+    """Refuse to resume a results file made on another model: resume skips
+    every (arm, question, rep) already there, so a Haiku sweep pointed at the
+    Opus results would run nothing and report Opus rows as its own. Rows from
+    before --model existed carry only the served model."""
+    if not results.exists():
+        return
+    other = sorted(
+        {
+            m
+            for ln in results.read_text().splitlines()
+            if ln.strip()
+            for r in [json.loads(ln)]
+            if (m := r.get("model_requested", r.get("model"))) != MODEL
+        }
+    )
+    if other:
+        sys.exit(
+            f"{results} holds rows run on {other}, not {MODEL}: use another --results"
+        )
 
 
 def server_versions() -> dict[str, str]:
@@ -203,6 +238,10 @@ def api_failure(events: list[dict[str, Any]]) -> bool:
     return rejected and not answered
 
 
+def seven_day_exhausted(rl: dict[str, Any]) -> bool:
+    return (rl.get("seven_day") or 0) >= STOP_SEVEN_DAY
+
+
 def pause_if_limited(rl: dict[str, Any], where: str) -> None:
     """Sleep until the five-hour window resets when it is at PAUSE_AT or a
     request was rejected; log the pause beside the results."""
@@ -275,7 +314,8 @@ def run_one(arm: str, q: dict[str, Any], rep: int) -> dict[str, Any]:
         "exit": rc,
         "seconds": seconds,
         "claude_code": init.get("claude_code_version"),
-        "model": init.get("model"),
+        "model": init.get("model"),  # the model actually served
+        "model_requested": MODEL,
         "mcp_servers": init.get("mcp_servers"),
         "tools_available": init.get("tools") or [],
         "tool_calls": tools,
@@ -290,6 +330,22 @@ def run_one(arm: str, q: dict[str, Any], rep: int) -> dict[str, Any]:
     }
     pause_if_limited(rl, f"{arm} {q['id']} rep{rep}")
     return row
+
+
+def record_models_served(results: Path) -> None:
+    """Add the models the init events reported (every row's ``model``) to
+    versions.json, so it shows what was served, not only what was asked for."""
+    versions = results.parent / "versions.json"
+    if not versions.exists() or not results.exists():
+        return
+    rows = [json.loads(ln) for ln in results.read_text().splitlines() if ln.strip()]
+    served: dict[str, int] = {}
+    for r in rows:
+        served[str(r.get("model"))] = served.get(str(r.get("model")), 0) + 1
+    v = json.loads(versions.read_text())
+    v["models_served"] = served
+    versions.write_text(json.dumps(v, indent=1) + "\n")
+    print("models served:", served, flush=True)
 
 
 def alphasimr_version() -> str:
@@ -383,9 +439,15 @@ def main() -> None:
         action="store_true",
         help="re-score every stored reply against the current questions.json, run nothing",
     )
+    ap.add_argument(
+        "--model",
+        default=MODEL,
+        help=f"claude --model for every arm (default {MODEL}); another model's "
+        "transcripts go to <runs>-<model>/",
+    )
     a = ap.parse_args()
-    global RUNS, WORK, PAUSES
-    RUNS = Path(a.runs).expanduser()
+    global WORK, PAUSES
+    set_model(a.model, Path(a.runs).expanduser())
     if a.work:
         WORK = Path(a.work).expanduser()
         WORK.mkdir(parents=True, exist_ok=True)
@@ -399,6 +461,7 @@ def main() -> None:
     if a.drop_api_failures:
         drop_api_failures(Path(a.results))
         return
+    check_results_model(Path(a.results))
     preflight(key)
     if "mcp" in a.arms.split(","):
         versions = server_versions()
@@ -417,6 +480,7 @@ def main() -> None:
                     "server_uvx": server_uvx(),
                     "exclude_newer": EXCLUDE_NEWER,
                     "model": MODEL,
+                    "runs_dir": RUNS.name,
                     "alphasimr": key["alphasimr"],
                     "server_environment": versions,
                     "claude_effort_env": os.environ.get("CLAUDE_EFFORT"),
@@ -455,6 +519,15 @@ def main() -> None:
                 f" ${r['cost_usd']}",
                 flush=True,
             )
+            if seven_day_exhausted(r["rate_limit"]):
+                print(
+                    f"STOP: seven_day {r['rate_limit']['seven_day']} >= {STOP_SEVEN_DAY}",
+                    flush=True,
+                )
+                pool.shutdown(wait=True, cancel_futures=True)
+                record_models_served(results)
+                sys.exit(3)
+    record_models_served(results)
     sys.exit(0)
 
 
