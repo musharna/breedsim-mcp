@@ -174,3 +174,15 @@ def test_every_readme_link_resolves_on_pypi():
         "b.png",
     ]
     assert len(_LINK.findall(README)) >= 7
+
+
+_CURRENT_RELEASE = re.compile(r"current\s+release\s+is\s+\*\*v([^*]+)\*\*")
+
+
+def test_security_md_names_the_declared_version_as_current():
+    """Every release bump edits this sentence by hand; 0.6.1's bump first missed it,
+    caught only by review, because the version greps covered code and config files."""
+    found = _CURRENT_RELEASE.findall((ROOT / "SECURITY.md").read_text())
+    assert found == [PYPROJECT["project"]["version"]]
+    # Control: the pattern reads the version across the line break SECURITY.md uses.
+    assert _CURRENT_RELEASE.findall("The current\nrelease is **v9.9.9**.") == ["9.9.9"]
