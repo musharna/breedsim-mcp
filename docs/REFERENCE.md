@@ -19,14 +19,20 @@ found_population(
 run_program(
     session_id, cycles=3, replicates=10, n_select=10, n_cross=None,
     base_seed=1000, selection_method="phenotypic", index_weights=None,
+    final_only=False,
 )
 compare_programs(
     session_id, a_n_select=10, b_n_select=25, cycles=3, replicates=10,
     a_n_cross=None, b_n_cross=None, base_seed=1000, a_label="A", b_label="B",
     a_selection_method="phenotypic", b_selection_method="phenotypic",
+    final_only=False,
 )
 describe_session(session_id)
 ```
+
+`final_only=True` returns only the last cycle; the warnings still read every cycle.
+Every float in a response is rounded to 4 significant figures, far inside the Monte
+Carlo error of these estimates (the library itself returns full precision).
 
 ## Species
 
@@ -49,7 +55,7 @@ directly rather than through this server.
 
 ## What `run_program` returns
 
-Example output (v0.5.0, AlphaSimR 2.1.0) from `found_population(generator="quickHaplo",
+Example output (AlphaSimR 2.1.0) from `found_population(generator="quickHaplo",
 seed=1)` with every other argument at its default, then `run_program(session_id,
 cycles=2, replicates=10, n_select=10, n_cross=60, base_seed=1000)`. Abridged to cycle 2;
 the session id is elided. Regenerate it with `uv run python scripts/readme_examples.py`.
@@ -62,17 +68,17 @@ the session id is elided. Regenerate it with `uv run python scripts/readme_examp
     {
       "cycle": 2,
       "genetic_gain": {
-        "mean": 2.0107208009172495,
-        "sd": 0.38613252679501087,
-        "ci_low": 1.7344982312545358,
-        "ci_high": 2.286943370579963,
+        "mean": 2.011,
+        "sd": 0.3861,
+        "ci_low": 1.734,
+        "ci_high": 2.287,
         "n": 10
       },
       "genetic_variance": {
-        "mean": 0.6598319510437,
-        "sd": 0.17387396740876424,
-        "ci_low": 0.5354500076893222,
-        "ci_high": 0.7842138943980778,
+        "mean": 0.6598,
+        "sd": 0.1739,
+        "ci_low": 0.5355,
+        "ci_high": 0.7842,
         "n": 10
       }
     }
@@ -113,7 +119,7 @@ Read `difference` and `favours`. `favours` is `null` when the interval contains 
 means the two programs are not distinguishable at that replicate count; the larger mean is
 then not the better program.
 
-Here is why the pairing earns its keep. Example output (v0.5.0, AlphaSimR 2.1.0) from
+Here is why the pairing earns its keep. Example output (AlphaSimR 2.1.0) from
 `found_population(generator="quickHaplo", seed=1)` with every other argument at its default
 (100 individuals), then `compare_programs(session_id, a_n_select=12, b_n_select=18,
 a_n_cross=100, b_n_cross=100, cycles=2, replicates=10)`: selecting 12 of 100 against 18 of
@@ -132,21 +138,21 @@ elided; `scripts/readme_examples.py` prints it in full.
     {
       "cycle": 2,
       "a_genetic_gain": {
-        "mean": 2.0302939883220854,
-        "ci_low": 1.8392366355489589,
-        "ci_high": 2.221351341095212,
+        "mean": 2.03,
+        "ci_low": 1.839,
+        "ci_high": 2.221,
         "n": 10
       },
       "b_genetic_gain": {
-        "mean": 1.716778892820318,
-        "ci_low": 1.5722361688822837,
-        "ci_high": 1.8613216167583524,
+        "mean": 1.717,
+        "ci_low": 1.572,
+        "ci_high": 1.861,
         "n": 10
       },
       "difference": {
-        "mean": 0.3135150955017676,
-        "ci_low": 0.14750513810480984,
-        "ci_high": 0.4795250528987254,
+        "mean": 0.3135,
+        "ci_low": 0.1475,
+        "ci_high": 0.4795,
         "n": 10
       }
     }

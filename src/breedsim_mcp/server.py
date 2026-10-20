@@ -15,6 +15,7 @@ from . import engine  # noqa: I001
 # isort: on
 import functools
 import importlib.metadata
+import math
 from typing import Any
 
 # mcp 2.x renamed FastMCP to MCPServer and removed mcp.server.fastmcp. Same
@@ -56,52 +57,19 @@ from .session import SessionStore, UnknownSessionError
 
 _store = SessionStore()
 
-INSTRUCTIONS = f"""\
-Breeding-scheme simulation, driving AlphaSimR.
-
-Work in this order: found_population -> run_program, or found_population ->
-compare_programs when the question is "which of these two is better".
-
-TO COMPARE TWO PROGRAMMES, USE compare_programs — do not run run_program twice and
-compare the means. compare_programs pairs the two arms on the same seeds so the
-shared luck cancels, and returns the DIFFERENCE with its own confidence interval.
-Read `difference` and `favours`. When `favours` is null the interval contains zero
-and the programmes are not distinguishable at that replicate count, so the larger
-mean is not the better programme. Two overlapping per-programme intervals do NOT
-imply no difference — that is what `overlap_but_different` is telling you.
-
-THIS SERVER DOES NOT RETURN SINGLE RUNS. run_program executes many replicates and
-returns, per cycle, the mean, standard deviation and 95% confidence interval of
-genetic gain and genetic variance. In one measurement on this engine (AlphaSimR
-2.1.0, 2026-07-29), five seeds of one identical programme gave gains spanning
-1.151 to 1.841 — sd 0.247, the same order
-as the differences people try to compare. One run is a draw from a distribution,
-not an answer, so there is no option to request one.
-
-GENOMIC SELECTION requires two things that are easy to get wrong. First, a SNP
-chip, which exists only if found_population was called with n_snp_per_chr > 0 —
-it cannot be added later. Second, and less obvious, the founders must actually
-carry LINKAGE DISEQUILIBRIUM, because that is the entire mechanism by which a
-marker says anything about a trait. Measured on this engine, quickHaplo founders
-carry NONE: adjacent markers correlate 0.0444 against a background of 0.0462
-between distant ones, and out-of-sample prediction accuracy is 0.097 against 0.351
-for runMacs. Genomic selection on quickHaplo founders is noise wearing the shape
-of a breeding value. Use generator="runMacs" for it, and understand the trade:
-runMacs founders are NOT reproducible here. Reproducibility and genomic realism
-cannot currently be had at the same time, so choose deliberately rather than by
-accident. Read `linkage_disequilibrium` in the found_population response and
-`prediction_accuracy` in every genomic run — the latter is measured out-of-sample
-on progeny the model never saw, and near zero means the gain you are looking at
-came from drift, not from selection.
-
-Read `reproducible` on every response. Two independent things break reproducibility:
-founders generated with runMacs ({RUNMACS_RNG_NOTE}), and OpenMP running
-multi-threaded. Use generator="quickHaplo" and keep threads pinned if you need a
-result someone else can repeat.
-
-Read the `warnings` array. `replicates_too_few` means the interval is too wide to
-support the comparison being made. `variance_exhausted` means selection has used up
-the usable variation, so a still-rising mean is a plateau rather than progress.\
+# Claude Code (2.1.302, checked 2026-10-18) places server instructions in a
+# system message AFTER the user's question, beside the per-run working
+# directory, so they are never in the cached prompt prefix: every conversation
+# pays to write them to the cache again. Tool descriptions sit in the cached
+# prefix. So the guidance an agent needs lives in the tool descriptions, and
+# this stays a few lines (test_instructions_stay_short).
+INSTRUCTIONS = """\
+Breeding-scheme simulation on AlphaSimR. Your client lists each tool under \
+its own prefix (e.g. mcp__breedsim__run_program); call it by that full name. \
+Call found_population first, then \
+run_program, or compare_programs to compare two programmes (paired seeds). \
+Results are distributions over replicates: read `reproducible` and `warnings` \
+on every response.\
 """
 
 
@@ -231,6 +199,37 @@ class MethodsInfo(TypedDict):
     guidance: str
 
 
+# Significant figures every float in a tool response is rounded to. A full
+# double (17 digits) cost the 2026-10-17 benchmark's agents about three times
+# the tokens of the number they needed, on every result they read. Four figures
+# sit far inside the Monte Carlo error: over every mean and CI bound in those
+# 120 server transcripts, the rounding error was at most 0.08 of the mean's own
+# standard error (sd / sqrt(n)). The library returns full precision; only this
+# boundary rounds.
+SIG_FIGS = 4
+
+
+def _round_floats(obj: Any) -> Any:
+    """`obj` with every finite float rounded to SIG_FIGS significant figures."""
+    if isinstance(obj, float):
+        return float(f"{obj:.{SIG_FIGS}g}") if math.isfinite(obj) else obj
+    if isinstance(obj, dict):
+        return {k: _round_floats(v) for k, v in obj.items()}
+    if isinstance(obj, list | tuple):
+        return [_round_floats(v) for v in obj]
+    return obj
+
+
+def _rounds_floats(fn):
+    """Apply _round_floats to a tool's response."""
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        return _round_floats(fn(*args, **kwargs))
+
+    return wrapper
+
+
 def _warn_dicts(advisories) -> list[WarningDict]:
     return [{"code": a.code, "message": a.message} for a in advisories if a]
 
@@ -308,6 +307,7 @@ def build_server() -> MCPServer:
         title="List engine capabilities and determinism status", annotations=READ_ONLY
     )
     @_surfaces_refusals
+    @_rounds_floats
     def list_methods() -> MethodsInfo:
         """Engine versions, available founder generators, replicate floor, and
         whether THIS process is currently able to produce reproducible results."""
@@ -338,6 +338,7 @@ def build_server() -> MCPServer:
         annotations=READ_ONLY,
     )
     @_surfaces_refusals
+    @_rounds_floats
     def found_population_tool(
         generator: str = "quickHaplo",
         seed: int = 1,
@@ -410,6 +411,7 @@ def build_server() -> MCPServer:
         annotations=READ_ONLY,
     )
     @_surfaces_refusals
+    @_rounds_floats
     def run_program_tool(
         session_id: str,
         cycles: int = 3,
@@ -419,8 +421,16 @@ def build_server() -> MCPServer:
         base_seed: int = 1000,
         selection_method: str = "phenotypic",
         index_weights: list[float] | None = None,
+        final_only: bool = False,
     ) -> RunResult:
         """Run the programme `replicates` times; return per-cycle mean, sd and 95% CI.
+
+        final_only=true returns only the last cycle, for a question about where
+        the programme ends; the warnings still read every cycle. To compare two
+        programmes, call compare_programs, not run_program twice. Read
+        `warnings`: `replicates_too_few` means the interval is too wide for the
+        comparison, `variance_exhausted` that a still-rising mean is a plateau.
+        Floats are rounded to 4 significant figures.
 
         There is no way to request a single run. In one five-seed measurement the
         spread was sd 0.247 on genetic gain, so one replicate is noise rather than a result.
@@ -511,6 +521,8 @@ def build_server() -> MCPServer:
                 ],
             ]
         )
+        if final_only:
+            out["cycles"] = out["cycles"][-1:]
         return out
 
     @mcp.tool(
@@ -519,6 +531,7 @@ def build_server() -> MCPServer:
         annotations=READ_ONLY,
     )
     @_surfaces_refusals
+    @_rounds_floats
     def compare_programs_tool(
         session_id: str,
         a_n_select: int = 10,
@@ -532,8 +545,13 @@ def build_server() -> MCPServer:
         b_label: str = "B",
         a_selection_method: str = "phenotypic",
         b_selection_method: str = "phenotypic",
+        final_only: bool = False,
     ) -> CompareResult:
         """Compare two programmes on shared founders using paired seeds.
+
+        final_only=true returns only the last cycle (`difference_is` and
+        `favours` are always about the last cycle). Floats are rounded to 4
+        significant figures.
 
         Set a_selection_method/b_selection_method to contrast genomic against
         phenotypic selection — THE way to ask "is genotyping worth it on these
@@ -579,10 +597,13 @@ def build_server() -> MCPServer:
                 no_linkage_disequilibrium_warning(session) if uses_genomic else None,
             ]
         )
+        if final_only:
+            out["cycles"] = out["cycles"][-1:]
         return out
 
     @mcp.tool(title="Describe a session", annotations=READ_ONLY)
     @_surfaces_refusals
+    @_rounds_floats
     def describe_session(session_id: str) -> SessionInfo:
         """Founder provenance, trait architecture, cycles run, reproducibility."""
         s = _store.get(session_id)

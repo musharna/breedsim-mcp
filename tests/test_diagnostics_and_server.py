@@ -257,7 +257,11 @@ def test_agent_facing_text_derives_from_one_source():
         "list_methods.guidance": guidance["guidance"],
         "session.reason": reason,
     }
+    # INSTRUCTIONS no longer explains runMacs at all (it was cut to a few lines,
+    # see test_compact_surface.py); any surface that does must derive the note.
     for name, text in surfaces.items():
+        if name == "INSTRUCTIONS" and "runMacs" not in text:
+            continue
         assert RUNMACS_RNG_NOTE in text, f"{name} paraphrases instead of deriving"
         assert "{RUNMACS" not in text, f"{name} leaked an uninterpolated placeholder"
 

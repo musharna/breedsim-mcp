@@ -8,9 +8,11 @@ right and with its own scripts 99 of 102, which is not separated on accuracy
 Both beat Claude alone, which got 51 of 102 (p < 1e-6). What separates the two
 tool setups is cost: the server's median answer cost $0.051 [0.047, 0.054]
 against $0.028 [0.026, 0.030] for Claude's own scripts, about 1.8 times as
-much, while time is not separated. The main limitation is that each question
-spells out the AlphaSimR calls, so this tests running a stated simulation, not
-designing one.
+much, while time is not separated. A pre-registered re-run on 2026-10-18 with a
+leaner server cut that gap by 70% but did not close it: $0.033 against $0.027
+([below](#re-run-2026-10-18-server-7038ec0)). The main limitation is that each
+question spells out the AlphaSimR calls, so this tests running a stated
+simulation, not designing one.
 
 ![Right and wrong answers per setup and per no-LLM baseline, 34 headline questions](agent_qa.png)
 
@@ -47,6 +49,56 @@ runs made in about 15 s. We did not find the cause. It raises the server's mean
 time to 31.8 s but not its median.
 
 ![Cost and seconds per answer, every run](agent_qa_cost_time.png)
+
+## Re-run 2026-10-18 (server 7038ec0)
+
+**Result: a loss on the pre-registered endpoint, median cost per answer.** The
+server stayed as accurate as Claude's own scripts and got cheaper, but it is
+still dearer on every question. This tests an unreleased commit,
+`git+https://github.com/musharna/breedsim-mcp@7038ec0`, which still reports
+version 0.5.1, not the PyPI release. The plan, win rule and analysis were
+committed before the sweep in [`PREREG_2026-10-18.md`](PREREG_2026-10-18.md).
+Both tool setups were re-run, interleaved by question, 40 questions × 3 runs;
+Claude alone was not re-run.
+
+| Headline, 34 questions × 3 runs | Claude + Bash, R and web | Claude + breedsim-mcp |
+|---|---|---|
+| Right / questions right in all 3 runs | 102 / 34 | 102 / 34 |
+| Cost / answer, median [95% CI] | $0.027 [0.025, 0.027] | $0.033 [0.033, 0.036] |
+| Seconds / answer, median [95% CI] | 16.6 [14.9, 18.0] | 17.8 [16.1, 19.0] |
+
+- **Win rule.** Accuracy is non-inferior: 34 against 34 questions right in all
+  runs, so the server needed 32 or more. On cost the server is worse:
+  alt was cheaper on all 34 questions (exact Wilcoxon p = 1.2e-10), and the
+  difference of medians is +$0.0066 [+0.0060, +0.0089]. On 10-17 the same
+  difference was +$0.0223 [+0.0196, +0.0244].
+- **Where the tokens went** (`diagnose.py`, mean per server run, 10-17 → 10-18).
+  Cache writes fell from 4,098 to 2,039 tokens: the uncached part of the first
+  call from 1,796 to 803 (the instructions, which Claude Code places after the
+  question), and tool results from 3,380 to 1,289 characters. Output tokens
+  barely moved (898 → 861; alt 692), and cache writes are still 2,039 against
+  alt's 1,320. Most of the remaining gap is those two items.
+- **Mechanism.** The shorter instructions and the 4-figure rounding apply to
+  every server run. `final_only` was used in 59 of 81 runs that called
+  `run_program` and in all 39 that called `compare_programs`. No call used a
+  bare tool name.
+- **Validity.** All 240 runs exited 0, and no run was rate-limited or paused.
+  As registered, the leak scan marked 28 alt runs invalid. The hits were each
+  run's own working directory, which this sweep placed under
+  `~/breedsim-mcp-artifacts/agent_qa/rerun_1018/work/` and which matches the
+  `agent_qa` pattern. No run touched any other path there. After the sweep,
+  `analyse.py` was changed to ignore a run's own working directory. A planted
+  sibling path still counts as a leak, which a test checks, and the change does
+  not alter the 10-17 analysis. As registered, alt scores 77 of 102
+  (`rerun_2026-10-18/analysis_as_registered.json`); the table uses the fixed
+  scan (`analysis.json`). The cost verdict is the same under both, because
+  cost counts every run.
+- **Sweep.** 2026-10-18, 21:19 to 22:42 EDT, $7.58 (alt $3.22, server $4.36),
+  plus $0.17 for two pilots and two usage probes. The server environment was
+  mcp 2.3.0, rpy2 3.5.17 and numpy 2.5.4 on CPython 3.14.3 (`--exclude-newer
+  2026-10-17`), and AlphaSimR 2.1.0 (`rerun_2026-10-18/versions.json`).
+
+![Cost and seconds per answer in the re-run, every run](rerun_2026-10-18/agent_qa_cost_time.png)
 
 ## Controls
 
@@ -138,7 +190,8 @@ an agent sets up and runs the stated simulation correctly, not whether
 AlphaSimR is right.
 [`tests/test_agent_qa_key_matches_server.py`](../../tests/test_agent_qa_key_matches_server.py)
 checks this on the real engine: on the same seeds the server's means equal the
-key script's to 1e-9 for phenotypic selection, genomic selection and a paired
+key script's to the 4 significant figures the tools report (1e-9 before
+2026-10-18) for phenotypic selection, genomic selection and a paired
 comparison, a different selection intensity must not match, and two planted
 mutations of the key script make it fail.
 

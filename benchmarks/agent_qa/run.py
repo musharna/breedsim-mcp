@@ -7,7 +7,9 @@ servers, an empty working directory per run):
 - ``alt``:  what a user has without this server: Bash (with R + AlphaSimR and
   Python on PATH), Read, WebSearch and WebFetch. Claude can write its own
   AlphaSimR or theory code.
-- ``mcp``:  breedsim-mcp (pinned PyPI release, via uvx) only.
+- ``mcp``:  breedsim-mcp (pinned PyPI release, via uvx) only. ``--server-spec``
+  runs an unreleased commit instead (a git URL by full SHA), and
+  ``--exclude-newer`` pins that environment's dependencies to a date.
 
 Each finished run is appended to ``results.jsonl`` with its score; a rerun
 skips (arm, question, rep) triples already there, so an interrupted sweep
@@ -22,6 +24,7 @@ come across earlier transcripts by listing the tree).
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 import os
 import subprocess
@@ -39,6 +42,19 @@ from score import score
 HERE = Path(__file__).resolve().parent
 MODEL = "claude-opus-5-5"
 SERVER = "breedsim-mcp==0.5.1"  # latest on PyPI, checked 2026-10-16
+# --server-spec runs an unreleased commit instead of the PyPI pin: the git URL
+# of a commit pushed to the PR branch, by full SHA so it cannot move. Set once by
+# main() before any run; recorded in every row and in versions.json.
+SPEC_PREFIX = "git+https://github.com/musharna/breedsim-mcp@"
+SERVER_SPEC: str | None = None
+# --exclude-newer: uvx resolves the server's dependencies (mcp, rpy2, numpy) as
+# of this date, so a re-run does not pick up a release made after the last sweep.
+EXCLUDE_NEWER: str | None = None
+# The account's usage windows, read from each transcript's rate_limit_event.
+# A run that sees the five-hour window at or above this, or a rejected request,
+# makes the sweep sleep until the window resets (each pause is logged).
+PAUSE_AT = 0.85
+PAUSES: Path | None = None
 RUN_TIMEOUT_S = 1800
 R_LIBS_USER = os.environ.get("R_LIBS_USER") or str(Path.home() / "R" / "library")
 # Every arm gets this in place of Claude Code's own system prompt, which
@@ -51,6 +67,66 @@ PROMPT = (
     "with\nANSWER: UNKNOWN"
 )
 ALT_TOOLS = "Bash,Read,WebSearch,WebFetch"
+
+
+def server_uvx() -> list[str]:
+    """uvx arguments that start the server under test."""
+    pins = ["--exclude-newer", EXCLUDE_NEWER] if EXCLUDE_NEWER else []
+    # A uv-managed CPython, as pyproject's [tool.uv] asks for: a conda
+    # interpreter's libstdc++ breaks rpy2's dlopen of libR.so.
+    managed = ["--python-preference", "only-managed"]
+    if SERVER_SPEC is None:
+        return [*pins, *managed, SERVER]
+    return [*pins, *managed, "--from", SERVER_SPEC, "breedsim-mcp"]
+
+
+def set_server_spec(spec: str | None, exclude_newer: str | None) -> None:
+    global SERVER_SPEC, EXCLUDE_NEWER
+    if spec is not None:
+        sha = spec.removeprefix(SPEC_PREFIX)
+        if (
+            not spec.startswith(SPEC_PREFIX)
+            or len(sha) != 40
+            or not all(c in "0123456789abcdef" for c in sha)
+        ):
+            sys.exit(
+                f"--server-spec must be {SPEC_PREFIX}<full 40-hex sha>, got {spec!r}"
+            )
+    SERVER_SPEC, EXCLUDE_NEWER = spec, exclude_newer
+
+
+def server_versions() -> dict[str, str]:
+    """What the mcp arm's uvx environment resolves to, read from inside it."""
+    code = (
+        "import importlib.metadata as m, platform, json; print(json.dumps("
+        "{d: m.version(d) for d in ('breedsim-mcp', 'mcp', 'rpy2', 'numpy')}"
+        " | {'python': platform.python_version()}))"
+    )
+    uvx = server_uvx()
+    if SERVER_SPEC is None:  # `uvx breedsim-mcp==x` names the tool; run python in it
+        uvx = [*uvx[:-1], "--from", SERVER]
+    else:
+        uvx = uvx[:-1]
+    out = subprocess.run(
+        ["uvx", *uvx, "python", "-c", code],
+        check=True, capture_output=True, text=True, timeout=900, env=clean_env(),
+    ).stdout  # fmt: skip
+    return json.loads(out.strip().splitlines()[-1])
+
+
+def clean_env() -> dict[str, str]:
+    """The caller's environment without this repository's virtualenv: under
+    ``uv run`` its python (which can import breedsim_mcp) would come first on
+    the alt arm's PATH, and its path names the benchmark's worktree."""
+    venv = os.environ.get("VIRTUAL_ENV")
+    env = {
+        k: v for k, v in os.environ.items() if k not in ("VIRTUAL_ENV", "PYTHONPATH")
+    }
+    if venv:
+        env["PATH"] = os.pathsep.join(
+            p for p in env.get("PATH", "").split(os.pathsep) if not p.startswith(venv)
+        )
+    return env
 
 
 def arm_flags(arm: str, tmp: Path) -> list[str]:
@@ -67,9 +143,7 @@ def arm_flags(arm: str, tmp: Path) -> list[str]:
         cfg = tmp / "mcp.json"
         server = {
             "command": "uvx",
-            # A uv-managed CPython, as pyproject's [tool.uv] asks for: a conda
-            # interpreter's libstdc++ breaks rpy2's dlopen of libR.so.
-            "args": ["--python-preference", "only-managed", SERVER],
+            "args": server_uvx(),
             "env": {"R_LIBS_USER": R_LIBS_USER, "OMP_NUM_THREADS": "1"},
         }
         cfg.write_text(json.dumps({"mcpServers": {"breedsim": server}}))
@@ -81,7 +155,7 @@ def arm_flags(arm: str, tmp: Path) -> list[str]:
 
 
 def run_env(tmp: Path) -> dict[str, str]:
-    env = dict(os.environ, R_LIBS_USER=R_LIBS_USER, OMP_NUM_THREADS="1")
+    env = dict(clean_env(), R_LIBS_USER=R_LIBS_USER, OMP_NUM_THREADS="1")
     # A private TMPDIR per run, so tempfile-using code in one run cannot see
     # another's files. (A script that writes a literal /tmp path still can;
     # the README says so.)
@@ -99,13 +173,57 @@ def run_env(tmp: Path) -> dict[str, str]:
 
 
 RUNS = HERE / "runs"
+# Per-run working directories (each with its own TMPDIR); None = the system temp.
+WORK: Path | None = None
+
+
+def rate_limit(events: list[dict[str, Any]]) -> dict[str, Any]:
+    """The last rate_limit_event's status and five-hour / seven-day windows."""
+    info = next(
+        (e["rate_limit_info"] for e in reversed(events)
+         if e.get("type") == "rate_limit_event" and e.get("rate_limit_info")),
+        {},
+    )  # fmt: skip
+    win = info.get("unifiedWindows") or {}
+    return {
+        "status": info.get("status"),
+        "five_hour": (win.get("five_hour") or {}).get("utilization"),
+        "seven_day": (win.get("seven_day") or {}).get("utilization"),
+        "resets_at": (win.get("five_hour") or {}).get("resetsAt")
+        or info.get("resetsAt"),
+    }
+
+
+def api_failure(events: list[dict[str, Any]]) -> bool:
+    """The API ended the run before the model answered: a request was rejected
+    for the rate limit and no assistant message came back. Read from the
+    transcript, never from the reply or its score."""
+    rejected = rate_limit(events)["status"] == "rejected"
+    answered = any(e.get("type") == "assistant" for e in events)
+    return rejected and not answered
+
+
+def pause_if_limited(rl: dict[str, Any], where: str) -> None:
+    """Sleep until the five-hour window resets when it is at PAUSE_AT or a
+    request was rejected; log the pause beside the results."""
+    hot = rl["status"] == "rejected" or (rl["five_hour"] or 0) >= PAUSE_AT
+    if not hot or not rl["resets_at"]:
+        return
+    wait = max(0.0, rl["resets_at"] - time.time()) + 120
+    start = dt.datetime.now().astimezone()
+    print(f"pausing {wait / 60:.0f} min after {where}: {rl}", flush=True)
+    if PAUSES is not None:
+        with PAUSES.open("a") as fh:
+            fh.write(json.dumps({"after": where, "at": start.isoformat(timespec="seconds"),
+                                 "sleep_s": round(wait), **rl}) + "\n")  # fmt: skip
+    time.sleep(wait)
 
 
 def run_one(arm: str, q: dict[str, Any], rep: int) -> dict[str, Any]:
     out = RUNS / arm / f"{q['id']}-{rep}.jsonl"
     out.parent.mkdir(parents=True, exist_ok=True)
     prompt = PROMPT.format(question=q["question"], answer_format=q["answer_format"])
-    with tempfile.TemporaryDirectory(prefix=f"agentqa-{arm}-") as d:
+    with tempfile.TemporaryDirectory(prefix=f"agentqa-{arm}-", dir=WORK) as d:
         tmp = Path(d)
         cmd = [
             "claude", "-p", prompt, "--model", MODEL, "--setting-sources", "",
@@ -139,15 +257,17 @@ def run_one(arm: str, q: dict[str, Any], rep: int) -> dict[str, Any]:
         {},
     )
     result = next((e for e in events if e.get("type") == "result"), {})
-    tools = [
-        b["name"]
+    uses = [
+        b
         for e in events
         if e.get("type") == "assistant"
         for b in e["message"].get("content", [])
         if b.get("type") == "tool_use"
     ]
+    tools = [b["name"] for b in uses]
     reply = result.get("result") or ""
-    return {
+    rl = rate_limit(events)
+    row = {
         "arm": arm,
         "qid": q["id"],
         "category": q["category"],
@@ -159,10 +279,17 @@ def run_one(arm: str, q: dict[str, Any], rep: int) -> dict[str, Any]:
         "mcp_servers": init.get("mcp_servers"),
         "tools_available": init.get("tools") or [],
         "tool_calls": tools,
+        "tool_arg_names": [sorted(b.get("input") or {}) for b in uses],
         "cost_usd": result.get("total_cost_usd"),
+        "server_spec": (SERVER_SPEC or SERVER) if arm == "mcp" else None,
+        "exclude_newer": EXCLUDE_NEWER if arm == "mcp" else None,
+        "rate_limit": rl,
+        "api_failure": api_failure(events),
         "reply": reply,
         **score(q, reply),
     }
+    pause_if_limited(rl, f"{arm} {q['id']} rep{rep}")
+    return row
 
 
 def alphasimr_version() -> str:
@@ -204,6 +331,28 @@ def rescore(results: Path, by_id: dict[str, dict[str, Any]]) -> None:
     results.write_text("".join(json.dumps(r) + "\n" for r in rows))
 
 
+def drop_api_failures(results: Path) -> None:
+    """Move every row the API ended to results.api_failures.jsonl, unless its
+    triple was already dropped once (then it stays, and counts as invalid)."""
+    side = results.with_name("results.api_failures.jsonl")
+    dropped = set()
+    if side.exists():
+        for ln in side.read_text().splitlines():
+            r = json.loads(ln)
+            dropped.add((r["arm"], r["qid"], r["rep"]))
+    rows = [json.loads(ln) for ln in results.read_text().splitlines()]
+    keep, move = [], []
+    for r in rows:
+        t = (r["arm"], r["qid"], r["rep"])
+        (move if r.get("api_failure") and t not in dropped else keep).append(r)
+    with side.open("a") as fh:
+        fh.writelines(json.dumps(r) + "\n" for r in move)
+    results.write_text("".join(json.dumps(r) + "\n" for r in keep))
+    print(
+        f"moved {len(move)} API-failure rows to {side.name}; resume to re-run them once"
+    )
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--arms", default="bare,alt,mcp")
@@ -214,20 +363,68 @@ def main() -> None:
     ap.add_argument("--only", default="", help="comma-separated question ids")
     ap.add_argument("--results", default=str(HERE / "results.jsonl"))
     ap.add_argument("--runs", default=str(HERE / "runs"), help="where transcripts go")
+    ap.add_argument("--work", default=None, help="parent of the per-run working dirs")
+    ap.add_argument(
+        "--server-spec",
+        help=f"run the server from {SPEC_PREFIX}<full sha> instead of {SERVER}",
+    )
+    ap.add_argument(
+        "--exclude-newer",
+        help="uvx --exclude-newer date for the server environment's dependencies",
+    )
+    ap.add_argument(
+        "--drop-api-failures",
+        action="store_true",
+        help="move rows the API ended (api_failure) to results.api_failures.jsonl "
+        "so a resume runs them again; a triple is re-run at most once",
+    )
     ap.add_argument(
         "--rescore",
         action="store_true",
         help="re-score every stored reply against the current questions.json, run nothing",
     )
     a = ap.parse_args()
-    global RUNS
+    global RUNS, WORK, PAUSES
     RUNS = Path(a.runs).expanduser()
+    if a.work:
+        WORK = Path(a.work).expanduser()
+        WORK.mkdir(parents=True, exist_ok=True)
+    PAUSES = Path(a.results).parent / "pauses.jsonl"
+    set_server_spec(a.server_spec, a.exclude_newer)
     key = json.loads((HERE / "questions.json").read_text())
     questions = key["questions"]
     if a.rescore:
         rescore(Path(a.results), {q["id"]: q for q in questions})
         return
+    if a.drop_api_failures:
+        drop_api_failures(Path(a.results))
+        return
     preflight(key)
+    if "mcp" in a.arms.split(","):
+        versions = server_versions()
+        print("server environment:", json.dumps(versions), flush=True)
+        if SERVER_SPEC is None and versions["breedsim-mcp"] != SERVER.split("==")[1]:
+            sys.exit(
+                f"uvx resolved breedsim-mcp {versions['breedsim-mcp']}, not {SERVER}"
+            )
+        Path(a.results).parent.mkdir(parents=True, exist_ok=True)
+        # What this sweep ran, beside its results; rewritten at every start, so
+        # a resume that resolved anything differently shows it in git.
+        (Path(a.results).parent / "versions.json").write_text(
+            json.dumps(
+                {
+                    "server_spec": SERVER_SPEC or SERVER,
+                    "server_uvx": server_uvx(),
+                    "exclude_newer": EXCLUDE_NEWER,
+                    "model": MODEL,
+                    "alphasimr": key["alphasimr"],
+                    "server_environment": versions,
+                    "claude_effort_env": os.environ.get("CLAUDE_EFFORT"),
+                },
+                indent=1,
+            )
+            + "\n"
+        )
     if a.only:
         keep = set(a.only.split(","))
         questions = [q for q in questions if q["id"] in keep]
