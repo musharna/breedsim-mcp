@@ -161,7 +161,9 @@ def test_the_spend_gate_refuses_a_run_and_the_sweep_stops_keeping_finished_rows(
     raises SpendStop when it exits non-zero; main() then starts no more runs,
     keeps the rows written, and exits 3. Under the cap or unset, no stop."""
     gate_py = tmp_path / "gate.py"
-    gate_py.write_text("import os, sys\nprint('cap reached', file=sys.stderr)\nsys.exit(int(os.environ['GATE_RC']))\n")
+    gate_py.write_text(
+        "import os, sys\nprint('cap reached', file=sys.stderr)\nsys.exit(int(os.environ['GATE_RC']))\n"
+    )
     monkeypatch.setenv("BENCH_SPEND_GATE", str(gate_py))
     monkeypatch.setenv("GATE_RC", "0")
     assert R.spend_stop() is None  # under the cap
