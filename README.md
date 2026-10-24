@@ -82,7 +82,7 @@ can currently produce reproducible results**.
 
 ## What the benchmark shows
 
-Claude was compared with itself writing its own AlphaSimR scripts, with R and AlphaSimR
+Claude with the server was compared with Claude writing its own AlphaSimR scripts, with R and AlphaSimR
 installed for it, on 34 breeding-simulation questions, 3 runs each. A tie means the server
 matches that result without you setting up R and AlphaSimR. Questions right in every run,
 server against Claude's own scripts: Claude Haiku 5.5 34 against 33, Sonnet 5.5 28 against 33,
