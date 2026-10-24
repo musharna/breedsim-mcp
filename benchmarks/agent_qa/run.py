@@ -41,6 +41,7 @@ from score import score
 
 HERE = Path(__file__).resolve().parent
 MODEL = "claude-opus-5-5"
+DEFAULT_MODEL = MODEL
 SERVER = "breedsim-mcp==0.5.1"  # latest on PyPI, checked 2026-10-16
 # --server-spec runs an unreleased commit instead of the PyPI pin: the git URL
 # of a commit pushed to the PR branch, by full SHA so it cannot move. Set once by
@@ -54,6 +55,10 @@ EXCLUDE_NEWER: str | None = None
 # A run that sees the five-hour window at or above this, or a rejected request,
 # makes the sweep sleep until the window resets (each pause is logged).
 PAUSE_AT = 0.85
+# The seven-day window does not reset within a sweep: at or above this the
+# sweep stops (exit 3) after writing the run that saw it; a later resume
+# carries on from there.
+STOP_SEVEN_DAY = 0.90
 PAUSES: Path | None = None
 RUN_TIMEOUT_S = 1800
 R_LIBS_USER = os.environ.get("R_LIBS_USER") or str(Path.home() / "R" / "library")
@@ -93,6 +98,37 @@ def set_server_spec(spec: str | None, exclude_newer: str | None) -> None:
                 f"--server-spec must be {SPEC_PREFIX}<full 40-hex sha>, got {spec!r}"
             )
     SERVER_SPEC, EXCLUDE_NEWER = spec, exclude_newer
+
+
+def set_model(model: str, runs: Path) -> None:
+    """--model runs every arm on another model. Its transcripts go to
+    ``<runs>-<model>/`` so they never overwrite the default model's."""
+    global MODEL, RUNS
+    MODEL = model
+    RUNS = runs if model == DEFAULT_MODEL else runs.with_name(f"{runs.name}-{model}")
+
+
+def check_results_model(results: Path) -> None:
+    """Refuse to resume a results file made on another model: resume skips
+    every (arm, question, rep) already there, so a Haiku sweep pointed at the
+    Opus results would run nothing and report Opus rows as its own. Rows from
+    before --model existed carry only the served model, and one that failed
+    before its init event carries none: that row says nothing either way."""
+    if not results.exists():
+        return
+    other = sorted(
+        {
+            m
+            for ln in results.read_text().splitlines()
+            if ln.strip()
+            for r in [json.loads(ln)]
+            if (m := r.get("model_requested") or r.get("model")) not in (None, MODEL)
+        }
+    )
+    if other:
+        sys.exit(
+            f"{results} holds rows run on {other}, not {MODEL}: use another --results"
+        )
 
 
 def server_versions() -> dict[str, str]:
@@ -194,13 +230,25 @@ def rate_limit(events: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def api_failure(events: list[dict[str, Any]]) -> bool:
+# The benchmark-only claude wrapper's exit code when the spend gate refuses
+# a launch (PREREG_2026-10-20 amendment, 2026-10-23); it writes no transcript.
+WRAPPER_REFUSED = 75
+
+
+def api_failure(events: list[dict[str, Any]], rc: int | str | None = None) -> bool:
     """The API ended the run before the model answered: a request was rejected
-    for the rate limit and no assistant message came back. Read from the
-    transcript, never from the reply or its score."""
+    for the rate limit and no assistant message came back, or the wrapper
+    refused to launch it (exit 75, no transcript). Read from the transcript
+    and exit code, never from the reply or its score."""
+    if rc == WRAPPER_REFUSED and not events:
+        return True
     rejected = rate_limit(events)["status"] == "rejected"
     answered = any(e.get("type") == "assistant" for e in events)
     return rejected and not answered
+
+
+def seven_day_exhausted(rl: dict[str, Any]) -> bool:
+    return (rl.get("seven_day") or 0) >= STOP_SEVEN_DAY
 
 
 def pause_if_limited(rl: dict[str, Any], where: str) -> None:
@@ -219,7 +267,34 @@ def pause_if_limited(rl: dict[str, Any], where: str) -> None:
     time.sleep(wait)
 
 
+class SpendStop(RuntimeError):
+    """The API spend gate refused the next run."""
+
+
+def spend_stop() -> str | None:
+    """Why an API-billed sweep must stop before its next run, or None.
+
+    Set ``BENCH_SPEND_GATE`` to the shared spend meter's script and each run
+    first asks it (``check``, track from ``BENCH_TRACK``); any non-zero exit
+    (spend cap, billing violation, checkpoint) stops the sweep cleanly.
+    """
+    gate = os.environ.get("BENCH_SPEND_GATE")
+    if not gate:
+        return None
+    p = subprocess.run(
+        [sys.executable, gate, "check"], capture_output=True, text=True, check=False
+    )
+    return (
+        None
+        if p.returncode == 0
+        else (p.stderr.strip() or f"spend gate exit {p.returncode}")
+    )
+
+
 def run_one(arm: str, q: dict[str, Any], rep: int) -> dict[str, Any]:
+    why = spend_stop()
+    if why:
+        raise SpendStop(why)
     out = RUNS / arm / f"{q['id']}-{rep}.jsonl"
     out.parent.mkdir(parents=True, exist_ok=True)
     prompt = PROMPT.format(question=q["question"], answer_format=q["answer_format"])
@@ -275,7 +350,8 @@ def run_one(arm: str, q: dict[str, Any], rep: int) -> dict[str, Any]:
         "exit": rc,
         "seconds": seconds,
         "claude_code": init.get("claude_code_version"),
-        "model": init.get("model"),
+        "model": init.get("model"),  # the model actually served
+        "model_requested": MODEL,
         "mcp_servers": init.get("mcp_servers"),
         "tools_available": init.get("tools") or [],
         "tool_calls": tools,
@@ -284,12 +360,28 @@ def run_one(arm: str, q: dict[str, Any], rep: int) -> dict[str, Any]:
         "server_spec": (SERVER_SPEC or SERVER) if arm == "mcp" else None,
         "exclude_newer": EXCLUDE_NEWER if arm == "mcp" else None,
         "rate_limit": rl,
-        "api_failure": api_failure(events),
+        "api_failure": api_failure(events, rc),
         "reply": reply,
         **score(q, reply),
     }
     pause_if_limited(rl, f"{arm} {q['id']} rep{rep}")
     return row
+
+
+def record_models_served(results: Path) -> None:
+    """Add the models the init events reported (every row's ``model``) to
+    versions.json, so it shows what was served, not only what was asked for."""
+    versions = results.parent / "versions.json"
+    if not versions.exists() or not results.exists():
+        return
+    rows = [json.loads(ln) for ln in results.read_text().splitlines() if ln.strip()]
+    served: dict[str, int] = {}
+    for r in rows:
+        served[str(r.get("model"))] = served.get(str(r.get("model")), 0) + 1
+    v = json.loads(versions.read_text())
+    v["models_served"] = served
+    versions.write_text(json.dumps(v, indent=1) + "\n")
+    print("models served:", served, flush=True)
 
 
 def alphasimr_version() -> str:
@@ -383,9 +475,15 @@ def main() -> None:
         action="store_true",
         help="re-score every stored reply against the current questions.json, run nothing",
     )
+    ap.add_argument(
+        "--model",
+        default=DEFAULT_MODEL,
+        help=f"claude --model for every arm (default {DEFAULT_MODEL}); another model's "
+        "transcripts go to <runs>-<model>/",
+    )
     a = ap.parse_args()
-    global RUNS, WORK, PAUSES
-    RUNS = Path(a.runs).expanduser()
+    global WORK, PAUSES
+    set_model(a.model, Path(a.runs).expanduser())
     if a.work:
         WORK = Path(a.work).expanduser()
         WORK.mkdir(parents=True, exist_ok=True)
@@ -399,6 +497,7 @@ def main() -> None:
     if a.drop_api_failures:
         drop_api_failures(Path(a.results))
         return
+    check_results_model(Path(a.results))
     preflight(key)
     if "mcp" in a.arms.split(","):
         versions = server_versions()
@@ -417,6 +516,7 @@ def main() -> None:
                     "server_uvx": server_uvx(),
                     "exclude_newer": EXCLUDE_NEWER,
                     "model": MODEL,
+                    "runs_dir": RUNS.name,
                     "alphasimr": key["alphasimr"],
                     "server_environment": versions,
                     "claude_effort_env": os.environ.get("CLAUDE_EFFORT"),
@@ -443,10 +543,21 @@ def main() -> None:
     ]
     print(f"{len(todo)} runs to do ({len(done)} already in {results.name})", flush=True)
     lock = threading.Lock()
+    stopped = False
     with ThreadPoolExecutor(max_workers=a.workers) as pool:
         futures = [pool.submit(run_one, *t) for t in todo]
         for n, f in enumerate(as_completed(futures), 1):
-            r = f.result()
+            if f.cancelled():
+                continue
+            try:
+                r = f.result()
+            except SpendStop as exc:
+                if not stopped:
+                    print(f"STOP: {exc}", flush=True)
+                    stopped = True
+                    for g in futures:
+                        g.cancel()
+                continue
             with lock, results.open("a") as fh:
                 fh.write(json.dumps(r) + "\n")
             print(
@@ -455,7 +566,18 @@ def main() -> None:
                 f" ${r['cost_usd']}",
                 flush=True,
             )
-    sys.exit(0)
+            if not stopped and seven_day_exhausted(r["rate_limit"]):
+                print(
+                    f"STOP: seven_day {r['rate_limit']['seven_day']} >= {STOP_SEVEN_DAY}",
+                    flush=True,
+                )
+                stopped = True
+                # Runs not yet started are cancelled; runs in flight finish
+                # and are written above, so no paid-for run is lost.
+                for g in futures:
+                    g.cancel()
+    record_models_served(results)
+    sys.exit(3 if stopped else 0)
 
 
 if __name__ == "__main__":
