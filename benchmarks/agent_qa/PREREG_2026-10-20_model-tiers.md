@@ -174,3 +174,20 @@ tier means Sonnet does not start.
   never the environment; the run's `init` must show `apiKeySource:
   apiKeyHelper` and the permission mode the harness asked for, or every later
   launch stops.
+- **Where the billing check lives (clarification, 2026-10-24, after the
+  sweeps; changes no rule).** The two "stops every later launch" checks above
+  are not in `run.py`. They are in the benchmark-only wrapper, which is
+  outside this repo (`~/.claude/state/mcp-bench-api/`). After each run its
+  recorder (`bench_spend.py record`) reads the `init` event and writes a
+  `BILLING_VIOLATION` flag if `apiKeySource` is wrong or the permission mode is
+  not the one the harness asked for. From then on `bench_spend.py check` exits 5,
+  so the wrapper refuses every launch (exit 75) and `run.py`'s spend gate
+  stops the sweep. The wrapper's own test (`test_wrapper.py`, cases 4 and 7)
+  raises both flags and checks that launches are blocked, then that they
+  start again once the flag is cleared. The recorder runs after a run ends,
+  so a run already started on another worker can still finish. The ledger
+  logged 769 breedsim runs: 37 with `ANTHROPIC_API_KEY` (all inside the
+  20:38-20:52 set-aside window) and 732 with `apiKeyHelper`, each in the
+  asked-for mode. No flag was ever raised, and no run was refused with exit
+  75. `run.py` now marks an exit-75 refusal with no transcript as
+  `api_failure`, so `--drop-api-failures` sets it aside as the rule above says.
