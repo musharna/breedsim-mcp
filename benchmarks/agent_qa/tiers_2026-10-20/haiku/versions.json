@@ -1,0 +1,27 @@
+{
+ "server_spec": "git+https://github.com/musharna/breedsim-mcp@6c095adc1df0c7634642edcccdfaa4823ed2f004",
+ "server_uvx": [
+  "--exclude-newer",
+  "2026-10-17",
+  "--python-preference",
+  "only-managed",
+  "--from",
+  "git+https://github.com/musharna/breedsim-mcp@6c095adc1df0c7634642edcccdfaa4823ed2f004",
+  "breedsim-mcp"
+ ],
+ "exclude_newer": "2026-10-17",
+ "model": "claude-haiku-5-5",
+ "runs_dir": "runs-claude-haiku-5-5",
+ "alphasimr": "2.1.0",
+ "server_environment": {
+  "breedsim-mcp": "0.6.1",
+  "mcp": "2.3.0",
+  "rpy2": "3.5.17",
+  "numpy": "2.5.4",
+  "python": "3.14.3"
+ },
+ "claude_effort_env": "high",
+ "models_served": {
+  "claude-haiku-5-5": 360
+ }
+}
