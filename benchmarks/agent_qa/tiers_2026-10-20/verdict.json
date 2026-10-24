@@ -1,0 +1,217 @@
+{
+ "tiers_present": [
+  "haiku",
+  "sonnet"
+ ],
+ "holm_over": 2,
+ "verdict": "TIE",
+ "tiers": {
+  "haiku": {
+   "questions": 34,
+   "right_in_all_3": {
+    "bare": 9,
+    "alt": 33,
+    "mcp": 34
+   },
+   "mcp only": 1,
+   "alt only": 0,
+   "p_exact_mcnemar": 1.0,
+   "mcp_minus_alt_accuracy_ci95": [
+    0.0,
+    0.08823529411764708
+   ],
+   "right_of_runs": {
+    "bare": [
+     31,
+     102
+    ],
+    "alt": [
+     99,
+     102
+    ],
+    "mcp": [
+     102,
+     102
+    ]
+   },
+   "invalid": {
+    "bare": {},
+    "alt": {},
+    "mcp": {}
+   },
+   "median_cost": {
+    "bare": 0.0024393875,
+    "alt": 0.001435145,
+    "mcp": 0.0011643550000000002
+   },
+   "median_seconds": {
+    "bare": 22.4,
+    "alt": 16.6,
+    "mcp": 14.7
+   },
+   "total_cost": 0.6179,
+   "cost_mcp_vs_alt": {
+    "questions": 34,
+    "mcp median cost": 0.0011643550000000002,
+    "alt median cost": 0.001435145,
+    "difference": -0.0002707899999999999,
+    "difference_ci95": [
+     -0.0004390399999999999,
+     -8.66249999999999e-05
+    ],
+    "questions mcp cheaper": 26,
+    "questions alt cheaper": 8,
+    "p_exact_wilcoxon": 0.001678760047070682
+   },
+   "mcp_vs_bare": {
+    "questions": 34,
+    "mcp only": 25,
+    "bare only": 0,
+    "both": 9,
+    "neither": 0,
+    "p_exact_mcnemar": 5.960464477539063e-08
+   },
+   "alt_vs_bare": {
+    "questions": 34,
+    "alt only": 24,
+    "bare only": 0,
+    "both": 9,
+    "neither": 1,
+    "p_exact_mcnemar": 1.1920928955078125e-07
+   },
+   "mechanism": {
+    "mcp_runs": 120,
+    "server_calls_median": 2.0,
+    "server_calls_mean": 1.94,
+    "runs_with_0_server_calls": 16,
+    "runs_with_0_server_calls_outside_control": 5,
+    "bare_name_calls": 0,
+    "runs_using_tool": {
+     "mcp__breedsim__compare_programs": 34,
+     "mcp__breedsim__found_population": 104,
+     "mcp__breedsim__list_methods": 22,
+     "mcp__breedsim__run_program": 70
+    },
+    "runs_using_final_only": 84,
+    "models_served": [
+     "claude-haiku-5-5"
+    ]
+   },
+   "p_holm": 1.0,
+   "direction": "none",
+   "substitute_mcp_vs_opus_alt_1018": {
+    "non_concurrent": true,
+    "questions": 34,
+    "mcp only": 0,
+    "alt only": 0,
+    "both": 34,
+    "neither": 0,
+    "p_exact_mcnemar": 1.0
+   }
+  },
+  "sonnet": {
+   "questions": 34,
+   "right_in_all_3": {
+    "bare": 7,
+    "alt": 33,
+    "mcp": 28
+   },
+   "mcp only": 1,
+   "alt only": 6,
+   "p_exact_mcnemar": 0.125,
+   "mcp_minus_alt_accuracy_ci95": [
+    -0.17647058823529416,
+    0.02941176470588236
+   ],
+   "right_of_runs": {
+    "bare": [
+     35,
+     102
+    ],
+    "alt": [
+     99,
+     102
+    ],
+    "mcp": [
+     92,
+     102
+    ]
+   },
+   "invalid": {
+    "bare": {},
+    "alt": {},
+    "mcp": {
+     "no tool call": 9
+    }
+   },
+   "median_cost": {
+    "bare": 0.012255250000000002,
+    "alt": 0.009516750000000001,
+    "mcp": 0.0129046
+   },
+   "median_seconds": {
+    "bare": 11.1,
+    "alt": 13.15,
+    "mcp": 14.100000000000001
+   },
+   "total_cost": 7.4824,
+   "cost_mcp_vs_alt": {
+    "questions": 34,
+    "mcp median cost": 0.0129046,
+    "alt median cost": 0.009516750000000001,
+    "difference": 0.0033878499999999995,
+    "difference_ci95": [
+     0.002665299999999999,
+     0.0040319
+    ],
+    "questions mcp cheaper": 4,
+    "questions alt cheaper": 30,
+    "p_exact_wilcoxon": 7.450580596923828e-08
+   },
+   "mcp_vs_bare": {
+    "questions": 34,
+    "mcp only": 24,
+    "bare only": 3,
+    "both": 4,
+    "neither": 3,
+    "p_exact_mcnemar": 4.9233436584472656e-05
+   },
+   "alt_vs_bare": {
+    "questions": 34,
+    "alt only": 26,
+    "bare only": 0,
+    "both": 7,
+    "neither": 1,
+    "p_exact_mcnemar": 2.9802322387695312e-08
+   },
+   "mechanism": {
+    "mcp_runs": 120,
+    "server_calls_median": 2.0,
+    "server_calls_mean": 1.33,
+    "runs_with_0_server_calls": 40,
+    "runs_with_0_server_calls_outside_control": 24,
+    "bare_name_calls": 0,
+    "runs_using_tool": {
+     "mcp__breedsim__compare_programs": 15,
+     "mcp__breedsim__found_population": 80,
+     "mcp__breedsim__run_program": 65
+    },
+    "runs_using_final_only": 76,
+    "models_served": [
+     "claude-sonnet-5-5"
+    ]
+   },
+   "p_holm": 0.25,
+   "direction": "none",
+   "substitute_mcp_vs_opus_alt_1018": {
+    "non_concurrent": true,
+    "questions": 34,
+    "mcp only": 0,
+    "alt only": 6,
+    "both": 28,
+    "neither": 0,
+    "p_exact_mcnemar": 0.03125
+   }
+  }
+ }
+}

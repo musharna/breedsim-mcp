@@ -100,6 +100,42 @@ Claude alone was not re-run.
 
 ![Cost and seconds per answer in the re-run, every run](rerun_2026-10-18/agent_qa_cost_time.png)
 
+## Haiku and Sonnet re-run 2026-10-20
+
+Pre-registered in [`PREREG_2026-10-20_model-tiers.md`](PREREG_2026-10-20_model-tiers.md):
+the same 40 questions and key, all three arms re-run on Claude Haiku 5.5 and Sonnet
+5.5, 3 runs each. Both sweeps ran on 2026-10-23 and 10-24 on an API key under a spend
+gate (the PREREG's amendments). Results: [`tiers_2026-10-20/`](tiers_2026-10-20/);
+[`tiers.py`](tiers.py) writes [`verdict.json`](tiers_2026-10-20/verdict.json).
+
+**Win rule across both tiers: TIE.** Holm-adjusted McNemar p: Haiku 1.0, Sonnet 0.25.
+
+| Headline, 34 questions | Haiku: alt | Haiku: server | Sonnet: alt | Sonnet: server |
+|---|---|---|---|---|
+| Questions right in all 3 runs | 33 | 34 | 33 | 28 |
+| Right / 102 runs | 99 | 102 | 99 | 92 |
+| Cost / answer, median | $0.0014 | $0.0012 | $0.0095 | $0.0129 |
+| Seconds / answer, median | 16.6 | 14.7 | 13.2 | 14.1 |
+
+- **Haiku:** 1 question only the server got right in all runs, 0 only alt; p = 1, CI
+  of the difference 0.00 to +0.09. The server was cheaper on 26 of 34 questions
+  (−$0.0003, −0.0004 to −0.0001, Wilcoxon p = 0.002), the reverse of Opus on 10-18.
+- **Sonnet:** 1 question only the server got right, 6 only alt; p = 0.125 raw, CI −0.18
+  to +0.03. Not a loss under the rule. The server cost more on 30 of 34 questions
+  (+$0.0034, +0.0027 to +0.0040).
+- **Mechanism (why Sonnet's server arm fell short):** 24 of Sonnet's 120 server runs
+  made no server call, so the validity rule scores them as not right; 9 of them are
+  headline runs. All 24 are on the `scheme_difference` (q23–q29) and `prob_beats`
+  (q30–q35) questions, which Sonnet answered from theory instead of running the
+  simulation. Haiku skipped the server in 5 of its 120 server runs, all on
+  `prob_beats` questions (outside the headline), and none on `scheme_difference`.
+- **All 40 questions (second view):** Haiku 1 against 3 (p = 0.63), Sonnet 1 against 12
+  (p = 0.003).
+- **Substitute (secondary, non-concurrent):** against the 10-18 Opus alt arm, Haiku's
+  server arm ties (34 and 34), and Sonnet's is lower (0 against 6, p = 0.03).
+- **Controls:** 720 runs, 0 API failures, 0 leak-scan hits. Sweep cost: Haiku $0.62,
+  Sonnet $7.48.
+
 ## Controls
 
 All controls are in [`analyse.py`](analyse.py), which runs on the stored
