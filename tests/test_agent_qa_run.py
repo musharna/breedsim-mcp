@@ -152,3 +152,47 @@ def test_the_seven_day_stop_keeps_every_finished_run_and_starts_no_more(
     assert [(r["qid"], r["rep"]) for r in rows] == [
         ("q01", 1), ("q02", 1), ("q01", 2), ("q02", 2)
     ][: len(rows)]  # fmt: skip
+
+
+def test_the_spend_gate_refuses_a_run_and_the_sweep_stops_keeping_finished_rows(
+    monkeypatch, tmp_path
+):
+    """API-billed sweeps (2026-10-23): run_one asks BENCH_SPEND_GATE first and
+    raises SpendStop when it exits non-zero; main() then starts no more runs,
+    keeps the rows written, and exits 3. Under the cap or unset, no stop."""
+    gate_py = tmp_path / "gate.py"
+    gate_py.write_text("import os, sys\nprint('cap reached', file=sys.stderr)\nsys.exit(int(os.environ['GATE_RC']))\n")
+    monkeypatch.setenv("BENCH_SPEND_GATE", str(gate_py))
+    monkeypatch.setenv("GATE_RC", "0")
+    assert R.spend_stop() is None  # under the cap
+    monkeypatch.setenv("GATE_RC", "3")
+    with pytest.raises(R.SpendStop, match="cap reached"):
+        R.run_one("bare", {"id": "q01"}, 1)  # refused before it touches anything
+    monkeypatch.delenv("BENCH_SPEND_GATE")
+    assert R.spend_stop() is None  # unset: subscription sweeps unchanged
+
+    real_run_one = R.run_one
+    calls = []
+
+    def fake_run_one(arm, q, rep):
+        calls.append((q["id"], rep))
+        if len(calls) >= 3:
+            monkeypatch.setenv("BENCH_SPEND_GATE", str(gate_py))
+            return real_run_one(arm, q, rep)  # the gate refuses this one
+        return {"arm": arm, "qid": q["id"], "rep": rep, "verdict": "right",
+                "exit": 0, "seconds": 1.0, "tool_calls": [], "cost_usd": 0.0,
+                "model": HAIKU, "model_requested": HAIKU, "rate_limit": {"seven_day": 0.5}}  # fmt: skip
+
+    results = tmp_path / "results.jsonl"
+    monkeypatch.setattr(R, "run_one", fake_run_one)
+    monkeypatch.setattr(R, "preflight", lambda key: None)
+    monkeypatch.setattr(
+        sys, "argv",
+        ["run.py", "--model", HAIKU, "--arms", "bare", "--reps", "3", "--only", "q01,q02",
+         "--results", str(results), "--runs", str(tmp_path / "runs")],
+    )  # fmt: skip
+    with pytest.raises(SystemExit) as exc:
+        R.main()
+    rows = [json.loads(ln) for ln in results.read_text().splitlines()]
+    assert exc.value.code == 3
+    assert [(r["qid"], r["rep"]) for r in rows] == [("q01", 1), ("q02", 1)]

@@ -27,7 +27,16 @@ sweep() {
                 --server-spec "$SPEC" --exclude-newer 2026-10-17
 }
 cd "$WT" || exit 1
-while true; do
+# API-billed (2026-10-23): no subscription windows to read; run.py asks the
+# spend gate (BENCH_SPEND_GATE) before every run instead.
+if [ -n "${BENCH_SPEND_GATE:-}" ]; then
+        echo "API-billed: usage-window probe skipped; spend gate $BENCH_SPEND_GATE"
+        python3 "$BENCH_SPEND_GATE" check || {
+                echo "STOP: spend gate"
+                exit 3
+        }
+fi
+while [ -z "${BENCH_SPEND_GATE:-}" ]; do
         read -r five seven reset < <(probe)
         echo "probe $(date +%H:%M) $M five_hour=$five seven_day=$seven resets=$(date -d @"$reset" +%H:%M)"
         if python3 -c "import sys; sys.exit(0 if float('$seven') >= 0.90 else 1)"; then

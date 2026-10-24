@@ -259,7 +259,34 @@ def pause_if_limited(rl: dict[str, Any], where: str) -> None:
     time.sleep(wait)
 
 
+class SpendStop(RuntimeError):
+    """The API spend gate refused the next run."""
+
+
+def spend_stop() -> str | None:
+    """Why an API-billed sweep must stop before its next run, or None.
+
+    Set ``BENCH_SPEND_GATE`` to the shared spend meter's script and each run
+    first asks it (``check``, track from ``BENCH_TRACK``); any non-zero exit
+    (spend cap, billing violation, checkpoint) stops the sweep cleanly.
+    """
+    gate = os.environ.get("BENCH_SPEND_GATE")
+    if not gate:
+        return None
+    p = subprocess.run(
+        [sys.executable, gate, "check"], capture_output=True, text=True, check=False
+    )
+    return (
+        None
+        if p.returncode == 0
+        else (p.stderr.strip() or f"spend gate exit {p.returncode}")
+    )
+
+
 def run_one(arm: str, q: dict[str, Any], rep: int) -> dict[str, Any]:
+    why = spend_stop()
+    if why:
+        raise SpendStop(why)
     out = RUNS / arm / f"{q['id']}-{rep}.jsonl"
     out.parent.mkdir(parents=True, exist_ok=True)
     prompt = PROMPT.format(question=q["question"], answer_format=q["answer_format"])
@@ -514,7 +541,15 @@ def main() -> None:
         for n, f in enumerate(as_completed(futures), 1):
             if f.cancelled():
                 continue
-            r = f.result()
+            try:
+                r = f.result()
+            except SpendStop as exc:
+                if not stopped:
+                    print(f"STOP: {exc}", flush=True)
+                    stopped = True
+                    for g in futures:
+                        g.cancel()
+                continue
             with lock, results.open("a") as fh:
                 fh.write(json.dumps(r) + "\n")
             print(
