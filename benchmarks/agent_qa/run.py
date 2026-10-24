@@ -230,10 +230,18 @@ def rate_limit(events: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def api_failure(events: list[dict[str, Any]]) -> bool:
+# The benchmark-only claude wrapper's exit code when the spend gate refuses
+# a launch (PREREG_2026-10-20 amendment, 2026-10-23); it writes no transcript.
+WRAPPER_REFUSED = 75
+
+
+def api_failure(events: list[dict[str, Any]], rc: int | str | None = None) -> bool:
     """The API ended the run before the model answered: a request was rejected
-    for the rate limit and no assistant message came back. Read from the
-    transcript, never from the reply or its score."""
+    for the rate limit and no assistant message came back, or the wrapper
+    refused to launch it (exit 75, no transcript). Read from the transcript
+    and exit code, never from the reply or its score."""
+    if rc == WRAPPER_REFUSED and not events:
+        return True
     rejected = rate_limit(events)["status"] == "rejected"
     answered = any(e.get("type") == "assistant" for e in events)
     return rejected and not answered
@@ -352,7 +360,7 @@ def run_one(arm: str, q: dict[str, Any], rep: int) -> dict[str, Any]:
         "server_spec": (SERVER_SPEC or SERVER) if arm == "mcp" else None,
         "exclude_newer": EXCLUDE_NEWER if arm == "mcp" else None,
         "rate_limit": rl,
-        "api_failure": api_failure(events),
+        "api_failure": api_failure(events, rc),
         "reply": reply,
         **score(q, reply),
     }

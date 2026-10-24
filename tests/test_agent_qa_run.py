@@ -140,18 +140,66 @@ def test_the_seven_day_stop_keeps_every_finished_run_and_starts_no_more(
     monkeypatch, tmp_path
 ):
     code, rows = _sweep(monkeypatch, tmp_path, seven_day_at=None)
-    assert (code, len(rows)) == (0, 6)
+    assert (code, len(rows)) == (0, 6)  # positive control: without the stop all 6 run
     (tmp_path / "results.jsonl").unlink()
     code, rows = _sweep(monkeypatch, tmp_path, seven_day_at=2)
     assert code == 3
-    # The run that saw it is written, then the run in flight. A fake run ends
-    # the moment its predecessor is written, so one more can start in the
-    # microseconds before the cancel; a real run takes seconds. Without the
-    # stop all 6 run.
+    # The stop cancels what has not started. A fake run ends the moment its
+    # predecessor is written, so up to two more can slip in before the cancel
+    # (a real run takes seconds); the run in flight being kept is pinned by
+    # the next test, which this bound alone cannot do.
     assert 2 <= len(rows) <= 4
     assert [(r["qid"], r["rep"]) for r in rows] == [
         ("q01", 1), ("q02", 1), ("q01", 2), ("q02", 2)
     ][: len(rows)]  # fmt: skip
+
+
+def test_a_run_in_flight_at_the_seven_day_stop_is_written(monkeypatch, tmp_path):
+    """Two workers, and q01 rep 2 is held in flight until the row that trips the
+    seven-day stop (q02 rep 1) is written. The stop must still write it: it was
+    paid for. Before 71f4b0c the sweep exited on the stop and dropped it."""
+    import threading
+
+    results = tmp_path / "results.jsonl"
+    in_flight = threading.Event()
+
+    def written() -> set:
+        if not results.exists():
+            return set()
+        return {
+            (r["qid"], r["rep"])
+            for r in map(json.loads, results.read_text().splitlines())
+        }
+
+    def fake_run_one(arm, q, rep):
+        key = (q["id"], rep)
+        if key == ("q02", 1):  # trips the stop, once q01 rep 2 is running
+            assert in_flight.wait(10), "q01 rep 2 never started"
+        elif key == ("q01", 2):
+            in_flight.set()
+            for _ in range(1000):
+                if ("q02", 1) in written():
+                    break
+                time.sleep(0.01)
+            else:
+                raise AssertionError("the stop row was never written")
+        return {"arm": arm, "qid": q["id"], "rep": rep, "verdict": "right",
+                "exit": 0, "seconds": 1.0, "tool_calls": [], "cost_usd": 0.0,
+                "model": HAIKU, "model_requested": HAIKU,
+                "rate_limit": {"seven_day": 0.95 if key == ("q02", 1) else 0.5}}  # fmt: skip
+
+    monkeypatch.setattr(R, "run_one", fake_run_one)
+    monkeypatch.setattr(R, "preflight", lambda key: None)
+    monkeypatch.setattr(
+        sys, "argv",
+        ["run.py", "--model", HAIKU, "--arms", "bare", "--reps", "3", "--only", "q01,q02",
+         "--workers", "2", "--results", str(results), "--runs", str(tmp_path / "runs")],
+    )  # fmt: skip
+    with pytest.raises(SystemExit) as exc:
+        R.main()
+    assert exc.value.code == 3
+    got = written()
+    assert {("q01", 1), ("q02", 1), ("q01", 2)} <= got  # the in-flight run is kept
 
 
 def test_the_spend_gate_refuses_a_run_and_the_sweep_stops_keeping_finished_rows(
@@ -198,3 +246,40 @@ def test_the_spend_gate_refuses_a_run_and_the_sweep_stops_keeping_finished_rows(
     rows = [json.loads(ln) for ln in results.read_text().splitlines()]
     assert exc.value.code == 3
     assert [(r["qid"], r["rep"]) for r in rows] == [("q01", 1), ("q02", 1)]
+
+
+def test_a_wrapper_refusal_is_an_api_failure_and_is_set_aside_once(tmp_path):
+    """PREREG amendment 2026-10-23: a run the wrapper refuses (exit 75, no
+    transcript) is a harness failure, set aside and re-run once, like a
+    rate-limit rejection. A run that answered, or exit 75 from a Claude that
+    did start, is a result."""
+    rejected = {"type": "rate_limit_event", "rate_limit_info": {"status": "rejected"}}
+    answered = {"type": "assistant", "message": {"content": []}}
+    init = {"type": "system", "subtype": "init"}
+    assert R.api_failure([], 75)  # refused by the wrapper
+    assert R.api_failure([init, rejected], 1)  # rejected before an answer
+    assert not R.api_failure([init, rejected, answered], 1)
+    assert not R.api_failure([init, answered], 75)  # Claude ran: a result
+    assert not R.api_failure([], 0)
+    assert not R.api_failure([], "timeout")
+
+    results = tmp_path / "results.jsonl"
+    rows = [
+        {"arm": "mcp", "qid": "q01", "rep": 1, "api_failure": R.api_failure([], 75)},
+        {"arm": "mcp", "qid": "q02", "rep": 1, "api_failure": False},
+    ]
+    results.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    R.drop_api_failures(results)
+    kept = [json.loads(ln)["qid"] for ln in results.read_text().splitlines()]
+    side = tmp_path / "results.api_failures.jsonl"
+    assert kept == ["q02"]
+    assert [json.loads(ln)["qid"] for ln in side.read_text().splitlines()] == ["q01"]
+    # Its re-run is refused again: it stays, and is not moved a second time.
+    with results.open("a") as fh:
+        fh.write(json.dumps(rows[0]) + "\n")
+    R.drop_api_failures(results)
+    assert [json.loads(ln)["qid"] for ln in results.read_text().splitlines()] == [
+        "q02",
+        "q01",
+    ]
+    assert len(side.read_text().splitlines()) == 1
