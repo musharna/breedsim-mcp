@@ -123,12 +123,14 @@ gate (the PREREG's amendments). Results: [`tiers_2026-10-20/`](tiers_2026-10-20/
 - **Sonnet:** 1 question only the server got right, 6 only alt; p = 0.125 raw, CI −0.18
   to +0.03. Not a loss under the rule. The server cost more on 30 of 34 questions
   (+$0.0034, +0.0027 to +0.0040).
-- **Mechanism (why Sonnet's server arm fell short):** 24 of Sonnet's 120 server runs
-  made no server call, so the validity rule scores them as not right; 9 of them are
-  headline runs. All 24 are on the `scheme_difference` (q23–q29) and `prob_beats`
-  (q30–q35) questions, which Sonnet answered from theory instead of running the
-  simulation. Haiku skipped the server in 5 of its 120 server runs, all on
-  `prob_beats` questions (outside the headline), and none on `scheme_difference`.
+- **Mechanism (why Sonnet's server arm fell short):** 40 of Sonnet's 120 server runs
+  made no server call. 16 are `control_response` questions, which need no call. The
+  other 24 are on the `scheme_difference` (q23–q29) and `prob_beats` (q30–q35)
+  questions, which Sonnet answered from theory instead of running the simulation;
+  the validity rule scores them as not right (12 of the 24 had a number inside the
+  band), and 9 of them are headline runs. Haiku made no server call in 16 of its 120
+  server runs: 11 control, 5 `prob_beats` (outside the headline), none on
+  `scheme_difference`.
 - **All 40 questions (second view):** Haiku 1 against 3 (p = 0.63), Sonnet 1 against 12
   (p = 0.003).
 - **Substitute (secondary, non-concurrent):** against the 10-18 Opus alt arm, Haiku's
