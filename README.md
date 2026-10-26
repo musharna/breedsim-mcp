@@ -13,29 +13,6 @@ run, so an agent can say what a selection scheme would gain and how sure that is
 
 <!-- mcp-name: io.github.musharna/breedsim-mcp -->
 
-## Does it help?
-
-Yes, compared with Claude alone. Compared with Claude writing its own AlphaSimR scripts, it
-is not measurably more accurate and costs more.
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/musharna/breedsim-mcp/master/benchmarks/agent_qa/agent_qa.png" width="780"
-       alt="Stacked bar chart of right and wrong answers to 34 breeding-simulation questions, 3 runs each. Claude alone: 51 right, 51 wrong. Claude with Bash, R and web: 99 right, 3 wrong. Claude with breedsim-mcp: 102 right, 0 wrong. No-LLM baselines, one answer per question: one constant per kind of question, 12 right and 22 wrong; best closed form per question, 15 right and 19 wrong.">
-</p>
-
-Claude Opus 5.5 answered 34 breeding-simulation questions three times each, keyed by
-AlphaSimR run directly; the best named formula lands in only 15 of 34. With this server
-Claude got 102 of 102 right, with its own R and AlphaSimR 99 of 102 (not separated, exact
-McNemar p = 1.0), and alone 51 of 102 (both tool setups beat it, p < 1e-6). It still costs
-more than Claude's own scripts. A pre-registered re-run on 2026-10-18, with an unreleased
-commit that cut the server's instructions and rounded its outputs, got 102 of 102 right in
-both setups and lowered the server's median cost per answer from $0.051 to $0.033, but Claude's
-own scripts cost $0.027, cheaper on all 34 questions (p = 1e-10). Time is not separated.
-
-Each question spells out the AlphaSimR calls, so this tests running a stated simulation, not
-designing one unaided; method, controls, other limitations, and six probability questions
-reported separately are in [benchmarks/agent_qa](https://github.com/musharna/breedsim-mcp/blob/master/benchmarks/agent_qa/README.md).
-
 ## Why replicates
 
 A single simulation run is not a result, and this API will not return one. Five seeds of an
@@ -102,6 +79,38 @@ through uv and pass the library path:
 
 Check it with `list_methods()`, which reports the engine versions **and whether this process
 can currently produce reproducible results**.
+
+## What the benchmark shows
+
+Claude with the server was compared with Claude writing its own AlphaSimR scripts, with R and AlphaSimR
+installed for it, on 34 breeding-simulation questions, 3 runs each. A tie means the server
+matches that result without you setting up R and AlphaSimR. Questions right in every run,
+server against Claude's own scripts: Claude Haiku 5.5 34 against 33, Sonnet 5.5 28 against 33,
+Opus 5.5 34 against 34 (re-run 2026-10-18). None is separated (pre-registered; Holm-adjusted
+McNemar p = 1.0 on Haiku, 0.25 on Sonnet). Sonnet's gap is runs where it answered from
+breeder's-equation theory instead of running the simulation. The server was cheaper with
+Haiku (on 26 of 34 questions) and dearer with Sonnet and Opus. Opus with no tools got 51 of
+102 answers right.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/musharna/breedsim-mcp/master/benchmarks/agent_qa/agent_qa.png" width="780"
+       alt="Stacked bar chart of right and wrong answers to 34 breeding-simulation questions, 3 runs each. Claude alone: 51 right, 51 wrong. Claude with Bash, R and web: 99 right, 3 wrong. Claude with breedsim-mcp: 102 right, 0 wrong. No-LLM baselines, one answer per question: one constant per kind of question, 12 right and 22 wrong; best closed form per question, 15 right and 19 wrong.">
+</p>
+
+The chart is the first Opus 5.5 run, keyed by AlphaSimR run directly; the best named formula
+lands in only 15 of 34. With this server Claude got 102 of 102 answers right, with its own R
+and AlphaSimR 99 of 102 (not separated, exact McNemar p = 1.0), and alone 51 of 102 (both
+tool setups beat it, p < 1e-6). The re-run, with an unreleased commit that cut the server's
+instructions and rounded its outputs, got 102 of 102 in both setups and lowered the server's
+median cost per answer from $0.051 to $0.033; Claude's own scripts cost $0.027, cheaper on all
+34 questions (p = 1e-10). Time is not separated.
+
+Each question spells out the AlphaSimR calls, so this tests running a stated simulation, not
+designing one unaided. We wrote the questions and ran the benchmark ourselves; an outside
+re-run is welcome. Method, controls, other limitations, and six probability questions
+reported separately are in [benchmarks/agent_qa](https://github.com/musharna/breedsim-mcp/blob/master/benchmarks/agent_qa/README.md);
+the Haiku and Sonnet runs:
+[2026-10-20 re-run](https://github.com/musharna/breedsim-mcp/blob/master/benchmarks/agent_qa/README.md#haiku-and-sonnet-re-run-2026-10-20).
 
 ## Tools
 
