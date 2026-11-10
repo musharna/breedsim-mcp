@@ -20,6 +20,9 @@ identical three-cycle program gave mean genetic gain `[1.151, 1.841, 1.424, 1.42
 sd 0.247, on the very number being reported (measured once on AlphaSimR 2.1.0 while
 building v0.1.0, 2026-07-29). So `run_program` enforces a replicate floor and returns a
 per-cycle mean, sd and confidence interval. No flag collapses it to a point estimate.
+The interval is conditional on the session's founders: replicates rerun breeding from the
+same founder population, so founder-to-founder variation is not in it. To generalize, repeat
+over several founder seeds (`recipe.interval_scope` on each result says so).
 
 ## Install
 

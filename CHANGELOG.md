@@ -6,6 +6,15 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- **Results say their interval is conditional on the founders.** `run_program`
+  and `compare_programs` now carry `recipe.interval_scope`. Replicates rerun
+  breeding from one founder population, so the interval leaves out
+  founder-to-founder variation. Across 20 founder seeds, a session's interval for
+  genetic variance held the across-founder mean only 12 times. The numbers are
+  unchanged.
+
 ### Fixed
 
 - **Overlapping tool calls give the answers they give alone.** The SDK runs each
