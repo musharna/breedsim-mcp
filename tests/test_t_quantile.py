@@ -57,3 +57,22 @@ def test_the_reference_can_tell_a_rounded_quantile_from_the_exact_one():
     assert _t_cdf(2.7764451, 4) == pytest.approx(0.975, abs=1e-6)
     assert abs(_t_cdf(2.064, 21) - 0.975) > 1e-4
     assert abs(_t_cdf(1.96, 30) - 0.975) > 1e-4
+
+
+def test_sd_and_interval_match_a_hand_computed_sample():
+    """The test above recovers the quantile by dividing by the sd `summarise`
+    reported, so it agrees with itself whichever sd that is: a population sd
+    (divide by n) in place of the sample sd (divide by n - 1) passed it and every
+    other test. This one is computed by hand.
+
+    Values 1, 2, 3, 4: mean 2.5, squared deviations 2.25 + 0.25 + 0.25 + 2.25 = 5,
+    so the sample sd is sqrt(5 / 3) = 1.2910 (the population sd would be
+    sqrt(5 / 4) = 1.1180). With df = 3, t(0.975) = 3.18245 (printed tables give
+    3.182), so the half-width is 3.18245 * 1.2910 / sqrt(4) = 2.0543.
+    """
+    s = summarise([1.0, 2.0, 3.0, 4.0])
+    assert s["n"] == 4
+    assert s["mean"] == 2.5
+    assert s["sd"] == pytest.approx(math.sqrt(5 / 3), rel=1e-12)
+    assert s["ci_low"] == pytest.approx(2.5 - 2.054260, abs=1e-5)
+    assert s["ci_high"] == pytest.approx(2.5 + 2.054260, abs=1e-5)
