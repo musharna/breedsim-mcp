@@ -53,6 +53,19 @@ other call until it finishes — there is no second worker. The caps are set whe
 stops being slow and starts being an outage. For genuinely large jobs, drive AlphaSimR
 directly rather than through this server.
 
+The per-axis ceilings do not bound a founding on their own, because its cost grows with
+the product `n_ind × n_chr × seg_sites`. Founding pulls every haplotype value
+(`n_ind × n_chr × seg_sites × 2`) into Python to hash it, and peak memory grew by 29 to 38
+bytes per value when measured (1000 × 10 × 1000 took 0.55 GiB and 142 s). At the
+ceilings, 5000 × 40 × 5000, that would be 55 to 71 GiB. So `found_population` also
+estimates memory at 40 bytes per value and refuses a founding over a budget before R
+runs. The refusal names the three sizes, the estimate and the budget.
+
+The budget defaults to 1024 MiB, about 27 million haplotype values, and `list_methods()`
+reports it as `limits.founding_memory_mib`. Set `BREEDSIM_FOUNDING_MEMORY_MIB` in the
+client's `env` block to change it. A value that is not a positive whole number stops the
+server at startup rather than falling back to the default.
+
 ## What `run_program` returns
 
 Example output (AlphaSimR 2.1.0) from `found_population(generator="quickHaplo",

@@ -17,6 +17,14 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   (`engine.R_LOCK`) for its whole body, so overlapping calls run one after the
   other.
 
+- **A founding is bounded by memory, not only by per-axis ceilings.** Each of
+  `n_ind`, `n_chr` and `seg_sites` had a ceiling, but founding memory grows with
+  their product (measured at 29 to 38 bytes per haplotype value), so the allowed
+  maximum would have needed 55 to 71 GiB. `found_population` now refuses a
+  founding whose estimate exceeds a budget, before R runs, and names the numbers.
+  The budget defaults to 1024 MiB, is set with `BREEDSIM_FOUNDING_MEMORY_MIB`, and
+  is published by `list_methods` as `limits.founding_memory_mib`.
+
 ## [0.6.1] - 2026-10-20
 
 ### Fixed

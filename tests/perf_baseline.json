@@ -78,9 +78,12 @@
    "founding.py:found_population": 1,
    "genomic.py:measure_ld": 1,
    "limits.py:check_all": 1,
+   "limits.py:check_founding_memory": 1,
    "limits.py:check_seed_range": 1,
    "limits.py:check_upper": 5,
-   "python_calls": 67,
+   "limits.py:founding_memory_mib": 1,
+   "limits.py:haplotype_values": 1,
+   "python_calls": 70,
    "r_evals": 10,
    "r_function_calls": 10,
    "server.py:_one_call_in_r_at_a_time.<locals>.wrapper": 1,
@@ -107,11 +110,11 @@
    "engine.py:check_environment": 1,
    "engine.py:require_alphasimr": 1,
    "engine.py:threads_are_pinned": 1,
-   "python_calls": 35,
+   "python_calls": 36,
    "r_evals": 4,
    "r_function_calls": 4,
    "server.py:_one_call_in_r_at_a_time.<locals>.wrapper": 1,
-   "server.py:_round_floats": 26,
+   "server.py:_round_floats": 27,
    "server.py:_rounds_floats.<locals>.wrapper": 1,
    "server.py:_surfaces_refusals.<locals>.wrapper": 1,
    "server.py:build_server.<locals>.list_methods": 1
@@ -119,7 +122,7 @@
   "signature": [
    2,
    2,
-   9
+   10
   ]
  },
  "run_program": {

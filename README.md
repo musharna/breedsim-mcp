@@ -158,7 +158,10 @@ warnings table, and the measurements behind the points below.
   `MAIZE`, but this is not a plant-only simulator.
 - **Limits.** Every size parameter has a ceiling, listed by `list_methods()` under
   `limits`. R is a single interpreter and calls are serialized, so one oversized call would
-  block every other. For large jobs, drive AlphaSimR directly.
+  block every other. A founding is also bounded by its product `n_ind × n_chr × seg_sites`,
+  through a memory budget (default 1024 MiB, set with `BREEDSIM_FOUNDING_MEMORY_MIB`); see
+  [docs/REFERENCE.md](https://github.com/musharna/breedsim-mcp/blob/master/docs/REFERENCE.md#limits).
+  For large jobs, drive AlphaSimR directly.
 
 ## Testing
 

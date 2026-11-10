@@ -48,7 +48,7 @@ from .diagnostics import (
 )
 from .founding import GENERATORS, RUNMACS_RNG_NOTE, found_population
 from .genomic import SELECTION_METHODS, NoSnpChipError
-from .limits import LIMITS
+from .limits import FOUNDING_MEMORY_MIB, LIMITS
 from .replication import (
     DEFAULT_REPLICATES,
     MIN_REPLICATES,
@@ -195,7 +195,8 @@ class MethodsInfo(TypedDict):
     threads_pinned: bool
     reproducible: bool
     # Published so a caller can size a request instead of discovering the
-    # ceiling by having one refused.
+    # ceiling by having one refused. `founding_memory_mib` bounds the product
+    # n_ind x n_chr x seg_sites (see limits.check_founding_memory).
     limits: dict[str, int]
     notes: list[str]
     guidance: str
@@ -349,7 +350,7 @@ def build_server() -> MCPServer:
             "default_replicates": DEFAULT_REPLICATES,
             "threads_pinned": env.threads_pinned,
             "reproducible": env.reproducible,
-            "limits": dict(LIMITS),
+            "limits": {**LIMITS, "founding_memory_mib": FOUNDING_MEMORY_MIB},
             "notes": env.notes,
             "guidance": (
                 "quickHaplo is reproducible from a seed; runMacs gives realistic "
