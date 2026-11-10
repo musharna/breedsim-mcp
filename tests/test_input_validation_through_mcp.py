@@ -240,3 +240,26 @@ def test_failed_calls_leave_no_r_objects_behind(monkeypatch):
     # And the session is intact after both failures.
     out = run_program(store, s.session_id, cycles=1, replicates=5)
     assert out["cycles"][0]["genetic_gain"]["n"] == 5
+
+
+# --------------------------------------------------------------------------
+# Fuzz issue 64, crash 4: a non-finite index weight reached R
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("bad", [float("inf"), float("-inf"), float("nan")])
+def test_a_non_finite_index_weight_is_refused_before_r(bad):
+    """JSON has no Infinity or NaN, but Python's json and the server's parser
+    accept the `Infinity` / `NaN` literals, and a raw stdio request carrying
+    them reached `_index_clause`. `str(float("inf"))` is 'inf', which R reads
+    as a variable name: the caller got "object 'inf' not found" in place of a
+    reason. Measured over raw stdio before the fix, for all three values."""
+    srv = server.build_server()
+    s = _call(srv, "found_population", {**SMALL, "h2": [0.4, 0.3]})
+    args = {"session_id": s["session_id"], "cycles": 1, "replicates": 5}
+    with pytest.raises(ToolError, match=r"index_weights must be finite") as refused:
+        _call(srv, "run_program", {**args, "index_weights": [1.0, bad]})
+    assert "not found" not in str(refused.value)
+    # Positive control: finite weights on the same session run.
+    out = _call(srv, "run_program", {**args, "index_weights": [1.0, 0.5]})
+    assert out["recipe"]["index_weights"] == [1.0, 0.5]

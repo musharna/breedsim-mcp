@@ -34,6 +34,11 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   The budget defaults to 1024 MiB, is set with `BREEDSIM_FOUNDING_MEMORY_MIB`, and
   is published by `list_methods` as `limits.founding_memory_mib`.
 
+- **A non-finite index weight is refused with a reason.** `index_weights` with
+  `Infinity` or `NaN` (which a raw JSON request can carry) was written into R as
+  `inf` / `nan`, and the caller got R's "object 'inf' not found". `run_program`
+  now refuses it before R runs. Refs #64.
+
 ## [0.6.1] - 2026-10-20
 
 ### Fixed

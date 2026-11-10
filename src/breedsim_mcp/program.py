@@ -222,6 +222,15 @@ def _index_clause(index_weights: list[float] | None, n_traits: int) -> str:
             f"index_weights has {len(index_weights)} weights but the session has "
             f"{n_traits} traits. One weight per trait, in trait order."
         )
+    # Before the R literal is built: str(float("inf")) is 'inf' and nan is
+    # 'nan', which R parses as variable names, so a non-finite weight died in R
+    # with "object 'inf' not found" (fuzz issue 64). Not a weight R could use
+    # either way.
+    if not all(math.isfinite(w) for w in index_weights):
+        raise ValueError(
+            f"index_weights must be finite numbers, got {list(index_weights)}. "
+            "Each weight is the economic value of one unit of its trait."
+        )
     if not any(index_weights):
         raise ValueError(
             "index_weights are all zero, so the index cannot rank anything."
