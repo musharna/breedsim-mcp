@@ -143,6 +143,9 @@ warnings table, and the measurements behind the points below.
   without it the same seed gives different results. The `runMacs` RNG is seeded once per R
   session and advances across calls, so a repeat call in this long-lived process differs
   (`reproducible: false`).
+- **Overlapping calls run one at a time.** R has one global RNG, so the server holds a
+  lock for each whole tool call. A call that overlaps another waits for it and then gives
+  the same answer it gives alone.
 - **Warnings explain; none of them withhold results.**
 - **Multi-trait selection.** Pass `h2` as a list and `index_weights` to select on a
   weighted index. `trait_correlation` must be a real correlation matrix (for n equally

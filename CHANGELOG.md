@@ -6,6 +6,17 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- **Overlapping tool calls give the answers they give alone.** The SDK runs each
+  synchronous tool on a worker thread, so two calls in flight at once ran at the
+  same time against the one embedded R. They drew from each other's RNG stream and
+  returned different numbers, still marked `reproducible: true`. Two on the same
+  session freed each other's scratch population, and one failed with
+  "object '.bs_..._pop' not found". Every tool now holds one process-wide lock
+  (`engine.R_LOCK`) for its whole body, so overlapping calls run one after the
+  other.
+
 ## [0.6.1] - 2026-10-20
 
 ### Fixed
