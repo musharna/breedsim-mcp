@@ -51,7 +51,10 @@ async def _conversation() -> None:
         env=dict(os.environ),
     )
     async with (
-        stdio_client(params) as (read, write),
+        # errlog is named here, at call time: the default was bound when
+        # mcp.client.stdio was first imported, and under pytest that is the
+        # capture file of whichever session imported it, closed when it ends.
+        stdio_client(params, errlog=sys.stderr) as (read, write),
         ClientSession(read, write) as s,
     ):
         await s.initialize()
