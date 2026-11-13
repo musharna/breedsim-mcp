@@ -20,6 +20,9 @@ identical three-cycle program gave mean genetic gain `[1.151, 1.841, 1.424, 1.42
 sd 0.247, on the very number being reported (measured once on AlphaSimR 2.1.0 while
 building v0.1.0, 2026-07-29). So `run_program` enforces a replicate floor and returns a
 per-cycle mean, sd and confidence interval. No flag collapses it to a point estimate.
+The interval is conditional on the session's founders: replicates rerun breeding from the
+same founder population, so founder-to-founder variation is not in it. To generalize, repeat
+over several founder seeds (`recipe.interval_scope` on each result says so).
 
 ## Install
 
@@ -143,6 +146,9 @@ warnings table, and the measurements behind the points below.
   without it the same seed gives different results. The `runMacs` RNG is seeded once per R
   session and advances across calls, so a repeat call in this long-lived process differs
   (`reproducible: false`).
+- **Overlapping calls run one at a time.** R has one global RNG, so the server holds a
+  lock for each whole tool call. A call that overlaps another waits for it and then gives
+  the same answer it gives alone.
 - **Warnings explain; none of them withhold results.**
 - **Multi-trait selection.** Pass `h2` as a list and `index_weights` to select on a
   weighted index. `trait_correlation` must be a real correlation matrix (for n equally
@@ -155,7 +161,10 @@ warnings table, and the measurements behind the points below.
   `MAIZE`, but this is not a plant-only simulator.
 - **Limits.** Every size parameter has a ceiling, listed by `list_methods()` under
   `limits`. R is a single interpreter and calls are serialized, so one oversized call would
-  block every other. For large jobs, drive AlphaSimR directly.
+  block every other. A founding is also bounded by its product `n_ind × n_chr × seg_sites`,
+  through a memory budget (default 1024 MiB, set with `BREEDSIM_FOUNDING_MEMORY_MIB`); see
+  [docs/REFERENCE.md](https://github.com/musharna/breedsim-mcp/blob/master/docs/REFERENCE.md#limits).
+  For large jobs, drive AlphaSimR directly.
 
 ## Testing
 

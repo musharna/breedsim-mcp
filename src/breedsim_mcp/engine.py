@@ -22,6 +22,7 @@ module scope puts them in the root context, which every task inherits.
 
 import os
 import sys
+import threading
 from dataclasses import dataclass
 
 # Recorded BEFORE we touch anything: if rpy2 is already loaded then R may already
@@ -52,6 +53,22 @@ except Exception as exc:  # noqa: BLE001 — any failure here means R is unusabl
     _RO = None
     _R_RUNTIME_ERROR = None
     _RPY2_IMPORT_ERROR = exc
+
+
+# One embedded R serves every caller in this process, and R has ONE global RNG
+# and ONE global environment. A unit of work here — a founding, a programme of
+# replicates — is many `r_eval` calls in a row that must see nobody else's
+# writes in between: `set.seed` in one call, draws in the next, scratch objects
+# named after the session. rpy2's own `openrlib.rlock` covers each single call
+# into R, which is why overlapping work never crashed outright inside one
+# evaluation, but it is released between calls, so two units of work
+# interleaved: they drew from each other's RNG stream and freed each other's
+# scratch population (BR-H1). Hold THIS lock for the whole unit of work.
+#
+# Re-entrant, so a function that holds it may call another that takes it.
+# Waiting is blocking by design: the MCP SDK runs each synchronous tool on its
+# own worker thread, so a second call simply waits for the first to finish.
+R_LOCK = threading.RLock()
 
 
 class EngineError(Exception):

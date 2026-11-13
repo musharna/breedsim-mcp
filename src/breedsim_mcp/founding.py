@@ -17,7 +17,7 @@ import numpy as np
 
 from .engine import r_eval, require_alphasimr
 from .genomic import measure_ld
-from .limits import check_all, check_seed_range
+from .limits import check_all, check_founding_memory, check_seed_range
 from .session import Session, SessionStore, free_r_objects
 
 GENERATORS: tuple[str, ...] = ("quickHaplo", "runMacs")
@@ -178,6 +178,10 @@ def found_population(
     ):
         if value < 1:
             raise ValueError(f"{name} must be >= 1, got {value}")
+    # The per-axis ceilings above leave the PRODUCT unbounded, and memory and time
+    # grow with the product. Checked before R is touched, so a refusal costs
+    # nothing and leaves no R objects behind.
+    check_founding_memory(n_ind, n_chr, seg_sites)
     # QTL are drawn from the segregating sites whether or not a chip is added, so
     # this bound holds on its own and not only inside the chip check below.
     # Without it n_qtl_per_chr > seg_sites died in R with "Not enough eligible

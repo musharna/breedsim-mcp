@@ -4,9 +4,11 @@
 loads, and R reads that variable when OpenMP initialises. Import order here is
 load-bearing, not incidental.
 
-Tools are synchronous. R is a single interpreter with global state; serialising
-calls on the event loop is what keeps concurrent tool invocations from
-interleaving inside it.
+Tools are synchronous, and the SDK runs each one on a worker thread, with every
+request as its own task: two calls in flight at once DO run at the same time.
+R is a single interpreter with global state, so every tool holds
+`engine.R_LOCK` for its whole body (`_one_call_in_r_at_a_time`). This docstring
+used to say the event loop serialised calls; it never did.
 """
 
 # isort: off  -- engine MUST come before anything that could pull in rpy2.
@@ -46,7 +48,7 @@ from .diagnostics import (
 )
 from .founding import GENERATORS, RUNMACS_RNG_NOTE, found_population
 from .genomic import SELECTION_METHODS, NoSnpChipError
-from .limits import LIMITS
+from .limits import FOUNDING_MEMORY_MIB, LIMITS
 from .replication import (
     DEFAULT_REPLICATES,
     MIN_REPLICATES,
@@ -193,7 +195,8 @@ class MethodsInfo(TypedDict):
     threads_pinned: bool
     reproducible: bool
     # Published so a caller can size a request instead of discovering the
-    # ceiling by having one refused.
+    # ceiling by having one refused. `founding_memory_mib` bounds the product
+    # n_ind x n_chr x seg_sites (see limits.check_founding_memory).
     limits: dict[str, int]
     notes: list[str]
     guidance: str
@@ -226,6 +229,30 @@ def _rounds_floats(fn):
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         return _round_floats(fn(*args, **kwargs))
+
+    return wrapper
+
+
+def _one_call_in_r_at_a_time(fn):
+    """Run the tool holding `engine.R_LOCK` from its first line to its last.
+
+    MCPServer runs a synchronous tool on a worker thread (`anyio.to_thread`), so
+    two overlapping requests run concurrently. Before this, two `run_program`
+    calls in flight together returned numbers that differed from the same calls
+    run alone, still flagged `reproducible: true`, and two on one session freed
+    each other's scratch population ("object '.bs_..._pop' not found").
+
+    The whole body is held, not only the simulation: the session store is a
+    plain OrderedDict that `get` reorders and `add` evicts from (eviction frees
+    R objects), and the post-processing reads the session and calls R for the
+    engine provenance. Every tool takes it, including the ones that only read,
+    so that no tool added later has to decide whether it is safe without it.
+    """
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        with engine.R_LOCK:
+            return fn(*args, **kwargs)
 
     return wrapper
 
@@ -307,6 +334,7 @@ def build_server() -> MCPServer:
         title="List engine capabilities and determinism status", annotations=READ_ONLY
     )
     @_surfaces_refusals
+    @_one_call_in_r_at_a_time
     @_rounds_floats
     def list_methods() -> MethodsInfo:
         """Engine versions, available founder generators, replicate floor, and
@@ -322,7 +350,7 @@ def build_server() -> MCPServer:
             "default_replicates": DEFAULT_REPLICATES,
             "threads_pinned": env.threads_pinned,
             "reproducible": env.reproducible,
-            "limits": dict(LIMITS),
+            "limits": {**LIMITS, "founding_memory_mib": FOUNDING_MEMORY_MIB},
             "notes": env.notes,
             "guidance": (
                 "quickHaplo is reproducible from a seed; runMacs gives realistic "
@@ -338,6 +366,7 @@ def build_server() -> MCPServer:
         annotations=READ_ONLY,
     )
     @_surfaces_refusals
+    @_one_call_in_r_at_a_time
     @_rounds_floats
     def found_population_tool(
         generator: str = "quickHaplo",
@@ -411,6 +440,7 @@ def build_server() -> MCPServer:
         annotations=READ_ONLY,
     )
     @_surfaces_refusals
+    @_one_call_in_r_at_a_time
     @_rounds_floats
     def run_program_tool(
         session_id: str,
@@ -531,6 +561,7 @@ def build_server() -> MCPServer:
         annotations=READ_ONLY,
     )
     @_surfaces_refusals
+    @_one_call_in_r_at_a_time
     @_rounds_floats
     def compare_programs_tool(
         session_id: str,
@@ -603,6 +634,7 @@ def build_server() -> MCPServer:
 
     @mcp.tool(title="Describe a session", annotations=READ_ONLY)
     @_surfaces_refusals
+    @_one_call_in_r_at_a_time
     @_rounds_floats
     def describe_session(session_id: str) -> SessionInfo:
         """Founder provenance, trait architecture, cycles run, reproducibility."""
