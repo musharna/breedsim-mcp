@@ -103,7 +103,8 @@ def test_the_budget_set_in_a_clients_env_block_reaches_the_server_over_stdio():
             env={**os.environ, FOUNDING_MEMORY_ENV: "16"},
         )
         async with (
-            stdio_client(params) as (read, write),
+            # errlog named at call time; see test_stdio_tests_name_errlog.py.
+            stdio_client(params, errlog=sys.stderr) as (read, write),
             ClientSession(read, write) as s,
         ):
             await s.initialize()
