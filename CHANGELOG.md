@@ -6,6 +6,14 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-13
+
+### Changed
+
+- The README's benchmark section, now "What the benchmark shows" after the
+  install docs, reports all three model tiers (Haiku 5.5, Sonnet 5.5, Opus 5.5)
+  against Claude's own AlphaSimR scripts; none is separated.
+
 ### Added
 
 - **Results say their interval is conditional on the founders.** `run_program`
