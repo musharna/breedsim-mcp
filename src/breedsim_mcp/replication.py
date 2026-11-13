@@ -44,6 +44,20 @@ def _engine_provenance() -> dict[str, str | None]:
     }
 
 
+# What every interval this server reports is conditional on. Each replicate
+# restarts from the SAME founders (program.run_replicate), so the spread is the
+# breeding process's noise on this founder population, and founder-to-founder
+# variation is not in it. Measured 2026-11-10 over 20 founder seeds at the tool
+# defaults: a session's 95% interval held the across-founder mean of genetic
+# variance in only 12 of 20 (genetic gain 19 of 20). Carried on the result,
+# like gain_scale, because the result is what gets quoted.
+INTERVAL_SCOPE = (
+    "conditional on this session's founders: replicates rerun breeding from the "
+    "same founder population, so the interval leaves out founder-to-founder "
+    "variation. To generalize, repeat over several found_population seeds."
+)
+
+
 # Below this, the standard deviation is not estimable in any meaningful way.
 MIN_REPLICATES = 5
 DEFAULT_REPLICATES = 10
@@ -213,6 +227,7 @@ def run_program(
             # gain is in founder additive genetic SD, while a multi-trait
             # session sets its own variances and the scale is whatever the
             # caller chose. One hard-coded label would be wrong for one of them.
+            "interval_scope": INTERVAL_SCOPE,
             "gain_scale": (
                 "founder additive genetic SD (trait variance set to 1 at founding)"
                 if n_traits == 1

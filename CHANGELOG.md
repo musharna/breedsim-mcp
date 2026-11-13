@@ -6,6 +6,39 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- **Results say their interval is conditional on the founders.** `run_program`
+  and `compare_programs` now carry `recipe.interval_scope`. Replicates rerun
+  breeding from one founder population, so the interval leaves out
+  founder-to-founder variation. Across 20 founder seeds, a session's interval for
+  genetic variance held the across-founder mean only 12 times. The numbers are
+  unchanged.
+
+### Fixed
+
+- **Overlapping tool calls give the answers they give alone.** The SDK runs each
+  synchronous tool on a worker thread, so two calls in flight at once ran at the
+  same time against the one embedded R. They drew from each other's RNG stream and
+  returned different numbers, still marked `reproducible: true`. Two on the same
+  session freed each other's scratch population, and one failed with
+  "object '.bs_..._pop' not found". Every tool now holds one process-wide lock
+  (`engine.R_LOCK`) for its whole body, so overlapping calls run one after the
+  other.
+
+- **A founding is bounded by memory, not only by per-axis ceilings.** Each of
+  `n_ind`, `n_chr` and `seg_sites` had a ceiling, but founding memory grows with
+  their product (measured at 29 to 38 bytes per haplotype value), so the allowed
+  maximum would have needed 55 to 71 GiB. `found_population` now refuses a
+  founding whose estimate exceeds a budget, before R runs, and names the numbers.
+  The budget defaults to 1024 MiB, is set with `BREEDSIM_FOUNDING_MEMORY_MIB`, and
+  is published by `list_methods` as `limits.founding_memory_mib`.
+
+- **A non-finite index weight is refused with a reason.** `index_weights` with
+  `Infinity` or `NaN` (which a raw JSON request can carry) was written into R as
+  `inf` / `nan`, and the caller got R's "object 'inf' not found". `run_program`
+  now refuses it before R runs. Refs #64.
+
 ## [0.6.1] - 2026-10-20
 
 ### Fixed

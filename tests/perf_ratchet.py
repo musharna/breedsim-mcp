@@ -130,7 +130,8 @@ WORKLOADS: dict[str, tuple[Any, str, dict[str, Any], Any]] = {
     ),
 }
 EXPECTED_SIGNATURE = {
-    "list_methods": [2, 2, 9],
+    # 10 limits: the nine per-axis ceilings plus founding_memory_mib.
+    "list_methods": [2, 2, 10],
     "found_population": [16, 10],
     "run_program": [2, 5, False],
     "run_program_genomic": [1, 5, 5],

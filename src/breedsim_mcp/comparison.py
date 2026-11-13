@@ -32,7 +32,12 @@ from dataclasses import dataclass
 
 from .limits import check_all, check_seed_range
 from .program import run_replicate
-from .replication import MIN_REPLICATES, TooFewReplicatesError, summarise
+from .replication import (
+    INTERVAL_SCOPE,
+    MIN_REPLICATES,
+    TooFewReplicatesError,
+    summarise,
+)
 from .session import SessionStore
 
 
@@ -192,5 +197,7 @@ def compare_programs(
             "seed": session.seed,
             "base_seed": base_seed,
             "cycles": cycles,
+            # The difference interval is conditional on these founders too.
+            "interval_scope": INTERVAL_SCOPE,
         },
     }

@@ -53,6 +53,19 @@ other call until it finishes — there is no second worker. The caps are set whe
 stops being slow and starts being an outage. For genuinely large jobs, drive AlphaSimR
 directly rather than through this server.
 
+The per-axis ceilings do not bound a founding on their own, because its cost grows with
+the product `n_ind × n_chr × seg_sites`. Founding pulls every haplotype value
+(`n_ind × n_chr × seg_sites × 2`) into Python to hash it, and peak memory grew by 29 to 38
+bytes per value when measured (1000 × 10 × 1000 took 0.55 GiB and 142 s). At the
+ceilings, 5000 × 40 × 5000, that would be 55 to 71 GiB. So `found_population` also
+estimates memory at 40 bytes per value and refuses a founding over a budget before R
+runs. The refusal names the three sizes, the estimate and the budget.
+
+The budget defaults to 1024 MiB, about 27 million haplotype values, and `list_methods()`
+reports it as `limits.founding_memory_mib`. Set `BREEDSIM_FOUNDING_MEMORY_MIB` in the
+client's `env` block to change it. A value that is not a positive whole number stops the
+server at startup rather than falling back to the default.
+
 ## What `run_program` returns
 
 Example output (AlphaSimR 2.1.0) from `found_population(generator="quickHaplo",
@@ -98,6 +111,7 @@ the session id is elided. Regenerate it with `uv run python scripts/readme_examp
       "alphasimr_version": "2.1.0",
       "rpy2_version": "3.5.17"
     },
+    "interval_scope": "conditional on this session's founders: replicates rerun breeding from the same founder population, so the interval leaves out founder-to-founder variation. To generalize, repeat over several found_population seeds.",
     "gain_scale": "founder additive genetic SD (trait variance set to 1 at founding)"
   },
   "warnings": []
@@ -107,6 +121,15 @@ the session id is elided. Regenerate it with `uv run python scripts/readme_examp
 There is no `value` field anywhere. Intervals use **t** critical values rather than a normal
 1.96, because at n = 5–10 the normal understates the interval — the wrong direction to be
 wrong in when the interval exists to be honest.
+
+**The interval is about these founders.** Every replicate restarts from the session's
+founder population with a new seed, so the interval measures the noise of the breeding
+process on those founders. It leaves out the variation between founder populations. Across
+20 founder seeds at the tool defaults, a session's 95% interval for genetic variance held
+the mean over all 20 founder sets only 12 times; for genetic gain, 19 times. To make a
+claim about a program in general, found several populations with different seeds and
+compare their results. `recipe.interval_scope` on every `run_program` and
+`compare_programs` result says this.
 
 ## Comparing two programs
 
@@ -161,7 +184,13 @@ elided; `scripts/readme_examples.py` prints it in full.
   "favours": "a",
   "intervals_overlap": true,
   "reproducible": true,
-  "recipe": { "generator": "quickHaplo", "seed": 1, "base_seed": 1000, "cycles": 2 },
+  "recipe": {
+    "generator": "quickHaplo",
+    "seed": 1,
+    "base_seed": 1000,
+    "cycles": 2,
+    "interval_scope": "conditional on this session's founders: ..."
+  },
   "warnings": [{ "code": "overlap_but_different", "message": "..." }]
 }
 ```

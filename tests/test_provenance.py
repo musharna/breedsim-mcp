@@ -73,3 +73,36 @@ def test_multi_trait_gain_is_NOT_labelled_with_the_single_trait_scale():
     scale = out["recipe"]["gain_scale"]
     assert "founder additive genetic SD" not in scale
     assert "caller-supplied variances" in scale
+
+
+def test_the_interval_says_it_is_conditional_on_the_sessions_founders():
+    """Replicates rerun breeding from the same founders, so the interval leaves
+    out founder-to-founder variation: across 20 founder seeds a session's
+    interval held the across-founder mean of genetic variance only 12 times.
+    Nothing on the result said so. Both tools that report an interval must."""
+    srv = build_server()
+    s = _call(srv, "found_population", FOUND)
+    sid = s["session_id"]
+    run = _call(
+        srv,
+        "run_program",
+        {"session_id": sid, "cycles": 1, "replicates": 5, "n_select": 5},
+    )
+    cmp = _call(
+        srv,
+        "compare_programs",
+        {
+            "session_id": sid,
+            "cycles": 1,
+            "replicates": 5,
+            "a_n_select": 5,
+            "b_n_select": 10,
+        },
+    )
+    for out in (run, cmp):
+        scope = out["recipe"]["interval_scope"]
+        assert "conditional on this session's founders" in scope
+        assert "found_population seeds" in scope
+    # The note is a statement about the interval, not a change to it: the run
+    # still returns its distribution.
+    assert run["cycles"][0]["genetic_gain"]["n"] == 5

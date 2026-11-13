@@ -126,9 +126,9 @@ def test_limits_are_published_so_a_caller_can_size_a_request():
     """An agent should read the ceiling, not discover it by being refused."""
     import asyncio
 
-    from breedsim_mcp.limits import LIMITS
+    from breedsim_mcp.limits import FOUNDING_MEMORY_MIB, LIMITS
     from breedsim_mcp.server import build_server
 
     out = asyncio.run(build_server().call_tool("list_methods", {})).structured_content
-    assert out["limits"] == LIMITS
+    assert out["limits"] == {**LIMITS, "founding_memory_mib": FOUNDING_MEMORY_MIB}
     assert out["limits"]["replicates"] >= MIN_REPLICATES
